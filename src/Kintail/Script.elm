@@ -23,9 +23,9 @@ import Html
 
 
 type Script a
-    = Succeed a
+    = Run ( Cmd (Script a), Sub (Script a) )
+    | Succeed a
     | Fail String
-    | Run ( Cmd (Script a), Sub (Script a) )
 
 
 commands : Script a -> Cmd (Script a)
@@ -34,7 +34,10 @@ commands script =
         Run ( commands, _ ) ->
             commands
 
-        _ ->
+        Succeed _ ->
+            Cmd.none
+
+        Fail _ ->
             Cmd.none
 
 
@@ -44,20 +47,23 @@ subscriptions script =
         Run ( _, subscriptions ) ->
             subscriptions
 
-        _ ->
+        Succeed _ ->
+            Sub.none
+
+        Fail _ ->
             Sub.none
 
 
 view script =
     case script of
+        Run ( _, _ ) ->
+            Html.text "Running..."
+
         Succeed value ->
             Html.text ("Succeeded: " ++ toString value)
 
         Fail error ->
             Html.text ("Failed: " ++ error)
-
-        Run ( _, _ ) ->
-            Html.text "Running..."
 
 
 run : Script a -> Program Never (Script a) (Script a)
@@ -88,12 +94,6 @@ fail =
 map : (a -> b) -> Script a -> Script b
 map function script =
     case script of
-        Succeed a ->
-            succeed (function a)
-
-        Fail error ->
-            fail error
-
         Run ( commands, subscriptions ) ->
             let
                 mappedCommands =
@@ -104,19 +104,16 @@ map function script =
             in
                 Run ( mappedCommands, mappedSubscriptions )
 
+        Succeed a ->
+            Succeed (function a)
+
+        Fail error ->
+            Fail error
+
 
 map2 : (a -> b -> c) -> Script a -> Script b -> Script c
 map2 function scriptA scriptB =
     case ( scriptA, scriptB ) of
-        ( Fail error, _ ) ->
-            fail error
-
-        ( _, Fail error ) ->
-            fail error
-
-        ( Succeed valueA, Succeed valueB ) ->
-            Succeed (function valueA valueB)
-
         ( Run ( commandsA, subscriptionsA ), _ ) ->
             let
                 mapMessageA updatedScriptA =
@@ -143,16 +140,19 @@ map2 function scriptA scriptB =
             in
                 Run ( mappedCommands, mappedSubscriptions )
 
+        ( Succeed valueA, Succeed valueB ) ->
+            Succeed (function valueA valueB)
+
+        ( Fail error, _ ) ->
+            Fail error
+
+        ( Succeed _, Fail error ) ->
+            Fail error
+
 
 andThen : (a -> Script b) -> Script a -> Script b
 andThen function script =
     case script of
-        Succeed value ->
-            function value
-
-        Fail error ->
-            fail error
-
         Run ( commands, subscriptions ) ->
             let
                 mappedCommands =
@@ -163,24 +163,28 @@ andThen function script =
             in
                 Run ( mappedCommands, mappedSubscriptions )
 
+        Succeed value ->
+            function value
 
-print : (a -> b) -> a -> Script a
-print selector value =
-    let
-        output =
-            selector value
+        Fail error ->
+            Fail error
 
-        task =
-            Task.succeed output
-                |> Task.map (Debug.log "output")
-                |> Task.map (always value)
-    in
-        perform task
+
+print : (a -> b) -> Script a -> Script a
+print selector =
+    map
+        (\value ->
+            let
+                _ =
+                    Debug.log "output" (selector value)
+            in
+                value
+        )
 
 
 perform : Task Never a -> Script a
 perform task =
-    Run ( Task.perform succeed task, Sub.none )
+    Run ( Task.perform Succeed task, Sub.none )
 
 
 attempt : Task String a -> Script a
@@ -189,14 +193,17 @@ attempt task =
         toScript result =
             case result of
                 Ok value ->
-                    succeed value
+                    Succeed value
 
                 Err error ->
-                    fail error
+                    Fail error
     in
         Run ( Task.attempt toScript task, Sub.none )
 
 
-sleep : Time -> a -> Script a
-sleep time result =
-    perform (Process.sleep time) |> andThen (always (succeed result))
+sleep : (a -> Time) -> Script a -> Script a
+sleep selector =
+    andThen
+        (\value ->
+            perform (Process.sleep (selector value)) |> map (always value)
+        )

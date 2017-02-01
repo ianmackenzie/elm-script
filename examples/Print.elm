@@ -2,17 +2,23 @@ module Print exposing (..)
 
 import Kintail.Script as Script exposing (Script)
 import Process
-import Time
+import Time exposing (Time)
 import Task
+
+
+delayTime : Time
+delayTime =
+    Time.second
 
 
 script : Script String
 script =
-    Script.init { text = "A", number = 4 }
-        |> Script.andThen (Script.print .text)
-        |> Script.andThen (Script.sleep (3 * Time.second))
+    Script.init { text = "A", number = 1 }
+        |> Script.print .text
+        |> Script.sleep (always delayTime)
         |> Script.map .number
-        |> Script.andThen (Script.print identity)
+        |> Script.print identity
+        |> Script.sleep (always delayTime)
         |> Script.andThen
             (\number ->
                 if number > 2 then
