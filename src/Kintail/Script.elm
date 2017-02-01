@@ -190,7 +190,7 @@ perform task =
 attempt : Task String a -> Script a
 attempt task =
     let
-        toScript result =
+        handleResult result =
             case result of
                 Ok value ->
                     Succeed value
@@ -198,7 +198,7 @@ attempt task =
                 Err error ->
                     Fail error
     in
-        Run ( Task.attempt toScript task, Sub.none )
+        Run ( Task.attempt handleResult task, Sub.none )
 
 
 sleep : (a -> Time) -> Script a -> Script a
