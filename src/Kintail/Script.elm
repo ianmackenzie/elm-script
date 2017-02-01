@@ -187,18 +187,9 @@ perform task =
     Run ( Task.perform Succeed task, Sub.none )
 
 
-attempt : Task String a -> Script a
+attempt : Task x a -> Script (Result x a)
 attempt task =
-    let
-        handleResult result =
-            case result of
-                Ok value ->
-                    Succeed value
-
-                Err error ->
-                    Fail error
-    in
-        Run ( Task.attempt handleResult task, Sub.none )
+    Run ( Task.attempt Succeed task, Sub.none )
 
 
 sleep : (a -> Time) -> Script a -> Script a
