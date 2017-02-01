@@ -196,5 +196,5 @@ sleep : (a -> Time) -> Script a -> Script a
 sleep selector =
     andThen
         (\value ->
-            perform (Process.sleep (selector value)) |> map (always value)
+            perform (Process.sleep (selector value) |> Task.map (always value))
         )
