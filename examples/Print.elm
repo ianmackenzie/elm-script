@@ -1,9 +1,7 @@
 module Print exposing (..)
 
 import Kintail.Script as Script exposing (Script)
-import Process
 import Time exposing (Time)
-import Task
 
 
 delayTime : Time
