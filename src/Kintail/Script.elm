@@ -32,7 +32,7 @@ import Html
 
 
 type alias Context =
-    { submitRequest : Value -> Cmd Never
+    { submitRequest : String -> Value -> Cmd Never
     , responses : Sub Value
     }
 
@@ -43,14 +43,6 @@ type Script a
     | Fail String
 
 
-buildRequest : String -> Value -> Value
-buildRequest name value =
-    Encode.object
-        [ ( "name", Encode.string name )
-        , ( "value", value )
-        ]
-
-
 commands : Context -> Script a -> Cmd (Script a)
 commands context script =
     case script of
@@ -58,11 +50,11 @@ commands context script =
             buildCommands context
 
         Succeed _ ->
-            context.submitRequest (buildRequest "succeed" Encode.null)
+            context.submitRequest "succeed" Encode.null
                 |> Cmd.map never
 
         Fail message ->
-            context.submitRequest (buildRequest "fail" (Encode.string message))
+            context.submitRequest "fail" (Encode.string message)
                 |> Cmd.map never
 
 
@@ -86,8 +78,15 @@ run :
     -> Program Never (Script a) (Script a)
 run script requestPort responsePort =
     let
+        submitRequest name value =
+            requestPort <|
+                Encode.object
+                    [ ( "name", Encode.string name )
+                    , ( "value", value )
+                    ]
+
         context =
-            { submitRequest = requestPort
+            { submitRequest = submitRequest
             , responses = responsePort identity
             }
     in
@@ -192,12 +191,9 @@ with function =
 submitRequest : String -> Value -> Script ()
 submitRequest name value =
     let
-        requestObject =
-            buildRequest name value
-
         buildCommands context =
             Cmd.batch
-                [ context.submitRequest requestObject |> Cmd.map never
+                [ context.submitRequest name value |> Cmd.map never
                 , Task.perform identity (Task.succeed (succeed ()))
                 ]
     in
