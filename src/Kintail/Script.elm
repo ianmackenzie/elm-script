@@ -18,7 +18,7 @@ module Kintail.Script
         , perform
         , attempt
         , onError
-        , retryUntil
+        , repeatUntil
         , retryUntilSuccess
         , sequence
         )
@@ -240,15 +240,15 @@ onError fallback script =
             fallback
 
 
-retryUntil : (a -> Bool) -> Script a -> Script a
-retryUntil predicate script =
+repeatUntil : (a -> Bool) -> Script a -> Script a
+repeatUntil predicate script =
     script
         |> andThen
             (\value ->
                 if predicate value then
                     succeed value
                 else
-                    retryUntil predicate script
+                    repeatUntil predicate script
             )
 
 
