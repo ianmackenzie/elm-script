@@ -133,41 +133,7 @@ map function script =
 
 map2 : (a -> b -> c) -> Script a -> Script b -> Script c
 map2 function scriptA scriptB =
-    case ( scriptA, scriptB ) of
-        ( Run ( buildCommandsA, buildSubscriptionsA ), _ ) ->
-            let
-                mapMessageA updatedScriptA =
-                    map2 function updatedScriptA scriptB
-
-                buildMappedCommands =
-                    buildCommandsA >> Cmd.map mapMessageA
-
-                buildMappedSubscriptions =
-                    buildSubscriptionsA >> Sub.map mapMessageA
-            in
-                Run ( buildMappedCommands, buildMappedSubscriptions )
-
-        ( Succeed valueA, Run ( buildCommandsB, buildSubscriptionsB ) ) ->
-            let
-                mapMessageB updatedScriptB =
-                    map2 function scriptA updatedScriptB
-
-                buildMappedCommands =
-                    buildCommandsB >> Cmd.map mapMessageB
-
-                buildMappedSubscriptions =
-                    buildSubscriptionsB >> Sub.map mapMessageB
-            in
-                Run ( buildMappedCommands, buildMappedSubscriptions )
-
-        ( Succeed valueA, Succeed valueB ) ->
-            Succeed (function valueA valueB)
-
-        ( Fail error, _ ) ->
-            Fail error
-
-        ( Succeed _, Fail error ) ->
-            Fail error
+    scriptA |> andThen (\valueA -> map (function valueA) scriptB)
 
 
 andThen : (a -> Script b) -> Script a -> Script b
