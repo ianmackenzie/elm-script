@@ -125,10 +125,10 @@ map function script =
                 Run ( buildMappedCommands, buildMappedSubscriptions )
 
         Succeed a ->
-            Succeed (function a)
+            succeed (function a)
 
         Fail error ->
-            Fail error
+            fail error
 
 
 map2 : (a -> b -> c) -> Script a -> Script b -> Script c
@@ -187,7 +187,7 @@ andThen function script =
             function value
 
         Fail error ->
-            Fail error
+            fail error
 
 
 ignore : Script a -> Script ()
@@ -199,7 +199,7 @@ do : List (Script ()) -> Script ()
 do scripts =
     case scripts of
         [] ->
-            Succeed ()
+            succeed ()
 
         first :: rest ->
             first |> andThen (always (do rest))
@@ -219,7 +219,7 @@ submitRequest name value =
         buildCommands context =
             Cmd.batch
                 [ context.submitRequest requestObject |> Cmd.map never
-                , Task.perform identity (Task.succeed (Succeed ()))
+                , Task.perform identity (Task.succeed (succeed ()))
                 ]
     in
         Run ( buildCommands, always Sub.none )
@@ -232,12 +232,12 @@ print value =
 
 perform : Task Never a -> Script a
 perform task =
-    Run ( always (Task.perform Succeed task), always Sub.none )
+    Run ( always (Task.perform succeed task), always Sub.none )
 
 
 attempt : Task x a -> Script (Result x a)
 attempt task =
-    Run ( always (Task.attempt Succeed task), always Sub.none )
+    Run ( always (Task.attempt succeed task), always Sub.none )
 
 
 sleep : Time -> Script ()
@@ -259,7 +259,7 @@ onError fallback script =
                 Run ( buildMappedCommands, buildMappedSubscriptions )
 
         Succeed value ->
-            Succeed value
+            succeed value
 
         Fail _ ->
             fallback
@@ -286,7 +286,7 @@ sequence : List (Script a) -> Script (List a)
 sequence scripts =
     case scripts of
         [] ->
-            Succeed []
+            succeed []
 
         first :: rest ->
             first |> andThen (\value -> sequence rest |> map ((::) value))
