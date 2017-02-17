@@ -133,7 +133,11 @@ map function script =
             fail error
 
 
-map2 : (a -> b -> c) -> Script a -> Script b -> Script c
+map2 :
+    (a -> b -> c)
+    -> Script a
+    -> Script b
+    -> Script c
 map2 function scriptA scriptB =
     scriptA |> andThen (\valueA -> map (function valueA) scriptB)
 
