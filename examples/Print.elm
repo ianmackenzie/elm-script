@@ -38,19 +38,21 @@ script =
     Script.init { text = "A", number = 2 }
         |> Script.with
             (\model ->
-                [ Script.print model.text
-                , printCurrentTime
-                , Script.sleep delayTime
-                ]
+                Script.do
+                    [ Script.print model.text
+                    , printCurrentTime
+                    , Script.sleep delayTime
+                    ]
             )
         |> Script.map .number
         |> Script.with
             (\number ->
-                [ Script.print number
-                , printCurrentTime
-                , Script.sleep delayTime
-                , Script.attempt getCurrentTime |> Script.ignore
-                ]
+                Script.do
+                    [ Script.print number
+                    , printCurrentTime
+                    , Script.sleep delayTime
+                    , Script.attempt getCurrentTime |> Script.ignore
+                    ]
             )
         |> Script.andThen
             (\number ->

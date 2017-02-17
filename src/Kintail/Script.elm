@@ -5,7 +5,7 @@ module Kintail.Script
         , init
         , succeed
         , fail
-        , sequence
+        , do
         , ignore
         , map
         , map2
@@ -191,22 +191,19 @@ ignore =
     map (always ())
 
 
-sequence : List (Script ()) -> Script ()
-sequence scripts =
+do : List (Script ()) -> Script ()
+do scripts =
     case scripts of
         [] ->
             Succeed ()
 
         first :: rest ->
-            first |> andThen (always (sequence rest))
+            first |> andThen (always (do rest))
 
 
-with : (a -> List (Script ())) -> Script a -> Script a
-with scripts =
-    andThen
-        (\value ->
-            sequence (scripts value) |> andThen (always (Succeed value))
-        )
+with : (a -> Script ()) -> Script a -> Script a
+with function =
+    andThen (\value -> function value |> andThen (always (Succeed value)))
 
 
 submitRequest : Value -> Script ()
