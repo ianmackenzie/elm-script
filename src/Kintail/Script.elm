@@ -202,12 +202,12 @@ do scripts =
             succeed ()
 
         first :: rest ->
-            first |> andThen (always (do rest))
+            first |> andThen (\() -> do rest)
 
 
 with : (a -> Script ()) -> Script a -> Script a
 with function =
-    andThen (\value -> function value |> andThen (always (Succeed value)))
+    andThen (\value -> function value |> andThen (\() -> succeed value))
 
 
 submitRequest : String -> Value -> Script ()
