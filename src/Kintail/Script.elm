@@ -9,6 +9,8 @@ module Kintail.Script
         , ignore
         , map
         , map2
+        , map3
+        , map4
         , andThen
         , with
         , print
@@ -134,6 +136,28 @@ map function script =
 map2 : (a -> b -> c) -> Script a -> Script b -> Script c
 map2 function scriptA scriptB =
     scriptA |> andThen (\valueA -> map (function valueA) scriptB)
+
+
+map3 :
+    (a -> b -> c -> d)
+    -> Script a
+    -> Script b
+    -> Script c
+    -> Script d
+map3 function scriptA scriptB scriptC =
+    scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
+
+
+map4 :
+    (a -> b -> c -> d -> e)
+    -> Script a
+    -> Script b
+    -> Script c
+    -> Script d
+    -> Script e
+map4 function scriptA scriptB scriptC scriptD =
+    scriptA
+        |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
 andThen : (a -> Script b) -> Script a -> Script b
