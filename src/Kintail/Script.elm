@@ -206,12 +206,15 @@ with function =
     andThen (\value -> function value |> andThen (always (Succeed value)))
 
 
-submitRequest : Value -> Script ()
-submitRequest object =
+submitRequest : String -> Value -> Script ()
+submitRequest name value =
     let
+        requestObject =
+            buildRequest name value
+
         buildCommands context =
             Cmd.batch
-                [ context.submitRequest object |> Cmd.map never
+                [ context.submitRequest requestObject |> Cmd.map never
                 , Task.perform identity (Task.succeed (Succeed ()))
                 ]
     in
@@ -220,7 +223,7 @@ submitRequest object =
 
 print : a -> Script ()
 print value =
-    submitRequest (buildRequest "print" (value |> toString |> Encode.string))
+    submitRequest "print" (value |> toString |> Encode.string)
 
 
 perform : Task Never a -> Script a
