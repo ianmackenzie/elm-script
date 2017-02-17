@@ -18,6 +18,7 @@ module Kintail.Script
         , onError
         , retryUntil
         , retryUntilSuccess
+        , sequence
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -279,3 +280,13 @@ retryUntil predicate script =
 retryUntilSuccess : Script a -> Script a
 retryUntilSuccess script =
     onError script script
+
+
+sequence : List (Script a) -> Script (List a)
+sequence scripts =
+    case scripts of
+        [] ->
+            Succeed []
+
+        first :: rest ->
+            first |> andThen (\value -> sequence rest |> map ((::) value))
