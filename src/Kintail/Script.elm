@@ -15,6 +15,9 @@ module Kintail.Script
         , sleep
         , perform
         , attempt
+        , onError
+        , retryUntil
+        , retryUntilSuccess
         )
 
 import Json.Encode as Encode exposing (Value)
@@ -239,3 +242,40 @@ attempt task =
 sleep : Time -> Script ()
 sleep time =
     perform (Process.sleep time)
+
+
+onError : Script a -> Script a -> Script a
+onError fallback script =
+    case script of
+        Run ( buildCommands, buildSubscriptions ) ->
+            let
+                buildMappedCommands =
+                    buildCommands >> Cmd.map (onError fallback)
+
+                buildMappedSubscriptions =
+                    buildSubscriptions >> Sub.map (onError fallback)
+            in
+                Run ( buildMappedCommands, buildMappedSubscriptions )
+
+        Succeed value ->
+            Succeed value
+
+        Fail _ ->
+            fallback
+
+
+retryUntil : (a -> Bool) -> Script a -> Script a
+retryUntil predicate script =
+    script
+        |> andThen
+            (\value ->
+                if predicate value then
+                    succeed value
+                else
+                    retryUntil predicate script
+            )
+
+
+retryUntilSuccess : Script a -> Script a
+retryUntilSuccess script =
+    onError script script
