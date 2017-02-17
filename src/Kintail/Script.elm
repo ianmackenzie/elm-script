@@ -115,22 +115,7 @@ fail =
 
 map : (a -> b) -> Script a -> Script b
 map function script =
-    case script of
-        Run ( buildCommands, buildSubscriptions ) ->
-            let
-                buildMappedCommands =
-                    buildCommands >> Cmd.map (map function)
-
-                buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (map function)
-            in
-                Run ( buildMappedCommands, buildMappedSubscriptions )
-
-        Succeed a ->
-            succeed (function a)
-
-        Fail error ->
-            fail error
+    script |> andThen (\value -> succeed (function value))
 
 
 map2 :
