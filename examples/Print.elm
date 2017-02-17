@@ -29,7 +29,7 @@ printCurrentTime =
                         Script.print timeString
 
                     Err _ ->
-                        Script.fail "HTTP request failed"
+                        Script.print "HTTP request failed"
             )
 
 
