@@ -45,14 +45,13 @@ script =
                     ]
             )
         |> Script.map .number
-        |> Script.with
-            (\number ->
-                Script.do
-                    [ Script.print number
-                    , printCurrentTime
-                    , Script.sleep delayTime
-                    , Script.attempt getCurrentTime |> Script.ignore
-                    ]
+        |> Script.with (\number -> Script.print number)
+        |> Script.aside
+            (Script.do
+                [ printCurrentTime
+                , Script.sleep delayTime
+                , Script.attempt getCurrentTime |> Script.ignore
+                ]
             )
         |> Script.andThen
             (\number ->

@@ -13,6 +13,7 @@ module Kintail.Script
         , map4
         , andThen
         , with
+        , aside
         , print
         , sleep
         , perform
@@ -265,3 +266,8 @@ sequence scripts =
 
         first :: rest ->
             first |> andThen (\value -> sequence rest |> map ((::) value))
+
+
+aside : Script () -> Script a -> Script a
+aside =
+    always >> with
