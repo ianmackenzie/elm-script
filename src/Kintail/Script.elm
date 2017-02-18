@@ -1,10 +1,12 @@
 module Kintail.Script
     exposing
         ( Script
-        , run
         , init
         , succeed
         , fail
+        , RequestPort
+        , ResponsePort
+        , run
         , print
         , sleep
         , do
@@ -30,7 +32,11 @@ various ways, and turn them into runnable programs.
 
 # Basics
 
-@docs Script, run, init, succeed, fail
+@docs Script, init, succeed, fail
+
+# Running
+
+@docs RequestPort, ResponsePort, run
 
 # Utilities
 
@@ -77,6 +83,14 @@ type Script a
     | Fail String
 
 
+type alias RequestPort =
+    Value -> Cmd Never
+
+
+type alias ResponsePort =
+    (Value -> Value) -> Sub Value
+
+
 commands : Context -> Script a -> Cmd (Script a)
 commands context script =
     case script of
@@ -105,11 +119,7 @@ subscriptions context script =
             Sub.none
 
 
-run :
-    Script a
-    -> (Value -> Cmd Never)
-    -> ((Value -> Value) -> Sub Value)
-    -> Program Never (Script a) (Script a)
+run : Script a -> RequestPort -> ResponsePort -> Program Never (Script a) (Script a)
 run script requestPort responsePort =
     let
         submitRequest name value =
