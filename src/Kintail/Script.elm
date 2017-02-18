@@ -68,7 +68,6 @@ import Json.Decode as Decode
 import Task exposing (Task)
 import Process
 import Time exposing (Time)
-import Html
 
 
 type alias Context =
