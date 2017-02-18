@@ -5,25 +5,55 @@ module Kintail.Script
         , init
         , succeed
         , fail
+        , print
+        , sleep
         , do
-        , ignore
+        , sequence
+        , andThen
+        , with
+        , andThenWith
+        , aside
+        , repeatUntil
         , map
+        , ignore
         , map2
         , map3
         , map4
-        , andThenWith
-        , andThen
-        , with
-        , aside
-        , print
-        , sleep
+        , onError
+        , retryUntilSuccess
         , perform
         , attempt
-        , onError
-        , repeatUntil
-        , retryUntilSuccess
-        , sequence
         )
+
+
+# Basics
+
+@docs Script, run, init, succeed, fail
+
+# Utilities
+
+@docs print, sleep
+
+# Sequencing
+
+@docs do, sequence, andThen, with, andThenWith, aside
+
+# Repetition
+
+@docs repeatUntil
+
+# Mapping
+
+@docs map, ignore, map2, map3, map4
+
+# Error recovery
+
+@docs onError, retryUntilSuccess
+
+# Tasks
+
+@docs perform, attempt
+-}
 
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode
