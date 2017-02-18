@@ -25,6 +25,8 @@ module Kintail.Script
         , attempt
         )
 
+{-| The functions in this module let you define scripts, chain them together in
+various ways, and turn them into runnable programs.
 
 # Basics
 
