@@ -22,7 +22,7 @@ getCurrentTime =
 printCurrentTime : Script ()
 printCurrentTime =
     Script.attempt getCurrentTime
-        |> Script.andThen
+        |> Script.andThenWith
             (\result ->
                 case result of
                     Ok timeString ->
@@ -53,7 +53,7 @@ script =
                 , Script.attempt getCurrentTime |> Script.ignore
                 ]
             )
-        |> Script.andThen
+        |> Script.andThenWith
             (\number ->
                 if number > 2 then
                     Script.succeed "Hooray"

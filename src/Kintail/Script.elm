@@ -11,6 +11,7 @@ module Kintail.Script
         , map2
         , map3
         , map4
+        , andThenWith
         , andThen
         , with
         , aside
@@ -115,7 +116,7 @@ fail =
 
 map : (a -> b) -> Script a -> Script b
 map function script =
-    script |> andThen (\value -> succeed (function value))
+    script |> andThenWith (\value -> succeed (function value))
 
 
 map2 :
@@ -124,7 +125,7 @@ map2 :
     -> Script b
     -> Script c
 map2 function scriptA scriptB =
-    scriptA |> andThen (\valueA -> map (function valueA) scriptB)
+    scriptA |> andThenWith (\valueA -> map (function valueA) scriptB)
 
 
 map3 :
@@ -134,7 +135,7 @@ map3 :
     -> Script c
     -> Script d
 map3 function scriptA scriptB scriptC =
-    scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
+    scriptA |> andThenWith (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
 map4 :
@@ -146,19 +147,20 @@ map4 :
     -> Script e
 map4 function scriptA scriptB scriptC scriptD =
     scriptA
-        |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
+        |> andThenWith
+            (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
-andThen : (a -> Script b) -> Script a -> Script b
-andThen function script =
+andThenWith : (a -> Script b) -> Script a -> Script b
+andThenWith function script =
     case script of
         Run ( buildCommands, buildSubscriptions ) ->
             let
                 buildMappedCommands =
-                    buildCommands >> Cmd.map (andThen function)
+                    buildCommands >> Cmd.map (andThenWith function)
 
                 buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (andThen function)
+                    buildSubscriptions >> Sub.map (andThenWith function)
             in
                 Run ( buildMappedCommands, buildMappedSubscriptions )
 
@@ -167,6 +169,11 @@ andThen function script =
 
         Fail error ->
             fail error
+
+
+andThen : Script a -> Script () -> Script a
+andThen =
+    andThenWith << always
 
 
 ignore : Script a -> Script ()
@@ -181,12 +188,12 @@ do scripts =
             succeed ()
 
         first :: rest ->
-            first |> andThen (\() -> do rest)
+            first |> andThen (do rest)
 
 
 with : (a -> Script ()) -> Script a -> Script a
 with function =
-    andThen (\value -> function value |> andThen (\() -> succeed value))
+    andThenWith (\value -> function value |> andThen (succeed value))
 
 
 submitRequest : String -> Value -> Script ()
@@ -244,7 +251,7 @@ onError fallback script =
 repeatUntil : (a -> Bool) -> Script a -> Script a
 repeatUntil predicate script =
     script
-        |> andThen
+        |> andThenWith
             (\value ->
                 if predicate value then
                     succeed value
@@ -265,7 +272,7 @@ sequence scripts =
             succeed []
 
         first :: rest ->
-            first |> andThen (\value -> sequence rest |> map ((::) value))
+            first |> andThenWith (\value -> sequence rest |> map ((::) value))
 
 
 aside : Script () -> Script a -> Script a
