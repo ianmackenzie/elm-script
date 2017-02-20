@@ -142,7 +142,7 @@ run script requestPort responsePort =
 
 init : a -> Script a
 init =
-    Succeed
+    succeed
 
 
 succeed : a -> Script a
