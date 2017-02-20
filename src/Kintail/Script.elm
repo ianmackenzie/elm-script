@@ -12,9 +12,9 @@ module Kintail.Script
         , do
         , sequence
         , andThen
-        , with
         , andThenWith
         , aside
+        , asideWith
         , repeatUntil
         , map
         , ignore
@@ -49,7 +49,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, sequence, andThen, with, andThenWith, aside
+@docs do, sequence, andThen, andThenWith, aside, asideWith
 
 # Repetition
 
@@ -241,8 +241,8 @@ do scripts =
             first |> andThen (do rest)
 
 
-with : (a -> Script ()) -> Script a -> Script a
-with function =
+asideWith : (a -> Script ()) -> Script a -> Script a
+asideWith function =
     andThenWith (\value -> function value |> andThen (succeed value))
 
 
@@ -327,7 +327,7 @@ sequence scripts =
 
 aside : Script () -> Script a -> Script a
 aside =
-    always >> with
+    asideWith << always
 
 
 type Arguments f r

@@ -36,7 +36,7 @@ printCurrentTime =
 script : Script String
 script =
     Script.init { text = "A", number = 2 }
-        |> Script.with
+        |> Script.asideWith
             (\model ->
                 Script.do
                     [ Script.print model.text
@@ -45,7 +45,7 @@ script =
                     ]
             )
         |> Script.map .number
-        |> Script.with (\number -> Script.print number)
+        |> Script.asideWith (\number -> Script.print number)
         |> Script.aside
             (Script.do
                 [ printCurrentTime
