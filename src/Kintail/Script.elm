@@ -25,6 +25,11 @@ module Kintail.Script
         , retryUntilSuccess
         , perform
         , attempt
+        , Arguments
+        , collect
+        , andCollect
+        , andThenWithCollected
+        , mapCollected
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -53,6 +58,10 @@ various ways, and turn them into runnable programs.
 # Mapping
 
 @docs map, ignore, map2, map3, map4
+
+# Combining
+
+@docs collect, andCollect, andThenWithCollected, mapCollected
 
 # Error recovery
 
@@ -319,3 +328,32 @@ sequence scripts =
 aside : Script () -> Script a -> Script a
 aside =
     always >> with
+
+
+type Arguments f r
+    = Arguments (f -> r)
+
+
+collect : Script a -> Script (Arguments (a -> r) r)
+collect =
+    map (\value -> Arguments (\function -> function value))
+
+
+andCollect : Script b -> Script (Arguments f (b -> r)) -> Script (Arguments f r)
+andCollect scriptB argumentsScriptA =
+    map2
+        (\(Arguments callerA) valueB ->
+            Arguments (\valueA -> callerA valueA valueB)
+        )
+        argumentsScriptA
+        scriptB
+
+
+andThenWithCollected : f -> Script (Arguments f (Script r)) -> Script r
+andThenWithCollected function =
+    andThenWith (\(Arguments caller) -> caller function)
+
+
+mapCollected : f -> Script (Arguments f r) -> Script r
+mapCollected function =
+    map (\(Arguments caller) -> caller function)
