@@ -5,7 +5,7 @@ import Json.Encode exposing (Value)
 import Time
 
 
-script : Script ()
+script : Script Never ()
 script =
     Script.collect (Script.succeed 3)
         |> Script.andCollect (Script.succeed "four")

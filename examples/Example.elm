@@ -13,27 +13,20 @@ delayTime =
     0.5 * Time.second
 
 
-getCurrentTime : Task Http.Error String
+getCurrentTime : Task String String
 getCurrentTime =
     Http.get "http://time.jsontest.com/" (Decode.field "time" Decode.string)
         |> Http.toTask
+        |> Task.mapError (always "HTTP request failed")
 
 
-printCurrentTime : Script ()
+printCurrentTime : Script String ()
 printCurrentTime =
-    Script.attempt getCurrentTime
-        |> Script.andThenWith
-            (\result ->
-                case result of
-                    Ok timeString ->
-                        Script.print timeString
-
-                    Err _ ->
-                        Script.print "HTTP request failed"
-            )
+    Script.perform getCurrentTime
+        |> Script.andThenWith (\result -> Script.print result)
 
 
-script : Script String
+script : Script String String
 script =
     Script.init { text = "A", number = 2 }
         |> Script.asideWith
@@ -50,7 +43,7 @@ script =
             (Script.do
                 [ printCurrentTime
                 , Script.sleep delayTime
-                , Script.attempt getCurrentTime |> Script.ignore
+                , Script.perform getCurrentTime |> Script.ignore
                 ]
             )
         |> Script.andThenWith

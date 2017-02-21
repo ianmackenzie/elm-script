@@ -24,7 +24,6 @@ module Kintail.Script
         , onError
         , retryUntilSuccess
         , perform
-        , attempt
         , Arguments
         , collect
         , andCollect
@@ -57,7 +56,7 @@ various ways, and turn them into runnable programs.
 
 # Mapping
 
-@docs map, ignore, map2, map3, map4
+@docs map, ignore, map2, map3, map4, mapError
 
 # Combining
 
@@ -65,11 +64,11 @@ various ways, and turn them into runnable programs.
 
 # Error recovery
 
-@docs onError, retryUntilSuccess
+@docs attempt, onError, retryUntilSuccess
 
 # Tasks
 
-@docs perform, attempt
+@docs perform
 -}
 
 import Json.Encode as Encode exposing (Value)
@@ -85,10 +84,10 @@ type alias Context =
     }
 
 
-type Script a
-    = Run ( Context -> Cmd (Script a), Context -> Sub (Script a) )
+type Script x a
+    = Run ( Context -> Cmd (Script x a), Context -> Sub (Script x a) )
     | Succeed a
-    | Fail String
+    | Fail x
 
 
 type alias RequestPort =
@@ -99,22 +98,20 @@ type alias ResponsePort =
     (Value -> Value) -> Sub Value
 
 
-commands : Context -> Script a -> Cmd (Script a)
+commands : Context -> Script x a -> Cmd (Script x a)
 commands context script =
     case script of
         Run ( buildCommands, _ ) ->
             buildCommands context
 
         Succeed _ ->
-            context.submitRequest "succeed" Encode.null
-                |> Cmd.map never
+            context.submitRequest "succeed" Encode.null |> Cmd.map never
 
-        Fail message ->
-            context.submitRequest "fail" (Encode.string message)
-                |> Cmd.map never
+        Fail _ ->
+            context.submitRequest "fail" Encode.null |> Cmd.map never
 
 
-subscriptions : Context -> Script a -> Sub (Script a)
+subscriptions : Context -> Script x a -> Sub (Script x a)
 subscriptions context script =
     case script of
         Run ( _, buildSubscriptions ) ->
@@ -127,7 +124,7 @@ subscriptions context script =
             Sub.none
 
 
-run : Script a -> RequestPort -> ResponsePort -> Program Never (Script a) (Script a)
+run : Script x a -> RequestPort -> ResponsePort -> Program Never (Script x a) (Script x a)
 run script requestPort responsePort =
     let
         submitRequest name value =
@@ -149,59 +146,59 @@ run script requestPort responsePort =
             }
 
 
-init : a -> Script a
+init : a -> Script x a
 init =
     succeed
 
 
-succeed : a -> Script a
+succeed : a -> Script x a
 succeed =
     Succeed
 
 
-fail : String -> Script a
+fail : x -> Script x a
 fail =
     Fail
 
 
-map : (a -> b) -> Script a -> Script b
+map : (a -> b) -> Script x a -> Script x b
 map function script =
     script |> andThenWith (\value -> succeed (function value))
 
 
 map2 :
     (a -> b -> c)
-    -> Script a
-    -> Script b
-    -> Script c
+    -> Script x a
+    -> Script x b
+    -> Script x c
 map2 function scriptA scriptB =
     scriptA |> andThenWith (\valueA -> map (function valueA) scriptB)
 
 
 map3 :
     (a -> b -> c -> d)
-    -> Script a
-    -> Script b
-    -> Script c
-    -> Script d
+    -> Script x a
+    -> Script x b
+    -> Script x c
+    -> Script x d
 map3 function scriptA scriptB scriptC =
     scriptA |> andThenWith (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
 map4 :
     (a -> b -> c -> d -> e)
-    -> Script a
-    -> Script b
-    -> Script c
-    -> Script d
-    -> Script e
+    -> Script x a
+    -> Script x b
+    -> Script x c
+    -> Script x d
+    -> Script x e
 map4 function scriptA scriptB scriptC scriptD =
     scriptA
         |> andThenWith
             (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
-andThenWith : (a -> Script b) -> Script a -> Script b
+andThenWith : (a -> Script x b) -> Script x a -> Script x b
 andThenWith function script =
     case script of
         Run ( buildCommands, buildSubscriptions ) ->
@@ -221,17 +218,17 @@ andThenWith function script =
             fail error
 
 
-andThen : Script a -> Script () -> Script a
+andThen : Script x a -> Script x () -> Script x a
 andThen =
     andThenWith << always
 
 
-ignore : Script a -> Script ()
+ignore : Script x a -> Script x ()
 ignore =
     map (always ())
 
 
-do : List (Script ()) -> Script ()
+do : List (Script x ()) -> Script x ()
 do scripts =
     case scripts of
         [] ->
@@ -241,12 +238,12 @@ do scripts =
             first |> andThen (do rest)
 
 
-asideWith : (a -> Script ()) -> Script a -> Script a
+asideWith : (a -> Script x ()) -> Script x a -> Script x a
 asideWith function =
     andThenWith (\value -> function value |> andThen (succeed value))
 
 
-submitRequest : String -> Value -> Script ()
+submitRequest : String -> Value -> Script x ()
 submitRequest name value =
     let
         buildCommands context =
@@ -258,47 +255,61 @@ submitRequest name value =
         Run ( buildCommands, always Sub.none )
 
 
-print : a -> Script ()
+print : a -> Script x ()
 print value =
     submitRequest "print" (value |> toString |> Encode.string)
 
 
-perform : Task Never a -> Script a
+perform : Task x a -> Script x a
 perform task =
-    Run ( always (Task.perform succeed task), always Sub.none )
+    let
+        mapResult result =
+            case result of
+                Ok value ->
+                    succeed value
+
+                Err error ->
+                    fail error
+    in
+        Run ( always (Task.attempt mapResult task), always Sub.none )
 
 
-attempt : Task x a -> Script (Result x a)
-attempt task =
-    Run ( always (Task.attempt succeed task), always Sub.none )
-
-
-sleep : Time -> Script ()
+sleep : Time -> Script x ()
 sleep time =
     perform (Process.sleep time)
 
 
-onError : Script a -> Script a -> Script a
-onError fallback script =
+onError : (x -> Script y a) -> Script x a -> Script y a
+onError recover script =
     case script of
         Run ( buildCommands, buildSubscriptions ) ->
             let
                 buildMappedCommands =
-                    buildCommands >> Cmd.map (onError fallback)
+                    buildCommands >> Cmd.map (onError recover)
 
                 buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (onError fallback)
+                    buildSubscriptions >> Sub.map (onError recover)
             in
                 Run ( buildMappedCommands, buildMappedSubscriptions )
 
         Succeed value ->
             succeed value
 
-        Fail _ ->
-            fallback
+        Fail error ->
+            recover error
 
 
-repeatUntil : (a -> Bool) -> Script a -> Script a
+mapError : (x -> y) -> Script x a -> Script y a
+mapError function =
+    onError (\error -> fail (function error))
+
+
+attempt : Script x a -> Script y (Result x a)
+attempt =
+    map Ok >> onError (Err >> succeed)
+
+
+repeatUntil : (a -> Bool) -> Script x a -> Script x a
 repeatUntil predicate script =
     script
         |> andThenWith
@@ -310,12 +321,12 @@ repeatUntil predicate script =
             )
 
 
-retryUntilSuccess : Script a -> Script a
+retryUntilSuccess : Script x a -> Script y a
 retryUntilSuccess script =
-    onError script script
+    onError (\error -> retryUntilSuccess script) script
 
 
-sequence : List (Script a) -> Script (List a)
+sequence : List (Script x a) -> Script x (List a)
 sequence scripts =
     case scripts of
         [] ->
@@ -325,7 +336,7 @@ sequence scripts =
             first |> andThenWith (\value -> sequence rest |> map ((::) value))
 
 
-aside : Script () -> Script a -> Script a
+aside : Script x () -> Script x a -> Script x a
 aside =
     asideWith << always
 
@@ -334,12 +345,12 @@ type Arguments f r
     = Arguments (f -> r)
 
 
-collect : Script a -> Script (Arguments (a -> r) r)
+collect : Script x a -> Script x (Arguments (a -> r) r)
 collect =
     map (\value -> Arguments (\function -> function value))
 
 
-andCollect : Script b -> Script (Arguments f (b -> r)) -> Script (Arguments f r)
+andCollect : Script x b -> Script x (Arguments f (b -> r)) -> Script x (Arguments f r)
 andCollect scriptB argumentsScriptA =
     map2
         (\(Arguments callerA) valueB ->
@@ -349,11 +360,11 @@ andCollect scriptB argumentsScriptA =
         scriptB
 
 
-andThenWithCollected : f -> Script (Arguments f (Script r)) -> Script r
+andThenWithCollected : f -> Script x (Arguments f (Script x r)) -> Script x r
 andThenWithCollected function =
     andThenWith (\(Arguments caller) -> caller function)
 
 
-mapCollected : f -> Script (Arguments f r) -> Script r
+mapCollected : f -> Script x (Arguments f r) -> Script x r
 mapCollected function =
     map (\(Arguments caller) -> caller function)
