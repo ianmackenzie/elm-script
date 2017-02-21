@@ -13,7 +13,6 @@ module Kintail.Script
         , sequence
         , andThen
         , aside
-        , repeatUntil
         , map
         , ignore
         , map2
@@ -47,10 +46,6 @@ various ways, and turn them into runnable programs.
 # Sequencing
 
 @docs do, sequence, andThen, aside
-
-# Repetition
-
-@docs repeatUntil
 
 # Mapping
 
@@ -298,18 +293,6 @@ mapError function =
 attempt : Script x a -> Script y (Result x a)
 attempt =
     map Ok >> onError (Err >> succeed)
-
-
-repeatUntil : (a -> Bool) -> Script x a -> Script x a
-repeatUntil predicate script =
-    script
-        |> andThen
-            (\value ->
-                if predicate value then
-                    succeed value
-                else
-                    repeatUntil predicate script
-            )
 
 
 retryUntilSuccess : Script x a -> Script y a
