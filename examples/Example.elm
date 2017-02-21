@@ -23,13 +23,13 @@ getCurrentTime =
 printCurrentTime : Script String ()
 printCurrentTime =
     Script.perform getCurrentTime
-        |> Script.andThenWith (\result -> Script.print result)
+        |> Script.andThen (\result -> Script.print result)
 
 
 script : Script String String
 script =
     Script.init { text = "A", number = 2 }
-        |> Script.asideWith
+        |> Script.aside
             (\model ->
                 Script.do
                     [ Script.print model.text
@@ -38,15 +38,16 @@ script =
                     ]
             )
         |> Script.map .number
-        |> Script.asideWith (\number -> Script.print number)
         |> Script.aside
-            (Script.do
-                [ printCurrentTime
-                , Script.sleep delayTime
-                , Script.perform getCurrentTime |> Script.ignore
-                ]
+            (\number ->
+                Script.do
+                    [ Script.print number
+                    , printCurrentTime
+                    , Script.sleep delayTime
+                    , Script.perform getCurrentTime |> Script.ignore
+                    ]
             )
-        |> Script.andThenWith
+        |> Script.andThen
             (\number ->
                 if number > 2 then
                     Script.succeed "Hooray"

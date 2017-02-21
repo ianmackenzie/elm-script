@@ -12,9 +12,7 @@ module Kintail.Script
         , do
         , sequence
         , andThen
-        , andThenWith
         , aside
-        , asideWith
         , repeatUntil
         , map
         , ignore
@@ -25,10 +23,10 @@ module Kintail.Script
         , retryUntilSuccess
         , perform
         , Arguments
-        , collect
-        , andCollect
-        , andThenWithCollected
-        , mapCollected
+        , with
+        , andWith
+        , yield
+        , return
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -48,7 +46,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, sequence, andThen, andThenWith, aside, asideWith
+@docs do, sequence, andThen, aside
 
 # Repetition
 
@@ -60,7 +58,7 @@ various ways, and turn them into runnable programs.
 
 # Combining
 
-@docs collect, andCollect, andThenWithCollected, mapCollected
+@docs with, andWith, yield, return
 
 # Error recovery
 
@@ -162,8 +160,8 @@ fail =
 
 
 map : (a -> b) -> Script x a -> Script x b
-map function script =
-    script |> andThenWith (\value -> succeed (function value))
+map function =
+    andThen (function >> succeed)
 
 
 map2 :
@@ -172,7 +170,7 @@ map2 :
     -> Script x b
     -> Script x c
 map2 function scriptA scriptB =
-    scriptA |> andThenWith (\valueA -> map (function valueA) scriptB)
+    scriptA |> andThen (\valueA -> map (function valueA) scriptB)
 
 
 map3 :
@@ -182,7 +180,7 @@ map3 :
     -> Script x c
     -> Script x d
 map3 function scriptA scriptB scriptC =
-    scriptA |> andThenWith (\valueA -> map2 (function valueA) scriptB scriptC)
+    scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
 map4 :
@@ -193,21 +191,19 @@ map4 :
     -> Script x d
     -> Script x e
 map4 function scriptA scriptB scriptC scriptD =
-    scriptA
-        |> andThenWith
-            (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
+    scriptA |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
-andThenWith : (a -> Script x b) -> Script x a -> Script x b
-andThenWith function script =
+andThen : (a -> Script x b) -> Script x a -> Script x b
+andThen function script =
     case script of
         Run ( buildCommands, buildSubscriptions ) ->
             let
                 buildMappedCommands =
-                    buildCommands >> Cmd.map (andThenWith function)
+                    buildCommands >> Cmd.map (andThen function)
 
                 buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (andThenWith function)
+                    buildSubscriptions >> Sub.map (andThen function)
             in
                 Run ( buildMappedCommands, buildMappedSubscriptions )
 
@@ -216,11 +212,6 @@ andThenWith function script =
 
         Fail error ->
             fail error
-
-
-andThen : Script x a -> Script x () -> Script x a
-andThen =
-    andThenWith << always
 
 
 ignore : Script x a -> Script x ()
@@ -235,12 +226,12 @@ do scripts =
             succeed ()
 
         first :: rest ->
-            first |> andThen (do rest)
+            first |> andThen (\() -> do rest)
 
 
-asideWith : (a -> Script x ()) -> Script x a -> Script x a
-asideWith function =
-    andThenWith (\value -> function value |> andThen (succeed value))
+aside : (a -> Script x ()) -> Script x a -> Script x a
+aside function =
+    andThen (\value -> function value |> andThen (\() -> succeed value))
 
 
 submitRequest : String -> Value -> Script x ()
@@ -301,7 +292,7 @@ onError recover script =
 
 mapError : (x -> y) -> Script x a -> Script y a
 mapError function =
-    onError (\error -> fail (function error))
+    onError (function >> fail)
 
 
 attempt : Script x a -> Script y (Result x a)
@@ -312,7 +303,7 @@ attempt =
 repeatUntil : (a -> Bool) -> Script x a -> Script x a
 repeatUntil predicate script =
     script
-        |> andThenWith
+        |> andThen
             (\value ->
                 if predicate value then
                     succeed value
@@ -333,25 +324,20 @@ sequence scripts =
             succeed []
 
         first :: rest ->
-            first |> andThenWith (\value -> sequence rest |> map ((::) value))
-
-
-aside : Script x () -> Script x a -> Script x a
-aside =
-    asideWith << always
+            first |> andThen (\value -> sequence rest |> map ((::) value))
 
 
 type Arguments f r
     = Arguments (f -> r)
 
 
-collect : Script x a -> Script x (Arguments (a -> r) r)
-collect =
+with : Script x a -> Script x (Arguments (a -> r) r)
+with =
     map (\value -> Arguments (\function -> function value))
 
 
-andCollect : Script x b -> Script x (Arguments f (b -> r)) -> Script x (Arguments f r)
-andCollect scriptB argumentsScriptA =
+andWith : Script x b -> Script x (Arguments f (b -> r)) -> Script x (Arguments f r)
+andWith scriptB argumentsScriptA =
     map2
         (\(Arguments callerA) valueB ->
             Arguments (\valueA -> callerA valueA valueB)
@@ -360,11 +346,11 @@ andCollect scriptB argumentsScriptA =
         scriptB
 
 
-andThenWithCollected : f -> Script x (Arguments f (Script x r)) -> Script x r
-andThenWithCollected function =
-    andThenWith (\(Arguments caller) -> caller function)
+yield : f -> Script x (Arguments f (Script x r)) -> Script x r
+yield function =
+    andThen (\(Arguments caller) -> caller function)
 
 
-mapCollected : f -> Script x (Arguments f r) -> Script x r
-mapCollected function =
+return : f -> Script x (Arguments f r) -> Script x r
+return function =
     map (\(Arguments caller) -> caller function)

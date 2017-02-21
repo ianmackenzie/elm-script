@@ -5,18 +5,22 @@ import Json.Encode exposing (Value)
 import Time
 
 
-script : Script Never ()
-script =
-    Script.collect (Script.succeed 3)
-        |> Script.andCollect (Script.succeed "four")
-        |> Script.andCollect (Script.succeed [ 1, 2, 3, 4, 5 ])
-        |> Script.mapCollected
+computeProduct : Script Never Int
+computeProduct =
+    Script.with (Script.succeed 3)
+        |> Script.andWith (Script.succeed "four")
+        |> Script.andWith (Script.succeed [ 1, 2, 3, 4, 5 ])
+        |> Script.return
             (\num str lst ->
                 num * String.length str * List.length lst
             )
-        |> Script.collect
-        |> Script.andCollect (Script.perform Time.now)
-        |> Script.andThenWithCollected
+
+
+script : Script Never ()
+script =
+    Script.with computeProduct
+        |> Script.andWith (Script.perform Time.now)
+        |> Script.yield
             (\product time ->
                 Script.do
                     [ Script.print ("Product: " ++ toString product)
