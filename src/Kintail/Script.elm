@@ -10,6 +10,7 @@ module Kintail.Script
         , print
         , sleep
         , do
+        , forEach
         , sequence
         , andThen
         , aside
@@ -46,7 +47,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, sequence, andThen, aside
+@docs do, forEach, sequence, andThen, aside
 
 # Mapping
 
@@ -227,6 +228,11 @@ do scripts =
 
         first :: rest ->
             first |> andThen (\() -> do rest)
+
+
+forEach : List a -> (a -> Script x ()) -> Script x ()
+forEach values function =
+    do (List.map function values)
 
 
 aside : (a -> Script x ()) -> Script x a -> Script x a
