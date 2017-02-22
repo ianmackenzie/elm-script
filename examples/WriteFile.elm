@@ -12,7 +12,7 @@ script =
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.map (String.join "\n")
         |> Script.andThen (Script.writeFile "reversed.txt")
-        |> Script.onError handleError
+        |> Script.onError (.message >> handleError)
 
 
 handleError : String -> Script Int ()

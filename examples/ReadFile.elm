@@ -10,7 +10,7 @@ script =
         |> Script.map String.lines
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.andThen (Script.forEach (String.toUpper >> Script.print))
-        |> Script.onError handleError
+        |> Script.onError (.message >> handleError)
 
 
 handleError : String -> Script Int ()

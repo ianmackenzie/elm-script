@@ -1,14 +1,14 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Script, FileError)
 
 
 filenames =
     [ "ReadFile.elm", "WriteFile.elm", "Example.elm" ]
 
 
-getLineCount : String -> Script String Int
+getLineCount : String -> Script FileError Int
 getLineCount =
     Script.readFile >> Script.map (String.lines >> List.length)
 
@@ -24,7 +24,7 @@ script =
                         (filename ++ ": " ++ toString lineCount ++ " lines")
                 )
             )
-        |> Script.onError handleError
+        |> Script.onError (.message >> handleError)
 
 
 handleError : String -> Script Int ()

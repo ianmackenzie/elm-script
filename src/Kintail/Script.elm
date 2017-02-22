@@ -30,6 +30,7 @@ module Kintail.Script
         , andWith
         , yield
         , return
+        , FileError
         , readFile
         , writeFile
         )
@@ -79,7 +80,7 @@ various ways, and turn them into runnable programs.
 -}
 
 import Json.Encode as Encode exposing (Value)
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Task exposing (Task)
 import Process
 import Time exposing (Time)
@@ -371,13 +372,26 @@ return function =
     map (\(Arguments caller) -> caller function)
 
 
-readFile : String -> Script String String
+type alias FileError =
+    { code : String
+    , message : String
+    }
+
+
+fileErrorDecoder : Decoder FileError
+fileErrorDecoder =
+    Decode.map2 FileError
+        (Decode.field "code" Decode.string)
+        (Decode.field "message" Decode.string)
+
+
+readFile : String -> Script FileError String
 readFile =
     let
         responseDecoder =
             Decode.oneOf
                 [ Decode.field "value" Decode.string |> Decode.map succeed
-                , Decode.field "error" Decode.string |> Decode.map fail
+                , fileErrorDecoder |> Decode.map fail
                 ]
 
         responseHandler value =
@@ -398,13 +412,13 @@ readFile =
         )
 
 
-writeFile : String -> String -> Script String ()
+writeFile : String -> String -> Script FileError ()
 writeFile =
     let
         responseDecoder =
             Decode.oneOf
                 [ Decode.null (succeed ())
-                , Decode.field "error" Decode.string |> Decode.map fail
+                , fileErrorDecoder |> Decode.map fail
                 ]
 
         responseHandler value =
