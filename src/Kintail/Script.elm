@@ -28,6 +28,7 @@ module Kintail.Script
         , yield
         , return
         , readFile
+        , writeFile
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -67,7 +68,7 @@ various ways, and turn them into runnable programs.
 
 # Files
 
-@docs readFile
+@docs readFile, writeFile
 -}
 
 import Json.Encode as Encode exposing (Value)
@@ -375,6 +376,42 @@ readFile =
 
                 buildCommands context =
                     context.submitRequest "readFile" (Encode.string filename)
+                        |> Cmd.map never
+            in
+                Run ( buildCommands, buildSubscriptions )
+        )
+
+
+writeFile : String -> String -> Script String ()
+writeFile =
+    let
+        responseDecoder =
+            Decode.oneOf
+                [ Decode.null (succeed ())
+                , Decode.field "error" Decode.string |> Decode.map fail
+                ]
+
+        handleResponse value =
+            case Decode.decodeValue responseDecoder value of
+                Ok script ->
+                    script
+
+                Err message ->
+                    fail message
+    in
+        (\filename contents ->
+            let
+                buildSubscriptions context =
+                    context.responses
+                        |> Sub.map handleResponse
+
+                buildCommands context =
+                    context.submitRequest "writeFile"
+                        (Encode.object
+                            [ ( "filename", Encode.string filename )
+                            , ( "contents", Encode.string contents )
+                            ]
+                        )
                         |> Cmd.map never
             in
                 Run ( buildCommands, buildSubscriptions )
