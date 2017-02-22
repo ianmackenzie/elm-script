@@ -78,14 +78,8 @@ import Process
 import Time exposing (Time)
 
 
-type alias Context =
-    { submitRequest : String -> Value -> Cmd Never
-    , responses : Sub Value
-    }
-
-
 type Script x a
-    = Run ( Context -> Cmd (Script x a), Context -> Sub (Script x a) )
+    = Run ( (String -> Value -> Cmd Never) -> Cmd (Script x a), Value -> Script x a )
     | Succeed a
     | Fail x
 
@@ -98,33 +92,12 @@ type alias ResponsePort =
     (Value -> Value) -> Sub Value
 
 
-commands : Context -> Script x a -> Cmd (Script x a)
-commands context script =
-    case script of
-        Run ( buildCommands, _ ) ->
-            buildCommands context
-
-        Succeed _ ->
-            context.submitRequest "succeed" Encode.null |> Cmd.map never
-
-        Fail _ ->
-            context.submitRequest "fail" Encode.null |> Cmd.map never
+type Msg x a
+    = Updated (Script x a)
+    | Response Value
 
 
-subscriptions : Context -> Script x a -> Sub (Script x a)
-subscriptions context script =
-    case script of
-        Run ( _, buildSubscriptions ) ->
-            buildSubscriptions context
-
-        Succeed _ ->
-            Sub.none
-
-        Fail _ ->
-            Sub.none
-
-
-run : Script x a -> RequestPort -> ResponsePort -> Program Never (Script x a) (Script x a)
+run : Script x a -> RequestPort -> ResponsePort -> Program Never (Script x a) (Msg x a)
 run script requestPort responsePort =
     let
         submitRequest name value =
@@ -134,16 +107,46 @@ run script requestPort responsePort =
                     , ( "value", value )
                     ]
 
-        context =
-            { submitRequest = submitRequest
-            , responses = responsePort identity
-            }
+        commands script =
+            case script of
+                Run ( buildCommands, _ ) ->
+                    buildCommands submitRequest |> Cmd.map Updated
+
+                Succeed _ ->
+                    submitRequest "succeed" Encode.null |> Cmd.map never
+
+                Fail error ->
+                    submitRequest "fail" (Encode.string (toString error))
+                        |> Cmd.map never
+
+        update message script =
+            case message of
+                Updated updated ->
+                    ( updated, commands updated )
+
+                Response value ->
+                    case script of
+                        Run ( _, responseHandler ) ->
+                            let
+                                updated =
+                                    responseHandler value
+                            in
+                                ( updated, commands updated )
+
+                        _ ->
+                            Debug.crash "Received response from JavaScript with no script running"
     in
         Platform.program
-            { init = ( script, commands context script )
-            , update = \updated _ -> ( updated, commands context updated )
-            , subscriptions = subscriptions context
+            { init = ( script, commands script )
+            , update = update
+            , subscriptions =
+                always (responsePort identity |> Sub.map Response)
             }
+
+
+noResponseHandler : Value -> Script x a
+noResponseHandler value =
+    Debug.crash "Script has no response handler"
 
 
 init : a -> Script x a
@@ -199,15 +202,15 @@ map4 function scriptA scriptB scriptC scriptD =
 andThen : (a -> Script x b) -> Script x a -> Script x b
 andThen function script =
     case script of
-        Run ( buildCommands, buildSubscriptions ) ->
+        Run ( buildCommands, responseHandler ) ->
             let
                 buildMappedCommands =
                     buildCommands >> Cmd.map (andThen function)
 
-                buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (andThen function)
+                mappedResponseHandler =
+                    responseHandler >> andThen function
             in
-                Run ( buildMappedCommands, buildMappedSubscriptions )
+                Run ( buildMappedCommands, mappedResponseHandler )
 
         Succeed value ->
             function value
@@ -244,13 +247,13 @@ aside function =
 submitRequest : String -> Value -> Script x ()
 submitRequest name value =
     let
-        buildCommands context =
+        buildCommands submitRequest =
             Cmd.batch
-                [ context.submitRequest name value |> Cmd.map never
+                [ submitRequest name value |> Cmd.map never
                 , Task.perform identity (Task.succeed (succeed ()))
                 ]
     in
-        Run ( buildCommands, always Sub.none )
+        Run ( buildCommands, noResponseHandler )
 
 
 print : String -> Script x ()
@@ -269,7 +272,7 @@ perform task =
                 Err error ->
                     fail error
     in
-        Run ( always (Task.attempt mapResult task), always Sub.none )
+        Run ( always (Task.attempt mapResult task), noResponseHandler )
 
 
 sleep : Time -> Script x ()
@@ -280,15 +283,15 @@ sleep time =
 onError : (x -> Script y a) -> Script x a -> Script y a
 onError recover script =
     case script of
-        Run ( buildCommands, buildSubscriptions ) ->
+        Run ( buildCommands, responseHandler ) ->
             let
                 buildMappedCommands =
                     buildCommands >> Cmd.map (onError recover)
 
-                buildMappedSubscriptions =
-                    buildSubscriptions >> Sub.map (onError recover)
+                mappedResponseHandler =
+                    responseHandler >> onError recover
             in
-                Run ( buildMappedCommands, buildMappedSubscriptions )
+                Run ( buildMappedCommands, mappedResponseHandler )
 
         Succeed value ->
             succeed value
@@ -360,25 +363,21 @@ readFile =
                 , Decode.field "error" Decode.string |> Decode.map fail
                 ]
 
-        handleResponse value =
+        responseHandler value =
             case Decode.decodeValue responseDecoder value of
                 Ok script ->
                     script
 
                 Err message ->
-                    fail message
+                    Debug.crash "Unexpected JSON returned from JavaScript"
     in
         (\filename ->
             let
-                buildSubscriptions context =
-                    context.responses
-                        |> Sub.map handleResponse
-
-                buildCommands context =
-                    context.submitRequest "readFile" (Encode.string filename)
+                buildCommands submitRequest =
+                    submitRequest "readFile" (Encode.string filename)
                         |> Cmd.map never
             in
-                Run ( buildCommands, buildSubscriptions )
+                Run ( buildCommands, responseHandler )
         )
 
 
@@ -391,22 +390,18 @@ writeFile =
                 , Decode.field "error" Decode.string |> Decode.map fail
                 ]
 
-        handleResponse value =
+        responseHandler value =
             case Decode.decodeValue responseDecoder value of
                 Ok script ->
                     script
 
                 Err message ->
-                    fail message
+                    Debug.crash "Unexpected JSON returned from JavaScript"
     in
         (\filename contents ->
             let
-                buildSubscriptions context =
-                    context.responses
-                        |> Sub.map handleResponse
-
-                buildCommands context =
-                    context.submitRequest "writeFile"
+                buildCommands submitRequest =
+                    submitRequest "writeFile"
                         (Encode.object
                             [ ( "filename", Encode.string filename )
                             , ( "contents", Encode.string contents )
@@ -414,5 +409,5 @@ writeFile =
                         )
                         |> Cmd.map never
             in
-                Run ( buildCommands, buildSubscriptions )
+                Run ( buildCommands, responseHandler )
         )
