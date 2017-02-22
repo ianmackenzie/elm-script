@@ -4,12 +4,6 @@ import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 
 
-handleError : String -> Script Int ()
-handleError message =
-    Script.print ("ERROR: " ++ message)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
 script : Script Int ()
 script =
     Script.readFile "test.txt"
@@ -20,6 +14,12 @@ script =
                     (\line -> Script.print (String.toUpper line))
             )
         |> Script.onError handleError
+
+
+handleError : String -> Script Int ()
+handleError message =
+    Script.print ("ERROR: " ++ message)
+        |> Script.andThen (\() -> Script.fail 1)
 
 
 port requestPort : Value -> Cmd msg
