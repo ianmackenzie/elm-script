@@ -241,8 +241,8 @@ do scripts =
             first |> andThen (\() -> do rest)
 
 
-forEach : List a -> (a -> Script x ()) -> Script x ()
-forEach values function =
+forEach : (a -> Script x ()) -> List a -> Script x ()
+forEach function values =
     do (List.map function values)
 
 
