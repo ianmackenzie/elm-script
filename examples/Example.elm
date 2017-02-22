@@ -41,7 +41,7 @@ script =
         |> Script.aside
             (\number ->
                 Script.do
-                    [ Script.print number
+                    [ Script.print (toString number)
                     , printCurrentTime
                     , Script.sleep delayTime
                     , Script.perform getCurrentTime |> Script.ignore

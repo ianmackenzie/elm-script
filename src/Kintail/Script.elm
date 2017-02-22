@@ -241,9 +241,9 @@ submitRequest name value =
         Run ( buildCommands, always Sub.none )
 
 
-print : a -> Script x ()
-print value =
-    submitRequest "print" (value |> toString |> Encode.string)
+print : String -> Script x ()
+print string =
+    submitRequest "print" (Encode.string string)
 
 
 perform : Task x a -> Script x a
