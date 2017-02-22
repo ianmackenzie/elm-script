@@ -19,6 +19,7 @@ module Kintail.Script
         , map2
         , map3
         , map4
+        , mapError
         , onError
         , retryUntilSuccess
         , perform
