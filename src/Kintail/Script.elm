@@ -23,6 +23,7 @@ module Kintail.Script
         , onError
         , retryUntilSuccess
         , perform
+        , request
         , Arguments
         , with
         , andWith
@@ -67,6 +68,10 @@ various ways, and turn them into runnable programs.
 
 @docs perform
 
+# Requests
+
+@docs request
+
 # Files
 
 @docs readFile, writeFile
@@ -77,6 +82,7 @@ import Json.Decode as Decode
 import Task exposing (Task)
 import Process
 import Time exposing (Time)
+import Http
 
 
 type Script x a
@@ -273,6 +279,11 @@ perform task =
                     fail error
     in
         Run ( always (Task.attempt mapResult task), noResponseHandler )
+
+
+request : Http.Request a -> Script Http.Error a
+request =
+    perform << Http.toTask
 
 
 sleep : Time -> Script x ()
