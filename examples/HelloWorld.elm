@@ -1,0 +1,18 @@
+port module Main exposing (..)
+
+import Kintail.Script as Script
+import Json.Encode exposing (Value)
+
+
+script =
+    Script.print "Hello World!"
+
+
+port requestPort : Value -> Cmd msg
+
+
+port responsePort : (Value -> msg) -> Sub msg
+
+
+main =
+    Script.run script requestPort responsePort
