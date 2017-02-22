@@ -26,7 +26,13 @@ printCurrentTime =
         |> Script.andThen (\result -> Script.print result)
 
 
-script : Script String String
+handleError : String -> Script Int ()
+handleError message =
+    Script.print ("ERROR: " ++ message)
+        |> Script.andThen (\() -> Script.fail 1)
+
+
+script : Script Int ()
 script =
     Script.init { text = "A", number = 2 }
         |> Script.aside
@@ -50,10 +56,11 @@ script =
         |> Script.andThen
             (\number ->
                 if number > 2 then
-                    Script.succeed "Hooray"
+                    Script.succeed ()
                 else
-                    Script.fail "Ugh"
+                    Script.fail "Ugh, number is too small"
             )
+        |> Script.onError handleError
 
 
 port requestPort : Value -> Cmd msg

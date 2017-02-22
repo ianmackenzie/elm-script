@@ -98,7 +98,7 @@ type Msg x a
     | Response Value
 
 
-run : Script x a -> RequestPort -> ResponsePort -> Program Never (Script x a) (Msg x a)
+run : Script Int () -> RequestPort -> ResponsePort -> Program Never (Script Int ()) (Msg Int ())
 run script requestPort responsePort =
     let
         submitRequest name value =
@@ -113,12 +113,11 @@ run script requestPort responsePort =
                 Run ( buildCommands, _ ) ->
                     buildCommands submitRequest |> Cmd.map Updated
 
-                Succeed _ ->
+                Succeed () ->
                     submitRequest "succeed" Encode.null |> Cmd.map never
 
-                Fail error ->
-                    submitRequest "fail" (Encode.string (toString error))
-                        |> Cmd.map never
+                Fail errorCode ->
+                    submitRequest "fail" (Encode.int errorCode) |> Cmd.map never
 
         update message script =
             case message of

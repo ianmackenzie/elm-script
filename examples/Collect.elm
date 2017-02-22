@@ -16,7 +16,7 @@ computeProduct =
             )
 
 
-script : Script Never ()
+script : Script Int ()
 script =
     Script.with computeProduct
         |> Script.andWith (Script.perform Time.now)
@@ -28,6 +28,7 @@ script =
                         ("Current time: " ++ toString (Time.inSeconds time))
                     ]
             )
+        |> Script.mapError never
 
 
 port requestPort : Value -> Cmd msg

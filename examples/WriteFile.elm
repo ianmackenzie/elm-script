@@ -4,7 +4,7 @@ import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 
 
-script : Script Never ()
+script : Script Int ()
 script =
     Script.readFile "test.txt"
         |> Script.map String.lines
