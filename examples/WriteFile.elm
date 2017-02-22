@@ -12,7 +12,13 @@ script =
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.map (String.join "\n")
         |> Script.andThen (Script.writeFile "reversed.txt")
-        |> Script.onError Script.print
+        |> Script.onError handleError
+
+
+handleError : String -> Script Int ()
+handleError message =
+    Script.print ("ERROR: " ++ message)
+        |> Script.andThen (\() -> Script.fail 1)
 
 
 port requestPort : Value -> Cmd msg
