@@ -8,11 +8,8 @@ script : Script Int ()
 script =
     Script.readFile "test.txt"
         |> Script.map String.lines
-        |> Script.andThen
-            (\lines ->
-                Script.forEach (List.filter (not << String.isEmpty) lines)
-                    (\line -> Script.print (String.toUpper line))
-            )
+        |> Script.map (List.filter (not << String.isEmpty))
+        |> Script.andThen (Script.forEach (String.toUpper >> Script.print))
         |> Script.onError handleError
 
 
