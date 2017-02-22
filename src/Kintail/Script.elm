@@ -12,6 +12,7 @@ module Kintail.Script
         , do
         , forEach
         , sequence
+        , collect
         , andThen
         , aside
         , map
@@ -50,7 +51,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, forEach, sequence, andThen, aside
+@docs do, forEach, sequence, collect, andThen, aside
 
 # Mapping
 
@@ -334,6 +335,11 @@ sequence scripts =
 
         first :: rest ->
             first |> andThen (\value -> sequence rest |> map ((::) value))
+
+
+collect : (a -> Script x b) -> List a -> Script x (List b)
+collect function values =
+    sequence (List.map function values)
 
 
 type Arguments f r
