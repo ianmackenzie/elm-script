@@ -8,30 +8,6 @@ import Http
 import Task exposing (Task)
 
 
-delayTime : Time
-delayTime =
-    0.5 * Time.second
-
-
-getCurrentTime : Task String String
-getCurrentTime =
-    Http.get "http://time.jsontest.com/" (Decode.field "time" Decode.string)
-        |> Http.toTask
-        |> Task.mapError (always "HTTP request failed")
-
-
-printCurrentTime : Script String ()
-printCurrentTime =
-    Script.perform getCurrentTime
-        |> Script.andThen (\result -> Script.print result)
-
-
-handleError : String -> Script Int ()
-handleError message =
-    Script.print ("ERROR: " ++ message)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
 script : Script Int ()
 script =
     Script.init { text = "A", number = 2 }
@@ -40,7 +16,7 @@ script =
                 Script.do
                     [ Script.print model.text
                     , printCurrentTime
-                    , Script.sleep delayTime
+                    , Script.sleep (0.5 * Time.second)
                     ]
             )
         |> Script.map .number
@@ -49,8 +25,8 @@ script =
                 Script.do
                     [ Script.print (toString number)
                     , printCurrentTime
-                    , Script.sleep delayTime
-                    , Script.perform getCurrentTime |> Script.ignore
+                    , Script.sleep (0.5 * Time.second)
+                    , getCurrentTime |> Script.ignore
                     ]
             )
         |> Script.andThen
@@ -61,6 +37,30 @@ script =
                     Script.fail "Ugh, number is too small"
             )
         |> Script.onError handleError
+
+
+getCurrentTime : Script String String
+getCurrentTime =
+    let
+        url =
+            "http://time.jsontest.com/"
+
+        decoder =
+            Decode.field "time" Decode.string
+    in
+        Script.request (Http.get url decoder)
+            |> Script.mapError (always "HTTP request failed")
+
+
+printCurrentTime : Script String ()
+printCurrentTime =
+    getCurrentTime |> Script.andThen Script.print
+
+
+handleError : String -> Script Int ()
+handleError message =
+    Script.print ("ERROR: " ++ message)
+        |> Script.andThen (\() -> Script.fail 1)
 
 
 port requestPort : Value -> Cmd msg
