@@ -4,17 +4,13 @@ import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script, FileError)
 
 
-filenames =
-    [ "ReadFile.elm", "WriteFile.elm", "Example.elm" ]
-
-
 getLineCount : String -> Script FileError Int
 getLineCount =
     Script.readFile >> Script.map (String.lines >> List.length)
 
 
-script : Script Int ()
-script =
+script : List String -> Script Int ()
+script filenames =
     Script.collect getLineCount filenames
         |> Script.map (List.map2 (,) filenames)
         |> Script.andThen

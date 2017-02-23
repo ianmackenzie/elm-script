@@ -16,8 +16,8 @@ computeProduct =
             )
 
 
-script : Script Int ()
-script =
+script : List String -> Script Int ()
+script arguments =
     Script.with computeProduct
         |> Script.andWith (Script.perform Time.now)
         |> Script.yield

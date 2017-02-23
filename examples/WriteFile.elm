@@ -4,8 +4,8 @@ import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 
 
-script : Script Int ()
-script =
+script : List String -> Script Int ()
+script arguments =
     Script.readFile "test.txt"
         |> Script.map String.lines
         |> Script.map List.reverse

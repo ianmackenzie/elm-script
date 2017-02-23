@@ -4,7 +4,7 @@ import Kintail.Script as Script
 import Json.Encode exposing (Value)
 
 
-script =
+script arguments =
     Script.print "Hello World!"
 
 

@@ -8,8 +8,8 @@ import Http
 import Task exposing (Task)
 
 
-script : Script Int ()
-script =
+script : List String -> Script Int ()
+script arguments =
     Script.init { text = "A", number = 2 }
         |> Script.aside
             (\model ->

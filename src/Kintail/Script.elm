@@ -106,9 +106,16 @@ type Msg x a
     | Response Value
 
 
-run : Script Int () -> RequestPort -> ResponsePort -> Program Never (Script Int ()) (Msg Int ())
-run script requestPort responsePort =
+run : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) (Script Int ()) (Msg Int ())
+run main requestPort responsePort =
     let
+        init args =
+            let
+                script =
+                    main args
+            in
+                ( script, commands script )
+
         submitRequest name value =
             requestPort <|
                 Encode.object
@@ -143,12 +150,14 @@ run script requestPort responsePort =
 
                         _ ->
                             Debug.crash "Received response from JavaScript with no script running"
+
+        subscriptions =
+            always (responsePort identity |> Sub.map Response)
     in
-        Platform.program
-            { init = ( script, commands script )
+        Platform.programWithFlags
+            { init = init
             , update = update
-            , subscriptions =
-                always (responsePort identity |> Sub.map Response)
+            , subscriptions = subscriptions
             }
 
 
