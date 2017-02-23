@@ -9,6 +9,7 @@ module Kintail.Script
         , run
         , print
         , sleep
+        , getEnvironmentVariable
         , do
         , forEach
         , sequence
@@ -48,7 +49,7 @@ various ways, and turn them into runnable programs.
 
 # Utilities
 
-@docs print, sleep
+@docs print, sleep, getEnvironmentVariable
 
 # Sequencing
 
@@ -300,6 +301,24 @@ request =
 sleep : Time -> Script x ()
 sleep time =
     perform (Process.sleep time)
+
+
+getEnvironmentVariable : String -> Script x (Maybe String)
+getEnvironmentVariable name =
+    let
+        buildCommands submitRequest =
+            submitRequest "getEnvironmentVariable" (Encode.string name)
+                |> Cmd.map never
+
+        responseHandler value =
+            case Decode.decodeValue (Decode.nullable Decode.string) value of
+                Ok value ->
+                    succeed value
+
+                Err message ->
+                    Debug.crash "Unexpected JSON returned from JavaScript"
+    in
+        Run ( buildCommands, responseHandler )
 
 
 onError : (x -> Script y a) -> Script x a -> Script y a
