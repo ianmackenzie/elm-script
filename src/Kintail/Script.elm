@@ -10,27 +10,28 @@ module Kintail.Script
         , print
         , sleep
         , getEnvironmentVariable
+        , map
+        , map2
+        , map3
+        , map4
+        , ignore
         , do
         , forEach
         , sequence
         , collect
         , andThen
         , aside
-        , map
-        , ignore
-        , map2
-        , map3
-        , map4
-        , mapError
-        , onError
-        , retryUntilSuccess
-        , perform
-        , request
         , Arguments
         , with
         , andWith
         , yield
         , return
+        , mapError
+        , attempt
+        , onError
+        , retryUntilSuccess
+        , perform
+        , request
         , FileError
         , readFile
         , writeFile
@@ -51,21 +52,21 @@ various ways, and turn them into runnable programs.
 
 @docs print, sleep, getEnvironmentVariable
 
+# Mapping
+
+@docs map, map2, map3, map4, ignore
+
 # Sequencing
 
 @docs do, forEach, sequence, collect, andThen, aside
 
-# Mapping
-
-@docs map, ignore, map2, map3, map4, mapError
-
 # Combining
 
-@docs with, andWith, yield, return
+@docs Arguments, with, andWith, yield, return
 
-# Error recovery
+# Error handling
 
-@docs attempt, onError, retryUntilSuccess
+@docs mapError, attempt, onError, retryUntilSuccess
 
 # Tasks
 
@@ -77,7 +78,7 @@ various ways, and turn them into runnable programs.
 
 # Files
 
-@docs readFile, writeFile
+@docs FileError, readFile, writeFile
 -}
 
 import Json.Encode as Encode exposing (Value)
@@ -92,6 +93,21 @@ type Script x a
     = Run ( (String -> Value -> Cmd Never) -> Cmd (Script x a), Value -> Script x a )
     | Succeed a
     | Fail x
+
+
+init : a -> Script x a
+init =
+    succeed
+
+
+succeed : a -> Script x a
+succeed =
+    Succeed
+
+
+fail : x -> Script x a
+fail =
+    Fail
 
 
 type alias RequestPort =
@@ -162,24 +178,49 @@ run main requestPort responsePort =
             }
 
 
+simpleRequest : String -> Value -> Script x ()
+simpleRequest name value =
+    let
+        buildCommands submitRequest =
+            Cmd.batch
+                [ submitRequest name value |> Cmd.map never
+                , Task.perform identity (Task.succeed (succeed ()))
+                ]
+    in
+        Run ( buildCommands, noResponseHandler )
+
+
 noResponseHandler : Value -> Script x a
 noResponseHandler value =
     Debug.crash "Script has no response handler"
 
 
-init : a -> Script x a
-init =
-    succeed
+print : String -> Script x ()
+print string =
+    simpleRequest "print" (Encode.string string)
 
 
-succeed : a -> Script x a
-succeed =
-    Succeed
+sleep : Time -> Script x ()
+sleep time =
+    perform (Process.sleep time)
 
 
-fail : x -> Script x a
-fail =
-    Fail
+getEnvironmentVariable : String -> Script x (Maybe String)
+getEnvironmentVariable name =
+    let
+        buildCommands submitRequest =
+            submitRequest "getEnvironmentVariable" (Encode.string name)
+                |> Cmd.map never
+
+        responseHandler value =
+            case Decode.decodeValue (Decode.nullable Decode.string) value of
+                Ok value ->
+                    succeed value
+
+                Err message ->
+                    Debug.crash "Unexpected JSON returned from JavaScript"
+    in
+        Run ( buildCommands, responseHandler )
 
 
 map : (a -> b) -> Script x a -> Script x b
@@ -217,26 +258,6 @@ map4 function scriptA scriptB scriptC scriptD =
     scriptA |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
-andThen : (a -> Script x b) -> Script x a -> Script x b
-andThen function script =
-    case script of
-        Run ( buildCommands, responseHandler ) ->
-            let
-                buildMappedCommands =
-                    buildCommands >> Cmd.map (andThen function)
-
-                mappedResponseHandler =
-                    responseHandler >> andThen function
-            in
-                Run ( buildMappedCommands, mappedResponseHandler )
-
-        Succeed value ->
-            function value
-
-        Fail error ->
-            fail error
-
-
 ignore : Script x a -> Script x ()
 ignore =
     map (always ())
@@ -257,105 +278,6 @@ forEach function values =
     do (List.map function values)
 
 
-aside : (a -> Script x ()) -> Script x a -> Script x a
-aside function =
-    andThen (\value -> function value |> andThen (\() -> succeed value))
-
-
-submitRequest : String -> Value -> Script x ()
-submitRequest name value =
-    let
-        buildCommands submitRequest =
-            Cmd.batch
-                [ submitRequest name value |> Cmd.map never
-                , Task.perform identity (Task.succeed (succeed ()))
-                ]
-    in
-        Run ( buildCommands, noResponseHandler )
-
-
-print : String -> Script x ()
-print string =
-    submitRequest "print" (Encode.string string)
-
-
-perform : Task x a -> Script x a
-perform task =
-    let
-        mapResult result =
-            case result of
-                Ok value ->
-                    succeed value
-
-                Err error ->
-                    fail error
-    in
-        Run ( always (Task.attempt mapResult task), noResponseHandler )
-
-
-request : Http.Request a -> Script Http.Error a
-request =
-    perform << Http.toTask
-
-
-sleep : Time -> Script x ()
-sleep time =
-    perform (Process.sleep time)
-
-
-getEnvironmentVariable : String -> Script x (Maybe String)
-getEnvironmentVariable name =
-    let
-        buildCommands submitRequest =
-            submitRequest "getEnvironmentVariable" (Encode.string name)
-                |> Cmd.map never
-
-        responseHandler value =
-            case Decode.decodeValue (Decode.nullable Decode.string) value of
-                Ok value ->
-                    succeed value
-
-                Err message ->
-                    Debug.crash "Unexpected JSON returned from JavaScript"
-    in
-        Run ( buildCommands, responseHandler )
-
-
-onError : (x -> Script y a) -> Script x a -> Script y a
-onError recover script =
-    case script of
-        Run ( buildCommands, responseHandler ) ->
-            let
-                buildMappedCommands =
-                    buildCommands >> Cmd.map (onError recover)
-
-                mappedResponseHandler =
-                    responseHandler >> onError recover
-            in
-                Run ( buildMappedCommands, mappedResponseHandler )
-
-        Succeed value ->
-            succeed value
-
-        Fail error ->
-            recover error
-
-
-mapError : (x -> y) -> Script x a -> Script y a
-mapError function =
-    onError (function >> fail)
-
-
-attempt : Script x a -> Script y (Result x a)
-attempt =
-    map Ok >> onError (Err >> succeed)
-
-
-retryUntilSuccess : Script x a -> Script y a
-retryUntilSuccess script =
-    onError (\error -> retryUntilSuccess script) script
-
-
 sequence : List (Script x a) -> Script x (List a)
 sequence scripts =
     case scripts of
@@ -369,6 +291,31 @@ sequence scripts =
 collect : (a -> Script x b) -> List a -> Script x (List b)
 collect function values =
     sequence (List.map function values)
+
+
+andThen : (a -> Script x b) -> Script x a -> Script x b
+andThen function script =
+    case script of
+        Run ( buildCommands, responseHandler ) ->
+            let
+                buildMappedCommands =
+                    buildCommands >> Cmd.map (andThen function)
+
+                mappedResponseHandler =
+                    responseHandler >> andThen function
+            in
+                Run ( buildMappedCommands, mappedResponseHandler )
+
+        Succeed value ->
+            function value
+
+        Fail error ->
+            fail error
+
+
+aside : (a -> Script x ()) -> Script x a -> Script x a
+aside function =
+    andThen (\value -> function value |> andThen (\() -> succeed value))
 
 
 type Arguments f r
@@ -398,6 +345,60 @@ yield function =
 return : f -> Script x (Arguments f r) -> Script x r
 return function =
     map (\(Arguments caller) -> caller function)
+
+
+mapError : (x -> y) -> Script x a -> Script y a
+mapError function =
+    onError (function >> fail)
+
+
+attempt : Script x a -> Script y (Result x a)
+attempt =
+    map Ok >> onError (Err >> succeed)
+
+
+onError : (x -> Script y a) -> Script x a -> Script y a
+onError recover script =
+    case script of
+        Run ( buildCommands, responseHandler ) ->
+            let
+                buildMappedCommands =
+                    buildCommands >> Cmd.map (onError recover)
+
+                mappedResponseHandler =
+                    responseHandler >> onError recover
+            in
+                Run ( buildMappedCommands, mappedResponseHandler )
+
+        Succeed value ->
+            succeed value
+
+        Fail error ->
+            recover error
+
+
+retryUntilSuccess : Script x a -> Script y a
+retryUntilSuccess script =
+    onError (\error -> retryUntilSuccess script) script
+
+
+perform : Task x a -> Script x a
+perform task =
+    let
+        mapResult result =
+            case result of
+                Ok value ->
+                    succeed value
+
+                Err error ->
+                    fail error
+    in
+        Run ( always (Task.attempt mapResult task), noResponseHandler )
+
+
+request : Http.Request a -> Script Http.Error a
+request =
+    perform << Http.toTask
 
 
 type alias FileError =
