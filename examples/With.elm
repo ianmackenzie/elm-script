@@ -5,7 +5,7 @@ import Json.Encode exposing (Value)
 import Time
 
 
-computeProduct : Script Never Int
+computeProduct : Script x Int
 computeProduct =
     Script.with (Script.succeed 3)
         |> Script.andWith (Script.succeed "four")
@@ -28,7 +28,6 @@ script arguments =
                         ("Current time: " ++ toString (Time.inSeconds time))
                     ]
             )
-        |> Script.mapError never
 
 
 port requestPort : Value -> Cmd msg
