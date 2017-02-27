@@ -148,10 +148,10 @@ program main requestPort responsePort =
         commands script =
             case script of
                 Succeed () ->
-                    submitRequest "succeed" Encode.null
+                    submitRequest "exit" (Encode.int 0)
 
                 Fail errorCode ->
-                    submitRequest "fail" (Encode.int errorCode)
+                    submitRequest "exit" (Encode.int errorCode)
 
                 Perform task ->
                     Task.perform Updated task
