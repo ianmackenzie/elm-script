@@ -46,7 +46,7 @@ various ways, and turn them into runnable programs.
 
 # Running
 
-@docs RequestPort, ResponsePort, program
+@docs RequestPort, ResponsePort, Model, Msg, program
 
 # Utilities
 
@@ -90,9 +90,10 @@ import Http
 
 
 type Script x a
-    = Run ( (String -> Value -> Cmd Never) -> Cmd (Script x a), Value -> Script x a )
-    | Succeed a
+    = Succeed a
     | Fail x
+    | Perform (Task Never (Script x a))
+    | Invoke String Value (Decoder (Script x a))
 
 
 init : a -> Script x a
@@ -111,19 +112,23 @@ fail =
 
 
 type alias RequestPort =
-    Value -> Cmd Never
+    Value -> Cmd Msg
 
 
 type alias ResponsePort =
-    (Value -> Value) -> Sub Value
+    (Value -> Msg) -> Sub Msg
 
 
-type Msg x a
-    = Updated (Script x a)
+type Model
+    = Model (Script Int ())
+
+
+type Msg
+    = Updated (Script Int ())
     | Response Value
 
 
-program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) (Script Int ()) (Msg Int ())
+program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) Model Msg
 program main requestPort responsePort =
     let
         init args =
@@ -131,7 +136,7 @@ program main requestPort responsePort =
                 script =
                     main args
             in
-                ( script, commands script )
+                ( Model script, commands script )
 
         submitRequest name value =
             requestPort <|
@@ -142,62 +147,46 @@ program main requestPort responsePort =
 
         commands script =
             case script of
-                Run ( buildCommands, _ ) ->
-                    buildCommands submitRequest |> Cmd.map Updated
-
                 Succeed () ->
-                    submitRequest "succeed" Encode.null |> Cmd.map never
+                    submitRequest "succeed" Encode.null
 
                 Fail errorCode ->
-                    submitRequest "fail" (Encode.int errorCode) |> Cmd.map never
+                    submitRequest "fail" (Encode.int errorCode)
 
-        update message script =
+                Perform task ->
+                    Task.perform Updated task
+
+                Invoke name value _ ->
+                    submitRequest name value
+
+        update message (Model current) =
             case message of
                 Updated updated ->
-                    ( updated, commands updated )
+                    ( Model updated, commands updated )
 
                 Response value ->
-                    case script of
-                        Run ( _, responseHandler ) ->
-                            let
-                                updated =
-                                    responseHandler value
-                            in
-                                ( updated, commands updated )
+                    case current of
+                        Invoke _ _ decoder ->
+                            case Decode.decodeValue decoder value of
+                                Ok updated ->
+                                    ( Model updated, commands updated )
+
+                                Err message ->
+                                    Debug.crash ("Failed to decode response from JavaScript: " ++ message)
 
                         _ ->
-                            Debug.crash "Received response from JavaScript with no script running"
-
-        subscriptions =
-            always (responsePort identity |> Sub.map Response)
+                            Debug.crash ("Received unexpected response from JavaScript: " ++ toString value)
     in
         Platform.programWithFlags
             { init = init
             , update = update
-            , subscriptions = subscriptions
+            , subscriptions = always (responsePort Response)
             }
-
-
-simpleRequest : String -> Value -> Script x ()
-simpleRequest name value =
-    let
-        buildCommands submitRequest =
-            Cmd.batch
-                [ submitRequest name value |> Cmd.map never
-                , Task.perform identity (Task.succeed (succeed ()))
-                ]
-    in
-        Run ( buildCommands, noResponseHandler )
-
-
-noResponseHandler : Value -> Script x a
-noResponseHandler value =
-    Debug.crash "Script has no response handler"
 
 
 print : String -> Script x ()
 print string =
-    simpleRequest "print" (Encode.string string)
+    Invoke "print" (Encode.string string) (Decode.null (succeed ()))
 
 
 sleep : Time -> Script x ()
@@ -207,20 +196,9 @@ sleep time =
 
 getEnvironmentVariable : String -> Script x (Maybe String)
 getEnvironmentVariable name =
-    let
-        buildCommands submitRequest =
-            submitRequest "getEnvironmentVariable" (Encode.string name)
-                |> Cmd.map never
-
-        responseHandler value =
-            case Decode.decodeValue (Decode.nullable Decode.string) value of
-                Ok value ->
-                    succeed value
-
-                Err message ->
-                    Debug.crash "Unexpected JSON returned from JavaScript"
-    in
-        Run ( buildCommands, responseHandler )
+    Invoke "getEnvironmentVariable"
+        (Encode.string name)
+        (Decode.nullable Decode.string |> Decode.map succeed)
 
 
 map : (a -> b) -> Script x a -> Script x b
@@ -296,21 +274,17 @@ collect function values =
 andThen : (a -> Script x b) -> Script x a -> Script x b
 andThen function script =
     case script of
-        Run ( buildCommands, responseHandler ) ->
-            let
-                buildMappedCommands =
-                    buildCommands >> Cmd.map (andThen function)
-
-                mappedResponseHandler =
-                    responseHandler >> andThen function
-            in
-                Run ( buildMappedCommands, mappedResponseHandler )
-
         Succeed value ->
             function value
 
         Fail error ->
             fail error
+
+        Perform task ->
+            Perform (Task.map (andThen function) task)
+
+        Invoke name value decoder ->
+            Invoke name value (Decode.map (andThen function) decoder)
 
 
 aside : (a -> Script x ()) -> Script x a -> Script x a
@@ -360,21 +334,17 @@ attempt =
 onError : (x -> Script y a) -> Script x a -> Script y a
 onError recover script =
     case script of
-        Run ( buildCommands, responseHandler ) ->
-            let
-                buildMappedCommands =
-                    buildCommands >> Cmd.map (onError recover)
-
-                mappedResponseHandler =
-                    responseHandler >> onError recover
-            in
-                Run ( buildMappedCommands, mappedResponseHandler )
-
         Succeed value ->
             succeed value
 
         Fail error ->
             recover error
+
+        Perform task ->
+            Perform (Task.map (onError recover) task)
+
+        Invoke name value decoder ->
+            Invoke name value (Decode.map (onError recover) decoder)
 
 
 retryUntilSuccess : Script x a -> Script y a
@@ -383,17 +353,8 @@ retryUntilSuccess script =
 
 
 perform : Task x a -> Script x a
-perform task =
-    let
-        mapResult result =
-            case result of
-                Ok value ->
-                    succeed value
-
-                Err error ->
-                    fail error
-    in
-        Run ( always (Task.attempt mapResult task), noResponseHandler )
+perform =
+    Task.map succeed >> Task.onError (fail >> Task.succeed) >> Perform
 
 
 request : Http.Request a -> Script Http.Error a
@@ -415,59 +376,26 @@ fileErrorDecoder =
 
 
 readFile : String -> Script FileError String
-readFile =
-    let
-        responseDecoder =
-            Decode.oneOf
-                [ Decode.field "value" Decode.string |> Decode.map succeed
-                , fileErrorDecoder |> Decode.map fail
-                ]
-
-        responseHandler value =
-            case Decode.decodeValue responseDecoder value of
-                Ok script ->
-                    script
-
-                Err message ->
-                    Debug.crash "Unexpected JSON returned from JavaScript"
-    in
-        (\filename ->
-            let
-                buildCommands submitRequest =
-                    submitRequest "readFile" (Encode.string filename)
-                        |> Cmd.map never
-            in
-                Run ( buildCommands, responseHandler )
+readFile filename =
+    Invoke "readFile"
+        (Encode.string filename)
+        (Decode.oneOf
+            [ Decode.field "value" Decode.string |> Decode.map succeed
+            , fileErrorDecoder |> Decode.map fail
+            ]
         )
 
 
 writeFile : String -> String -> Script FileError ()
-writeFile =
-    let
-        responseDecoder =
-            Decode.oneOf
-                [ Decode.null (succeed ())
-                , fileErrorDecoder |> Decode.map fail
-                ]
-
-        responseHandler value =
-            case Decode.decodeValue responseDecoder value of
-                Ok script ->
-                    script
-
-                Err message ->
-                    Debug.crash "Unexpected JSON returned from JavaScript"
-    in
-        (\filename contents ->
-            let
-                buildCommands submitRequest =
-                    submitRequest "writeFile"
-                        (Encode.object
-                            [ ( "filename", Encode.string filename )
-                            , ( "contents", Encode.string contents )
-                            ]
-                        )
-                        |> Cmd.map never
-            in
-                Run ( buildCommands, responseHandler )
+writeFile filename contents =
+    Invoke "writeFile"
+        (Encode.object
+            [ ( "filename", Encode.string filename )
+            , ( "contents", Encode.string contents )
+            ]
+        )
+        (Decode.oneOf
+            [ Decode.null (succeed ())
+            , fileErrorDecoder |> Decode.map fail
+            ]
         )
