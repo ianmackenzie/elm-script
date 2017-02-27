@@ -80,7 +80,7 @@ various ways, and turn them into runnable programs.
 
 # Files
 
-@docs FileError, readFile, writeFile
+@docs FileError, readFile, writeFile, listFiles, listSubdirectories
 -}
 
 import Json.Encode as Encode exposing (Value)
