@@ -15,4 +15,4 @@ port responsePort : (Value -> msg) -> Sub msg
 
 
 main =
-    Script.run script requestPort responsePort
+    Script.program script requestPort responsePort

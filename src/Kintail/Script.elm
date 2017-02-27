@@ -6,7 +6,7 @@ module Kintail.Script
         , fail
         , RequestPort
         , ResponsePort
-        , run
+        , program
         , print
         , sleep
         , getEnvironmentVariable
@@ -46,7 +46,7 @@ various ways, and turn them into runnable programs.
 
 # Running
 
-@docs RequestPort, ResponsePort, run
+@docs RequestPort, ResponsePort, program
 
 # Utilities
 
@@ -123,8 +123,8 @@ type Msg x a
     | Response Value
 
 
-run : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) (Script Int ()) (Msg Int ())
-run main requestPort responsePort =
+program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) (Script Int ()) (Msg Int ())
+program main requestPort responsePort =
     let
         init args =
             let
