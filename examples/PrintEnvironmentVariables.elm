@@ -12,8 +12,8 @@ printEnvironmentVariable name =
 
 
 script : List String -> Script Int ()
-script filenames =
-    filenames |> Script.forEach printEnvironmentVariable
+script names =
+    names |> Script.forEach printEnvironmentVariable
 
 
 port requestPort : Value -> Cmd msg
