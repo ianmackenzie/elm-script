@@ -380,7 +380,7 @@ readFile filename =
     Invoke "readFile"
         (Encode.string filename)
         (Decode.oneOf
-            [ Decode.field "value" Decode.string |> Decode.map succeed
+            [ Decode.string |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
             ]
         )
