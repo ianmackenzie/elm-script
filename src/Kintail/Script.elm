@@ -35,6 +35,8 @@ module Kintail.Script
         , FileError
         , readFile
         , writeFile
+        , listFiles
+        , listSubdirectories
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -396,6 +398,28 @@ writeFile filename contents =
         )
         (Decode.oneOf
             [ Decode.null (succeed ())
+            , fileErrorDecoder |> Decode.map fail
+            ]
+        )
+
+
+listFiles : String -> Script FileError (List String)
+listFiles directory =
+    Invoke "listFiles"
+        (Encode.string directory)
+        (Decode.oneOf
+            [ Decode.list Decode.string |> Decode.map succeed
+            , fileErrorDecoder |> Decode.map fail
+            ]
+        )
+
+
+listSubdirectories : String -> Script FileError (List String)
+listSubdirectories directory =
+    Invoke "listSubdirectories"
+        (Encode.string directory)
+        (Decode.oneOf
+            [ Decode.list Decode.string |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
             ]
         )
