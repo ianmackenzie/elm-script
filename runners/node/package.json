@@ -1,0 +1,28 @@
+{
+  "name": "@kintail/elm-run",
+  "version": "0.1.0",
+  "description": "Node runner for Elm scripts created using the kintail/script package",
+  "main": "lib.js",
+  "bin": {
+    "elm-run": "./cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kintail/script.git"
+  },
+  "keywords": [
+    "elm",
+    "run",
+    "script",
+    "kintail"
+  ],
+  "author": "Ian Mackenzie <ian.e.mackenzie@gmail.com>",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/kintail/script/issues"
+  },
+  "homepage": "https://github.com/kintail/script#readme",
+  "dependencies": {
+    "xhr2": "*"
+  }
+}
