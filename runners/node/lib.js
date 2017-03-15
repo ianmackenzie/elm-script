@@ -3,6 +3,7 @@
 let vm = require('vm')
 let fs = require('fs')
 let path = require('path')
+let child_process = require('child_process')
 
 function listEntities (request, responsePort, statsPredicate) {
   try {
@@ -67,6 +68,23 @@ module.exports = function (path, args) {
         break
       case 'listSubdirectories':
         listEntities(request, responsePort, stats => stats.isDirectory())
+        break
+      case 'execute':
+        try {
+          let filename = request.value.filename
+          let args = request.value.arguments
+          let options = {encoding: 'utf8', maxBuffer: 1024 * 1024 * 1024}
+          let output = child_process.execFileSync(filename, args, options)
+          responsePort.send(output)
+        } catch (error) {
+          if (error.status !== null) {
+            responsePort.send({error: 'exited', code: error.status})
+          } else if (error.signal !== null) {
+            responsePort.send({error: 'terminated'})
+          } else {
+            responsePort.send({error: 'failed', message: error.message})
+          }
+        }
         break
     }
   })

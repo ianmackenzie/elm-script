@@ -37,6 +37,8 @@ module Kintail.Script
         , writeFile
         , listFiles
         , listSubdirectories
+        , ProcessError(..)
+        , execute
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -421,5 +423,44 @@ listSubdirectories directory =
         (Decode.oneOf
             [ Decode.list Decode.string |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
+            ]
+        )
+
+
+type ProcessError
+    = ProcessFailed String
+    | ProcessWasTerminated
+    | ProcessExitedWithError Int
+
+
+execute : String -> List String -> Script ProcessError String
+execute filename arguments =
+    Invoke "execute"
+        (Encode.object
+            [ ( "filename", Encode.string filename )
+            , ( "arguments", Encode.list (List.map Encode.string arguments) )
+            ]
+        )
+        (Decode.oneOf
+            [ Decode.string |> Decode.map succeed
+            , Decode.field "error" Decode.string
+                |> Decode.andThen
+                    (\error ->
+                        case error of
+                            "failed" ->
+                                Decode.field "message" Decode.string
+                                    |> Decode.map ProcessFailed
+
+                            "terminated" ->
+                                Decode.succeed ProcessWasTerminated
+
+                            "exited" ->
+                                Decode.field "code" Decode.int
+                                    |> Decode.map ProcessExitedWithError
+
+                            _ ->
+                                Decode.fail "Unexpected execution error type"
+                    )
+                |> Decode.map fail
             ]
         )
