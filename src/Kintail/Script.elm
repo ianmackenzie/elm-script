@@ -44,13 +44,15 @@ module Kintail.Script
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-# Basics
-
-@docs Script, init, succeed, fail
+@docs Script
 
 # Running
 
 @docs RequestPort, ResponsePort, Model, Msg, program
+
+# Basics
+
+@docs succeed, fail, init
 
 # Utilities
 
@@ -93,26 +95,14 @@ import Time exposing (Time)
 import Http
 
 
+{-| A `Script x a` value defines a script that, when run, will either produce a
+value of type `a` or an error of type `x`.
+-}
 type Script x a
     = Succeed a
     | Fail x
     | Perform (Task Never (Script x a))
     | Invoke String Value (Decoder (Script x a))
-
-
-init : a -> Script x a
-init =
-    succeed
-
-
-succeed : a -> Script x a
-succeed =
-    Succeed
-
-
-fail : x -> Script x a
-fail =
-    Fail
 
 
 type alias RequestPort =
@@ -186,6 +176,51 @@ program main requestPort responsePort =
             , update = update
             , subscriptions = always (responsePort Response)
             }
+
+
+{-| A script that succeeds immediately with the given value. Often used with
+`andThen`:
+
+    script : List String -> Script Int ()
+-}
+succeed : a -> Script x a
+succeed =
+    Succeed
+
+
+{-| A script that fails immediately with the given value. Often used with
+`andThen`; the following script greets someone by their name given by the first
+command-line argument, or prints an error message and then returns an error
+code if no names or multiple names are given:
+
+    script : List String -> Script Int ()
+    script args =
+        case args of
+            [ name ] ->
+                Script.print ("Hello " ++ name ++ "!")
+
+            [] ->
+                Script.print "Please enter a name"
+                    |> Script.andThen (\() -> Script.fail 1)
+
+            _ ->
+                Script.print "Please enter only one name!"
+                    |> Script.andThen (\() -> Script.fail 2)
+-}
+fail : x -> Script x a
+fail =
+    Fail
+
+
+{-| Synonym for `succeed` that reads better when used to 'kick off' a script:
+
+    Script.init { a = 3, b = 4 }
+        |> Script.map .a
+    --> Script.succeed 3
+-}
+init : a -> Script x a
+init =
+    succeed
 
 
 print : String -> Script x ()
