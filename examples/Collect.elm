@@ -5,8 +5,9 @@ import Kintail.Script as Script exposing (Script, FileError)
 
 
 getLineCount : String -> Script FileError Int
-getLineCount =
-    Script.readFile >> Script.map (String.lines >> List.length)
+getLineCount filename =
+    Script.readFile filename
+        |> Script.map (String.lines >> List.length)
 
 
 script : List String -> Script Int ()
