@@ -86,6 +86,11 @@ module.exports = function (path, args) {
           }
         }
         break
+      default:
+        console.log('Internal error - unexpected request: ' + request)
+        console.log('Try updating to a newer version of elm-run')
+        process.exit(1)
+        break
     }
   })
 }
