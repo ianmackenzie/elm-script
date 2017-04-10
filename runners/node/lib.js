@@ -111,7 +111,7 @@ module.exports = function (path, args) {
         break
       default:
         console.log('Internal error - unexpected request: ' + request)
-        console.log('Try updating to a newer version of elm-run')
+        console.log('Try updating to newer versions of elm-run and the kintail/script package')
         process.exit(1)
     }
   })
