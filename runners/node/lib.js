@@ -1,5 +1,8 @@
 'use strict'
 
+let majorVersion = 1
+let minorVersion = 0
+
 let vm = require('vm')
 let fs = require('fs')
 let path = require('path')
@@ -34,6 +37,27 @@ module.exports = function (path, args) {
   // Listen for requests, send responses when required
   requestPort.subscribe(function (request) {
     switch (request.name) {
+      case 'requiredVersion':
+        let requiredMajorVersion = request.value[0]
+        let requiredMinorVersion = request.value[1]
+        let describeCurrentVersion = ' (current elm-run version: ' + majorVersion + '.' + minorVersion + ')'
+        if (requiredMajorVersion !== majorVersion) {
+          console.log('Version mismatch: script requires elm-run major version ' + requiredMajorVersion + describeCurrentVersion)
+          if (requiredMajorVersion > majorVersion) {
+            console.log('Please update to a newer version of elm-run')
+          } else {
+            console.log('Please update script to use a newer version of the kintail/script package')
+          }
+          process.exit(1)
+        } else if (requiredMinorVersion > minorVersion) {
+          let requiredVersionString = requiredMajorVersion + '.' + requiredMinorVersion
+          console.log('Version mismatch: script requires elm-run version at least ' + requiredVersionString + describeCurrentVersion)
+          console.log('Please update to a newer version of elm-run')
+          process.exit(1)
+        } else {
+          responsePort.send(null)
+        }
+        break
       case 'print':
         console.log(request.value)
         responsePort.send(null)

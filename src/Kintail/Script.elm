@@ -95,6 +95,11 @@ import Time exposing (Time)
 import Http
 
 
+requiredHostVersion : ( Int, Int )
+requiredHostVersion =
+    ( 1, 0 )
+
+
 {-| A `Script x a` value defines a script that, when run, will either produce a
 value of type `a` or an error of type `x`.
 -}
@@ -125,10 +130,23 @@ type Msg
 program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) Model Msg
 program main requestPort responsePort =
     let
+        checkHostVersion =
+            let
+                ( major, minor ) =
+                    requiredHostVersion
+
+                encodedVersion =
+                    Encode.list [ Encode.int major, Encode.int minor ]
+
+                decoder =
+                    Decode.null (succeed ())
+            in
+                Invoke "requiredVersion" encodedVersion decoder
+
         init args =
             let
                 script =
-                    main args
+                    checkHostVersion |> andThen (\() -> main args)
             in
                 ( Model script, commands script )
 
