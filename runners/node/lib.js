@@ -40,7 +40,6 @@ module.exports = function (path, args) {
         break
       case 'exit':
         process.exit(request.value)
-        break
       case 'readFile':
         try {
           let filename = request.value
@@ -90,7 +89,6 @@ module.exports = function (path, args) {
         console.log('Internal error - unexpected request: ' + request)
         console.log('Try updating to a newer version of elm-run')
         process.exit(1)
-        break
     }
   })
 }
