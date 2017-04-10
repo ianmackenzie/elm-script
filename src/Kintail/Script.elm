@@ -487,10 +487,10 @@ type ProcessError
 
 
 execute : String -> List String -> Script ProcessError String
-execute filename arguments =
+execute command arguments =
     Invoke "execute"
         (Encode.object
-            [ ( "filename", Encode.string filename )
+            [ ( "command", Encode.string command )
             , ( "arguments", Encode.list (List.map Encode.string arguments) )
             ]
         )

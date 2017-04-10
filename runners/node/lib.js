@@ -94,10 +94,10 @@ module.exports = function (path, args) {
         break
       case 'execute':
         try {
-          let filename = request.value.filename
+          let command = request.value.command
           let args = request.value.arguments
           let options = {encoding: 'utf8', maxBuffer: 1024 * 1024 * 1024}
-          let output = child_process.execFileSync(filename, args, options)
+          let output = child_process.execSync(command + ' ' + args.join(' '), options)
           responsePort.send(output)
         } catch (error) {
           if (error.status !== null) {
