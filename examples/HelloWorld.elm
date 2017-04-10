@@ -1,6 +1,6 @@
 port module Main exposing (..)
 
-import Kintail.Script as Script
+import Kintail.Script as Script exposing (Script)
 import Json.Encode exposing (Value)
 
 
