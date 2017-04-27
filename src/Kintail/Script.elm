@@ -46,45 +46,56 @@ various ways, and turn them into runnable programs.
 
 @docs Script
 
+
 # Running
 
 @docs RequestPort, ResponsePort, Model, Msg, program
+
 
 # Basics
 
 @docs succeed, fail, init
 
+
 # Utilities
 
 @docs print, sleep, getEnvironmentVariable
+
 
 # Mapping
 
 @docs map, map2, map3, map4, ignore
 
+
 # Sequencing
 
 @docs do, forEach, sequence, collect, andThen, aside
+
 
 # Combining
 
 @docs Arguments, with, andWith, yield, return
 
+
 # Error handling
 
 @docs mapError, attempt, onError, retryUntilSuccess
+
 
 # Tasks
 
 @docs perform
 
+
 # Requests
 
 @docs request
 
+
 # Files
 
 @docs FileError, readFile, writeFile, listFiles, listSubdirectories
+
 -}
 
 import Json.Encode as Encode exposing (Value)
@@ -200,6 +211,7 @@ program main requestPort responsePort =
 `andThen`:
 
     script : List String -> Script Int ()
+
 -}
 succeed : a -> Script x a
 succeed =
@@ -224,6 +236,7 @@ code if no names or multiple names are given:
             _ ->
                 Script.print "Please enter only one name!"
                     |> Script.andThen (\() -> Script.fail 2)
+
 -}
 fail : x -> Script x a
 fail =
@@ -235,6 +248,7 @@ fail =
     Script.init { a = 3, b = 4 }
         |> Script.map .a
     --> Script.succeed 3
+
 -}
 init : a -> Script x a
 init =
