@@ -273,8 +273,8 @@ getEnvironmentVariable name =
 
 
 map : (a -> b) -> Script x a -> Script x b
-map function =
-    andThen (function >> succeed)
+map function script =
+    script |> andThen (\value -> succeed (function value))
 
 
 map2 :
