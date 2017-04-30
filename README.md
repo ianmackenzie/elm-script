@@ -4,12 +4,17 @@ This package allows you define command-line scripts in Elm that can read and
 write files, accept command-line arguments, and perform any other tasks that are
 possible in Elm such as making HTTP requests.
 
-This package is currently experimental - expect breaking changes
+This package is currently experimental - expect breaking changes.
 
 # Getting started
 
-Create a new Elm package and add `kintail/script` as a dependency. Add a
-`Main.elm` file that looks like this:
+`kintail/script` has not yet been published, so right now if you want to play
+around with it you'll have to check out this repository. You can then either
+just experiment with the files in the `examples` directory, or add the `src`
+directory of this package to the `source-directories` field in your package's
+`elm-package.json`.
+
+To create a new script, create a `Main.elm` file that looks like this:
 
 ```elm
 port module Main exposing (..)
@@ -29,19 +34,16 @@ main =
     Script.program script requestPort responsePort
 ```
 
-Compile this file with
+Compile this file with:
 
 ```
 elm make --output main.js Main.elm
 ```
 
-To actually run the compiled script, you will need to install `elm-run`:
-
-```
-npm install -g @kintail/elm-run
-```
-
-You should then be able to run your script with
+To actually run the compiled script, you will need the Node-based `elm-run`
+runner script. This has also not yet been published, so in the `runners/node`
+directory run `npm link` to use the current version. You should then be able to
+run your script with:
 
 ```
 elm-run main.js
