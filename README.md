@@ -34,7 +34,10 @@ main =
     Script.program script requestPort responsePort
 ```
 
-Compile this file with:
+(The top-level script must have the type `Script Int ()`, i.e. the script must
+either fail with an integer error code or succeed with the unit value, but it
+can be composed out of smaller scripts that produce any kinds of errors and
+success values.) Compile this file with:
 
 ```
 elm make --output main.js Main.elm
