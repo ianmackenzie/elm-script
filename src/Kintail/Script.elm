@@ -1,44 +1,44 @@
 module Kintail.Script
     exposing
-        ( Script
-        , init
-        , succeed
-        , fail
+        ( Arguments
+        , FileError
+        , ProcessError(..)
         , RequestPort
         , ResponsePort
-        , program
-        , print
-        , sleep
+        , Script
+        , andThen
+        , andWith
+        , aside
+        , attempt
+        , collect
+        , do
+        , execute
+        , fail
+        , forEach
         , getEnvironmentVariable
+        , ignore
+        , init
+        , listFiles
+        , listSubdirectories
         , map
         , map2
         , map3
         , map4
-        , ignore
-        , do
-        , forEach
-        , sequence
-        , collect
-        , andThen
-        , aside
-        , Arguments
-        , with
-        , andWith
-        , yield
-        , return
         , mapError
-        , attempt
         , onError
-        , retryUntilSuccess
         , perform
-        , request
-        , FileError
+        , print
+        , program
         , readFile
+        , request
+        , retryUntilSuccess
+        , return
+        , sequence
+        , sleep
+        , succeed
+        , with
         , writeFile
-        , listFiles
-        , listSubdirectories
-        , ProcessError(..)
-        , execute
+        , yield
         )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -98,12 +98,12 @@ various ways, and turn them into runnable programs.
 
 -}
 
-import Json.Encode as Encode exposing (Value)
-import Json.Decode as Decode exposing (Decoder)
-import Task exposing (Task)
-import Process
-import Time exposing (Time)
 import Http
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import Process
+import Task exposing (Task)
+import Time exposing (Time)
 
 
 requiredHostVersion : ( Int, Int )
@@ -152,14 +152,14 @@ program main requestPort responsePort =
                 decoder =
                     Decode.null (succeed ())
             in
-                Invoke "requiredVersion" encodedVersion decoder
+            Invoke "requiredVersion" encodedVersion decoder
 
         init args =
             let
                 script =
                     checkHostVersion |> andThen (\() -> main args)
             in
-                ( Model script, commands script )
+            ( Model script, commands script )
 
         submitRequest name value =
             requestPort <|
@@ -200,11 +200,11 @@ program main requestPort responsePort =
                         _ ->
                             Debug.crash ("Received unexpected response from JavaScript: " ++ toString value)
     in
-        Platform.programWithFlags
-            { init = init
-            , update = update
-            , subscriptions = always (responsePort Response)
-            }
+    Platform.programWithFlags
+        { init = init
+        , update = update
+        , subscriptions = always (responsePort Response)
+        }
 
 
 {-| A script that succeeds immediately with the given value. Often used with
