@@ -212,11 +212,7 @@ program main requestPort responsePort =
         }
 
 
-{-| A script that succeeds immediately with the given value. Often used with
-`andThen`:
-
-    script : List String -> Script Int ()
-
+{-| A script that succeeds immediately with the given value.
 -}
 succeed : a -> Script x a
 succeed =
