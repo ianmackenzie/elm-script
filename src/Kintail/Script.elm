@@ -3,6 +3,7 @@ module Kintail.Script
         ( Arguments
         , FileError
         , ProcessError(..)
+        , Program
         , RequestPort
         , ResponsePort
         , Script
@@ -138,7 +139,11 @@ type Msg
     | Response Value
 
 
-program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program (List String) Model Msg
+type alias Program =
+    Platform.Program (List String) Model Msg
+
+
+program : (List String -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkHostVersion =
