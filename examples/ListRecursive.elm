@@ -53,5 +53,6 @@ port requestPort : Value -> Cmd msg
 port responsePort : (Value -> msg) -> Sub msg
 
 
+main : Script.Program
 main =
     Script.program script requestPort responsePort
