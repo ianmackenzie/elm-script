@@ -219,10 +219,10 @@ succeed =
     Succeed
 
 
-{-| A script that fails immediately with the given value. Often used with
-`andThen`; the following script greets someone by their name given by the first
-command-line argument, or prints an error message and then returns an error
-code if no names or multiple names are given:
+{-| A script that fails immediately with the given value. The following script
+greets someone by their name given by the first command-line argument, or prints
+an error message and then returns an error code if no names or multiple names
+are given:
 
     script : List String -> Script Int ()
     script args =
@@ -231,12 +231,16 @@ code if no names or multiple names are given:
                 Script.print ("Hello " ++ name ++ "!")
 
             [] ->
-                Script.print "Please enter a name"
-                    |> Script.andThen (\() -> Script.fail 1)
+                Script.do
+                    [ Script.print "Please enter a name"
+                    , Script.fail 1
+                    ]
 
             _ ->
-                Script.print "Please enter only one name!"
-                    |> Script.andThen (\() -> Script.fail 2)
+                Script.do
+                    [ Script.print "Please enter only one name!"
+                    , Script.fail 2
+                    ]
 
 -}
 fail : x -> Script x a

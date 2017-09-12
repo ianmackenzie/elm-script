@@ -16,14 +16,15 @@ script arguments =
                 |> Script.onError (.message >> handleError)
 
         _ ->
-            Script.print "Please supply the filename of one file to read"
-                |> Script.andThen (\() -> Script.fail 1)
+            Script.do
+                [ Script.print "Please supply the filename of one file to read"
+                , Script.fail 1
+                ]
 
 
 handleError : String -> Script Int ()
 handleError message =
-    Script.print ("ERROR: " ++ message)
-        |> Script.andThen (\() -> Script.fail 1)
+    Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 
 
 port requestPort : Value -> Cmd msg

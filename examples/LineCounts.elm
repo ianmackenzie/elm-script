@@ -26,8 +26,7 @@ script filenames =
 
 handleError : String -> Script Int ()
 handleError message =
-    Script.print ("ERROR: " ++ message)
-        |> Script.andThen (\() -> Script.fail 1)
+    Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 
 
 port requestPort : Value -> Cmd msg

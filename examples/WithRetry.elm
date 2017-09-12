@@ -6,7 +6,7 @@ import Json.Encode exposing (Value)
 
 abort : String -> Script Int ()
 abort message =
-    Script.print message |> Script.andThen (\() -> Script.fail 1)
+    Script.do [ Script.print message, Script.fail 1 ]
 
 
 retry : String -> List String -> Int -> Script Int ()
@@ -43,8 +43,10 @@ script arguments =
             retry executable rest 5
 
         [] ->
-            Script.print "Please enter an executable to run"
-                |> Script.andThen (\() -> Script.fail 1)
+            Script.do
+                [ Script.print "Please enter an executable to run"
+                , Script.fail 1
+                ]
 
 
 port requestPort : Value -> Cmd msg

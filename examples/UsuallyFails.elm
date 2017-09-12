@@ -12,10 +12,8 @@ script _ =
             (\time ->
                 if (truncate time % 100 > 87) then
                     Script.print "Succeeded"
-                        |> Script.andThen (\() -> Script.succeed ())
                 else
-                    Script.print "Failed"
-                        |> Script.andThen (\() -> Script.fail 1)
+                    Script.do [ Script.print "Failed", Script.fail 1 ]
             )
 
 
