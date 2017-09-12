@@ -18,13 +18,11 @@ retry executable arguments maxCount =
                 if maxCount > 0 then
                     case error of
                         Script.ProcessExitedWithError _ ->
-                            Script.print "Process exited with error, retrying..."
-                                |> Script.andThen
-                                    (\() ->
-                                        retry executable
-                                            arguments
-                                            (maxCount - 1)
-                                    )
+                            Script.do
+                                [ Script.print
+                                    "Process exited with error, retrying..."
+                                , retry executable arguments (maxCount - 1)
+                                ]
 
                         Script.ProcessWasTerminated ->
                             abort "Process was terminated"
