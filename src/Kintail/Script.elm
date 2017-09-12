@@ -32,7 +32,6 @@ module Kintail.Script
         , program
         , readFile
         , request
-        , retryUntilSuccess
         , return
         , sequence
         , sleep
@@ -80,7 +79,7 @@ various ways, and turn them into runnable programs.
 
 # Error handling
 
-@docs mapError, attempt, onError, retryUntilSuccess
+@docs mapError, attempt, onError
 
 
 # Tasks
@@ -421,11 +420,6 @@ onError recover script =
 
         Invoke name value decoder ->
             Invoke name value (Decode.map (onError recover) decoder)
-
-
-retryUntilSuccess : Script x a -> Script y a
-retryUntilSuccess script =
-    onError (\error -> retryUntilSuccess script) script
 
 
 perform : Task x a -> Script x a
