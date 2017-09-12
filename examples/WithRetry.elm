@@ -1,15 +1,15 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Allowed, Script)
 
 
-abort : String -> Script Int ()
+abort : String -> Script p Int ()
 abort message =
     Script.do [ Script.print message, Script.fail 1 ]
 
 
-retry : String -> List String -> Int -> Script Int ()
+retry : String -> List String -> Int -> Script { p | subprocesses : Allowed } Int ()
 retry executable arguments maxCount =
     Script.execute executable arguments
         |> Script.andThen Script.print
@@ -34,7 +34,7 @@ retry executable arguments maxCount =
             )
 
 
-script : List String -> Script Int ()
+script : List String -> Script { subprocesses : Allowed } Int ()
 script arguments =
     case arguments of
         executable :: rest ->

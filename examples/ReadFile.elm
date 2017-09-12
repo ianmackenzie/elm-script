@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Allowed, Script)
 
 
-script : List String -> Script Int ()
+script : List String -> Script { read : Allowed } Int ()
 script arguments =
     case arguments of
         [ filename ] ->
@@ -22,7 +22,7 @@ script arguments =
                 ]
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script p Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

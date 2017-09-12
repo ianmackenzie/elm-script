@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Allowed, Script)
 
 
-script : List String -> Script Int ()
+script : List String -> Script { read : Allowed, write : Allowed } Int ()
 script arguments =
     Script.readFile "test.txt"
         |> Script.map String.lines
@@ -15,7 +15,7 @@ script arguments =
         |> Script.onError (.message >> handleError)
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script p Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

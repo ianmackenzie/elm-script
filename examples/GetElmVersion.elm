@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (ProcessError(..), Script)
+import Kintail.Script as Script exposing (Allowed, ProcessError(..), Script)
 
 
-script : List String -> Script Int ()
+script : List String -> Script { subprocesses : Allowed } Int ()
 script arguments =
     Script.execute "elm" [ "--version" ]
         |> Script.map String.trim
@@ -28,7 +28,7 @@ toErrorString processError =
             "Process exited with code " ++ toString code
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script p Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

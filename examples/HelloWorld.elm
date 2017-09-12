@@ -4,7 +4,7 @@ import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 
 
-script : List String -> Script Int ()
+script : List String -> Script {} Int ()
 script arguments =
     Script.print "Hello World!"
 

@@ -3,11 +3,11 @@ port module Main exposing (..)
 import Http
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Allowed, Script)
 import Time exposing (Time)
 
 
-script : List String -> Script Int ()
+script : List String -> Script { http : Allowed } Int ()
 script arguments =
     Script.init { text = "A", number = 2 }
         |> Script.aside
@@ -38,7 +38,7 @@ script arguments =
         |> Script.onError handleError
 
 
-getCurrentTime : Script String String
+getCurrentTime : Script { p | http : Allowed } String String
 getCurrentTime =
     let
         url =
@@ -51,12 +51,12 @@ getCurrentTime =
         |> Script.mapError (always "HTTP request failed")
 
 
-printCurrentTime : Script String ()
+printCurrentTime : Script { p | http : Allowed } String ()
 printCurrentTime =
     getCurrentTime |> Script.andThen Script.print
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script p Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

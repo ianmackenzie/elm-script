@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (FileError, Script)
+import Kintail.Script as Script exposing (Allowed, FileError, Script)
 
 
-listRecursively : Int -> String -> Script FileError ()
+listRecursively : Int -> String -> Script { p | read : Allowed } FileError ()
 listRecursively level directory =
     let
         indentation =
@@ -31,7 +31,7 @@ listRecursively level directory =
         ]
 
 
-script : List String -> Script Int ()
+script : List String -> Script { read : Allowed } Int ()
 script arguments =
     case arguments of
         [ directory ] ->
@@ -42,7 +42,7 @@ script arguments =
             Script.print "Please supply one directory name"
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script p Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

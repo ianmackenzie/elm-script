@@ -1,11 +1,11 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
+import Kintail.Script as Script exposing (Allowed, Script)
 import Time
 
 
-script : List String -> Script Int ()
+script : List String -> Script { tasks : Allowed } Int ()
 script _ =
     Script.perform Time.now
         |> Script.andThen
