@@ -5,7 +5,6 @@ import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 import Time exposing (Time)
-import Task exposing (Task)
 
 
 script : List String -> Script Int ()
