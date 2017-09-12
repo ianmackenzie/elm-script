@@ -1,10 +1,10 @@
 port module Main exposing (..)
 
+import Http
+import Json.Decode as Decode
+import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
 import Time exposing (Time)
-import Json.Encode exposing (Value)
-import Json.Decode as Decode
-import Http
 import Task exposing (Task)
 
 
@@ -48,8 +48,8 @@ getCurrentTime =
         decoder =
             Decode.field "time" Decode.string
     in
-        Script.request (Http.get url decoder)
-            |> Script.mapError (always "HTTP request failed")
+    Script.request (Http.get url decoder)
+        |> Script.mapError (always "HTTP request failed")
 
 
 printCurrentTime : Script String ()

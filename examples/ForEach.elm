@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
-import Kintail.Script as Script
 import Json.Encode exposing (Value)
+import Kintail.Script as Script exposing (Script)
 
 
 script arguments =
@@ -9,7 +9,7 @@ script arguments =
         |> Script.forEach
             (\n ->
                 Script.print
-                    (toString n ++ " squared is " ++ (toString (n * n)))
+                    (toString n ++ " squared is " ++ toString (n * n))
             )
 
 

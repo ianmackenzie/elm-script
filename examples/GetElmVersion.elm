@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script, ProcessError(..))
+import Kintail.Script as Script exposing (ProcessError(..), Script)
 
 
 script : List String -> Script Int ()
@@ -25,7 +25,7 @@ toErrorString processError =
             "Process was terminated"
 
         ProcessExitedWithError code ->
-            ("Process exited with code " ++ toString code)
+            "Process exited with code " ++ toString code
 
 
 handleError : String -> Script Int ()

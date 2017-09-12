@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
-import Kintail.Script as Script exposing (Script)
 import Json.Encode exposing (Value)
+import Kintail.Script as Script exposing (Script)
 import Time
 
 
@@ -10,7 +10,7 @@ script _ =
     Script.perform Time.now
         |> Script.andThen
             (\time ->
-                if (truncate time % 100 > 87) then
+                if truncate time % 100 > 87 then
                     Script.print "Succeeded"
                 else
                     Script.do [ Script.print "Failed", Script.fail 1 ]

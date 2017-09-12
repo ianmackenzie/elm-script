@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script, FileError)
+import Kintail.Script as Script exposing (FileError, Script)
 
 
 listRecursively : Int -> String -> Script FileError ()
@@ -10,25 +10,25 @@ listRecursively level directory =
         indentation =
             String.repeat level "    "
     in
-        Script.do
-            [ Script.listSubdirectories directory
-                |> Script.andThen
-                    (Script.forEach
-                        (\subdirectory ->
-                            Script.do
-                                [ Script.print
-                                    (indentation ++ subdirectory ++ "/")
-                                , listRecursively (level + 1)
-                                    (directory ++ "/" ++ subdirectory)
-                                ]
-                        )
+    Script.do
+        [ Script.listSubdirectories directory
+            |> Script.andThen
+                (Script.forEach
+                    (\subdirectory ->
+                        Script.do
+                            [ Script.print
+                                (indentation ++ subdirectory ++ "/")
+                            , listRecursively (level + 1)
+                                (directory ++ "/" ++ subdirectory)
+                            ]
                     )
-            , Script.listFiles directory
-                |> Script.andThen
-                    (Script.forEach
-                        (\filename -> Script.print (indentation ++ filename))
-                    )
-            ]
+                )
+        , Script.listFiles directory
+            |> Script.andThen
+                (Script.forEach
+                    (\filename -> Script.print (indentation ++ filename))
+                )
+        ]
 
 
 script : List String -> Script Int ()
