@@ -16,10 +16,10 @@ computeProduct =
             )
 
 
-script : List String -> Script { tasks : Allowed } Int ()
+script : List String -> Script {} Int ()
 script arguments =
     Script.with computeProduct
-        |> Script.andWith (Script.perform Time.now)
+        |> Script.andWith Script.getCurrentTime
         |> Script.yield
             (\product time ->
                 Script.do

@@ -20,6 +20,7 @@ module Kintail.Script
         , execute
         , fail
         , forEach
+        , getCurrentTime
         , getEnvironmentVariable
         , ignore
         , init
@@ -31,7 +32,6 @@ module Kintail.Script
         , map4
         , mapError
         , onError
-        , perform
         , print
         , program
         , readFile
@@ -68,7 +68,7 @@ various ways, and turn them into runnable programs.
 
 # Utilities
 
-@docs print, sleep, getEnvironmentVariable
+@docs print, sleep, getEnvironmentVariable, getCurrentTime
 
 
 # Mapping
@@ -89,11 +89,6 @@ various ways, and turn them into runnable programs.
 # Error handling
 
 @docs mapError, attempt, onError
-
-
-# Tasks
-
-@docs perform
 
 
 # Requests
@@ -305,6 +300,11 @@ getEnvironmentVariable name =
         (Decode.nullable Decode.string |> Decode.map succeed)
 
 
+getCurrentTime : Script {} x Time
+getCurrentTime =
+    perform Time.now
+
+
 map : (a -> b) -> Script p x a -> Script p x b
 map function script =
     script |> andThen (\value -> succeed (function value))
@@ -467,7 +467,7 @@ changePermissions script =
             Invoke name value (Decode.map changePermissions decoder)
 
 
-perform : Task x a -> Script { p | tasks : Allowed } x a
+perform : Task x a -> Script p x a
 perform =
     Task.map succeed >> Task.onError (fail >> Task.succeed) >> Perform
 
