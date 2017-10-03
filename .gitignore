@@ -1,3 +1,4 @@
 elm-stuff
 examples/*.js
 node_modules
+examples/reversed.txt
