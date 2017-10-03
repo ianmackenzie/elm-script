@@ -7,6 +7,7 @@ let vm = require('vm')
 let fs = require('fs')
 let path = require('path')
 let child_process = require('child_process')
+let compileToString = require('node-elm-compiler').compileToString
 
 function listEntities (request, responsePort, statsPredicate) {
   try {
@@ -20,17 +21,15 @@ function listEntities (request, responsePort, statsPredicate) {
   }
 }
 
-module.exports = function (path, args) {
-  // Load compiled Elm code
-  let source = fs.readFileSync(path)
+function runCompiledJs(compiledJs, commandLineArgs) {
   // Set up browser-like context in which to run compiled Elm code
   global.XMLHttpRequest = require('xhr2')
   global.setTimeout = require('timers').setTimeout
   // Run Elm code to create the 'Elm' object
-  vm.runInThisContext(source, path)
+  vm.runInThisContext(compiledJs)
 
   // Create Elm worker and get its request/response ports
-  let script = global['Elm'].Main.worker(args)
+  let script = global['Elm'].Main.worker(commandLineArgs)
   let requestPort = script.ports.requestPort
   let responsePort = script.ports.responsePort
 
@@ -114,5 +113,14 @@ module.exports = function (path, args) {
         console.log('Try updating to newer versions of elm-run and the kintail/script package')
         process.exit(1)
     }
+  })
+}
+
+module.exports = function (elmFileName, commandLineArgs) {
+  let absolutePath = path.resolve(elmFileName)
+  let directory = path.dirname(absolutePath)
+  let compileOptions = {yes: true, cwd: directory}
+  compileToString(absolutePath, compileOptions).then(function (compiledJs) {
+    runCompiledJs(compiledJs, commandLineArgs)
   })
 }

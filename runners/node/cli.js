@@ -5,8 +5,8 @@
 let run = require('./lib.js')
 
 if (process.argv.length >= 3) {
-  let filename = process.argv[2]
-  run(filename, process.argv.slice(3))
+  let elmFileName = process.argv[2]
+  run(elmFileName, process.argv.slice(3))
 } else {
-  console.log("Run as 'elm-run main.js'")
+  console.log("Run as 'elm-run Script.elm [arguments]'")
 }

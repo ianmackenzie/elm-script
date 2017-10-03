@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/kintail/script#readme",
   "dependencies": {
-    "xhr2": "*"
+    "xhr2": "*",
+    "node-elm-compiler": "*"
   }
 }
