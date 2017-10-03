@@ -122,5 +122,7 @@ module.exports = function (elmFileName, commandLineArgs) {
   let compileOptions = {yes: true, cwd: directory}
   compileToString(absolutePath, compileOptions).then(function (compiledJs) {
     runCompiledJs(compiledJs, commandLineArgs)
+  }).catch(function (error) {
+    console.log(error.message)
   })
 }
