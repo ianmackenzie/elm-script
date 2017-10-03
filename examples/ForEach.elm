@@ -5,13 +5,17 @@ import Kintail.Script as Script exposing (Script)
 
 
 script : List String -> Script {} Int ()
-script arguments =
-    List.range 1 10
-        |> Script.forEach
-            (\n ->
-                Script.print
-                    (toString n ++ " squared is " ++ toString (n * n))
-            )
+script =
+    Script.forEach
+        (\argument ->
+            Script.print <|
+                case String.toFloat argument of
+                    Ok value ->
+                        argument ++ " squared is " ++ toString (value * value)
+
+                    Err _ ->
+                        argument ++ " is not a number!"
+        )
 
 
 port requestPort : Value -> Cmd msg
