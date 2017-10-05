@@ -300,7 +300,7 @@ getEnvironmentVariable name =
         (Decode.nullable Decode.string |> Decode.map succeed)
 
 
-getCurrentTime : Script {} x Time
+getCurrentTime : Script p x Time
 getCurrentTime =
     perform Time.now
 
