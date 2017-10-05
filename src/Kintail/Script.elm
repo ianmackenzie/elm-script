@@ -15,6 +15,7 @@ module Kintail.Script
         , andWith
         , aside
         , attempt
+        , call
         , collect
         , do
         , execute
@@ -78,7 +79,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, forEach, sequence, collect, andThen, aside
+@docs do, forEach, sequence, collect, andThen, aside, call
 
 
 # Combining
@@ -394,6 +395,20 @@ andThen function script =
 aside : (a -> Script p x ()) -> Script p x a -> Script p x a
 aside function =
     andThen (\value -> function value |> andThen (\() -> succeed value))
+
+
+call : (() -> Result x a) -> Script p x a
+call function =
+    perform (Task.succeed ())
+        |> andThen
+            (\() ->
+                case function () of
+                    Ok result ->
+                        succeed result
+
+                    Err error ->
+                        fail error
+            )
 
 
 type Arguments f r
