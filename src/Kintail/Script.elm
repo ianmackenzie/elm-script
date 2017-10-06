@@ -393,8 +393,19 @@ andThen function script =
 
 
 aside : (a -> Script p x ()) -> Script p x a -> Script p x a
-aside function =
-    andThen (\value -> function value |> andThen (\() -> succeed value))
+aside doSomethingWith script =
+    -- Run the given script...
+    script
+        |> andThen
+            (\value ->
+                -- ...as an 'aside' do something with the generated value
+                -- (logging, printing to console etc)...
+                doSomethingWith value
+                    |> andThen
+                        -- ...finally, return the original generated value
+                        -- (not the unit return value of the 'aside' script)
+                        (\() -> succeed value)
+            )
 
 
 call : (() -> Result x a) -> Script p x a
