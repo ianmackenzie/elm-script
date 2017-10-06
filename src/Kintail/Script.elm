@@ -500,7 +500,7 @@ perform =
 
 request : Http.Request a -> Script { p | http : Allowed } Http.Error a
 request =
-    Http.toTask >> perform >> changePermissions
+    Http.toTask >> perform
 
 
 type alias FileError =
