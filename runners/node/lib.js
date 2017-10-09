@@ -1,6 +1,6 @@
 "use strict";
 
-let majorVersion = 1;
+let majorVersion = 2;
 let minorVersion = 0;
 
 let vm = require("vm");
@@ -11,9 +11,9 @@ let compileToString = require("node-elm-compiler").compileToString;
 
 function listEntities(request, responsePort, statsPredicate) {
   try {
-    let directory = request.value;
-    let results = fs.readdirSync(directory).filter(function(entity) {
-      return statsPredicate(fs.statSync(path.resolve(directory, entity)));
+    let directoryPath = path.join(...request.value);
+    let results = fs.readdirSync(directoryPath).filter(function(entity) {
+      return statsPredicate(fs.statSync(path.resolve(directoryPath, entity)));
     });
     responsePort.send(results);
   } catch (error) {
@@ -21,7 +21,7 @@ function listEntities(request, responsePort, statsPredicate) {
   }
 }
 
-function runCompiledJs(compiledJs, commandLineArgs) {
+function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
   // Set up browser-like context in which to run compiled Elm code
   global.XMLHttpRequest = require("xhr2");
   global.setTimeout = require("timers").setTimeout;
@@ -29,7 +29,10 @@ function runCompiledJs(compiledJs, commandLineArgs) {
   vm.runInThisContext(compiledJs);
 
   // Create Elm worker and get its request/response ports
-  let script = global["Elm"].Main.worker(commandLineArgs);
+  let flags = {};
+  flags["arguments"] = commandLineArgs;
+  flags["workingDirectory"] = workingDirectory;
+  let script = global["Elm"].Main.worker(flags);
   let requestPort = script.ports.requestPort;
   let responsePort = script.ports.responsePort;
 
@@ -81,8 +84,8 @@ function runCompiledJs(compiledJs, commandLineArgs) {
         process.exit(request.value);
       case "readFile":
         try {
-          let filename = request.value;
-          let contents = fs.readFileSync(filename, "utf8");
+          let filePath = path.join(...request.value);
+          let contents = fs.readFileSync(filePath, "utf8");
           responsePort.send(contents);
         } catch (error) {
           responsePort.send({ code: error.code, message: error.message });
@@ -90,9 +93,9 @@ function runCompiledJs(compiledJs, commandLineArgs) {
         break;
       case "writeFile":
         try {
-          let filename = request.value.filename;
+          let filePath = path.join(...request.value.path);
           let contents = request.value.contents;
-          fs.writeFileSync(filename, contents, "utf8");
+          fs.writeFileSync(filePath, contents, "utf8");
           responsePort.send(null);
         } catch (error) {
           responsePort.send({ code: error.code, message: error.message });
@@ -138,12 +141,13 @@ function runCompiledJs(compiledJs, commandLineArgs) {
 }
 
 module.exports = function(elmFileName, commandLineArgs) {
+  let workingDirectory = process.cwd();
   let absolutePath = path.resolve(elmFileName);
   let directory = path.dirname(absolutePath);
   let compileOptions = { yes: true, cwd: directory };
   compileToString(absolutePath, compileOptions)
     .then(function(compiledJs) {
-      runCompiledJs(compiledJs, commandLineArgs);
+      runCompiledJs(compiledJs, commandLineArgs, workingDirectory);
     })
     .catch(function(error) {
       console.log(error.message);

@@ -1,15 +1,11 @@
 module Kintail.Script
     exposing
-        ( Allowed
-        , Arguments
+        ( Arguments
         , FileError
         , ProcessError(..)
         , Program
-        , ReadOnly
         , RequestPort
         , ResponsePort
-        , Safe
-        , Sandboxed
         , Script
         , andThen
         , andWith
@@ -49,7 +45,7 @@ module Kintail.Script
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script
+@docs Script, Process
 
 
 # Permissions
@@ -106,6 +102,12 @@ various ways, and turn them into runnable programs.
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Kintail.Script.Directory as Directory exposing (Directory)
+import Kintail.Script.File exposing (File)
+import Kintail.Script.Internal as Internal
+import Kintail.Script.Path exposing (Path)
+import Kintail.Script.Permissions exposing (Allowed)
+import Kintail.Script.Process as Process exposing (EnvironmentVariables, NetworkAccess, Process, Shell)
 import Process
 import Task exposing (Task)
 import Time exposing (Time)
@@ -113,36 +115,17 @@ import Time exposing (Time)
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 1, 0 )
+    ( 2, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
 value of type `a` or an error of type `x`.
 -}
-type Script p x a
+type Script x a
     = Succeed a
     | Fail x
-    | Perform (Task Never (Script p x a))
-    | Invoke String Value (Decoder (Script p x a))
-
-
-type Allowed
-    = NotConstructable Allowed
-
-
-type alias Safe =
-    {}
-
-
-type alias Sandboxed =
-    { http : Allowed
-    }
-
-
-type alias ReadOnly =
-    { http : Allowed
-    , read : Allowed
-    }
+    | Perform (Task Never (Script x a))
+    | Invoke String Value (Decoder (Script x a))
 
 
 type alias RequestPort =
@@ -154,19 +137,19 @@ type alias ResponsePort =
 
 
 type Model
-    = Model (Script {} Int ())
+    = Model (Script Int ())
 
 
 type Msg
-    = Updated (Script {} Int ())
+    = Updated (Script Int ())
     | Response Value
 
 
 type alias Program =
-    Platform.Program (List String) Model Msg
+    Platform.Program Internal.Flags Model Msg
 
 
-program : (List String -> Script p Int ()) -> RequestPort -> ResponsePort -> Program
+program : (Process -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkHostVersion =
@@ -182,11 +165,13 @@ program main requestPort responsePort =
             in
             Invoke "requiredVersion" encodedVersion decoder
 
-        init args =
+        init flags =
             let
+                process =
+                    Internal.Process flags
+
                 script =
-                    checkHostVersion
-                        |> andThen (\() -> changePermissions (main args))
+                    checkHostVersion |> andThen (\() -> main process)
             in
             ( Model script, commands script )
 
@@ -238,7 +223,7 @@ program main requestPort responsePort =
 
 {-| A script that succeeds immediately with the given value.
 -}
-succeed : a -> Script p x a
+succeed : a -> Script x a
 succeed =
     Succeed
 
@@ -267,7 +252,7 @@ are given:
                     ]
 
 -}
-fail : x -> Script p x a
+fail : x -> Script x a
 fail =
     Fail
 
@@ -279,74 +264,74 @@ fail =
     --> Script.succeed 3
 
 -}
-init : a -> Script p x a
+init : a -> Script x a
 init =
     succeed
 
 
-print : String -> Script p x ()
+print : String -> Script x ()
 print string =
     Invoke "print" (Encode.string string) (Decode.null (succeed ()))
 
 
-sleep : Time -> Script p x ()
+sleep : Time -> Script x ()
 sleep time =
     Perform (Task.map succeed (Process.sleep time))
 
 
-getEnvironmentVariable : String -> Script { p | read : Allowed } x (Maybe String)
-getEnvironmentVariable name =
+getEnvironmentVariable : EnvironmentVariables { p | read : Allowed } -> String -> Script x (Maybe String)
+getEnvironmentVariable environmentVariables name =
     Invoke "getEnvironmentVariable"
         (Encode.string name)
         (Decode.nullable Decode.string |> Decode.map succeed)
 
 
-getCurrentTime : Script p x Time
+getCurrentTime : Script x Time
 getCurrentTime =
     perform Time.now
 
 
-map : (a -> b) -> Script p x a -> Script p x b
+map : (a -> b) -> Script x a -> Script x b
 map function script =
     script |> andThen (\value -> succeed (function value))
 
 
 map2 :
     (a -> b -> c)
-    -> Script p x a
-    -> Script p x b
-    -> Script p x c
+    -> Script x a
+    -> Script x b
+    -> Script x c
 map2 function scriptA scriptB =
     scriptA |> andThen (\valueA -> map (function valueA) scriptB)
 
 
 map3 :
     (a -> b -> c -> d)
-    -> Script p x a
-    -> Script p x b
-    -> Script p x c
-    -> Script p x d
+    -> Script x a
+    -> Script x b
+    -> Script x c
+    -> Script x d
 map3 function scriptA scriptB scriptC =
     scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
 map4 :
     (a -> b -> c -> d -> e)
-    -> Script p x a
-    -> Script p x b
-    -> Script p x c
-    -> Script p x d
-    -> Script p x e
+    -> Script x a
+    -> Script x b
+    -> Script x c
+    -> Script x d
+    -> Script x e
 map4 function scriptA scriptB scriptC scriptD =
     scriptA |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
-ignore : Script p x a -> Script p x ()
+ignore : Script x a -> Script x ()
 ignore =
     map (always ())
 
 
-do : List (Script p x ()) -> Script p x ()
+do : List (Script x ()) -> Script x ()
 do scripts =
     case scripts of
         [] ->
@@ -356,12 +341,12 @@ do scripts =
             first |> andThen (\() -> do rest)
 
 
-forEach : (a -> Script p x ()) -> List a -> Script p x ()
+forEach : (a -> Script x ()) -> List a -> Script x ()
 forEach function values =
     do (List.map function values)
 
 
-sequence : List (Script p x a) -> Script p x (List a)
+sequence : List (Script x a) -> Script x (List a)
 sequence scripts =
     case scripts of
         [] ->
@@ -371,12 +356,12 @@ sequence scripts =
             first |> andThen (\value -> sequence rest |> map ((::) value))
 
 
-collect : (a -> Script p x b) -> List a -> Script p x (List b)
+collect : (a -> Script x b) -> List a -> Script x (List b)
 collect function values =
     sequence (List.map function values)
 
 
-andThen : (a -> Script p x b) -> Script p x a -> Script p x b
+andThen : (a -> Script x b) -> Script x a -> Script x b
 andThen function script =
     case script of
         Succeed value ->
@@ -392,7 +377,7 @@ andThen function script =
             Invoke name value (Decode.map (andThen function) decoder)
 
 
-aside : (a -> Script p x ()) -> Script p x a -> Script p x a
+aside : (a -> Script x ()) -> Script x a -> Script x a
 aside doSomethingWith script =
     -- Run the given script...
     script
@@ -408,7 +393,7 @@ aside doSomethingWith script =
             )
 
 
-call : (() -> Result x a) -> Script p x a
+call : (() -> Result x a) -> Script x a
 call function =
     perform (Task.succeed ())
         |> andThen
@@ -426,12 +411,12 @@ type Arguments f r
     = Arguments (f -> r)
 
 
-with : Script p x a -> Script p x (Arguments (a -> r) r)
+with : Script x a -> Script x (Arguments (a -> r) r)
 with =
     map (\value -> Arguments (\function -> function value))
 
 
-andWith : Script p x b -> Script p x (Arguments f (b -> r)) -> Script p x (Arguments f r)
+andWith : Script x b -> Script x (Arguments f (b -> r)) -> Script x (Arguments f r)
 andWith scriptB argumentsScriptA =
     map2
         (\(Arguments callerA) valueB ->
@@ -441,27 +426,27 @@ andWith scriptB argumentsScriptA =
         scriptB
 
 
-yield : f -> Script p x (Arguments f (Script p x r)) -> Script p x r
+yield : f -> Script x (Arguments f (Script x r)) -> Script x r
 yield function =
     andThen (\(Arguments caller) -> caller function)
 
 
-return : f -> Script p x (Arguments f r) -> Script p x r
+return : f -> Script x (Arguments f r) -> Script x r
 return function =
     map (\(Arguments caller) -> caller function)
 
 
-mapError : (x -> y) -> Script p x a -> Script p y a
+mapError : (x -> y) -> Script x a -> Script y a
 mapError function =
     onError (function >> fail)
 
 
-attempt : Script p x a -> Script p y (Result x a)
+attempt : Script x a -> Script y (Result x a)
 attempt =
     map Ok >> onError (Err >> succeed)
 
 
-onError : (x -> Script p y a) -> Script p x a -> Script p y a
+onError : (x -> Script y a) -> Script x a -> Script y a
 onError recover script =
     case script of
         Succeed value ->
@@ -477,29 +462,13 @@ onError recover script =
             Invoke name value (Decode.map (onError recover) decoder)
 
 
-changePermissions : Script p1 x a -> Script p2 x a
-changePermissions script =
-    case script of
-        Succeed value ->
-            Succeed value
-
-        Fail error ->
-            Fail error
-
-        Perform task ->
-            Perform (Task.map changePermissions task)
-
-        Invoke name value decoder ->
-            Invoke name value (Decode.map changePermissions decoder)
-
-
-perform : Task x a -> Script p x a
+perform : Task x a -> Script x a
 perform =
     Task.map succeed >> Task.onError (fail >> Task.succeed) >> Perform
 
 
-request : Http.Request a -> Script { p | http : Allowed } Http.Error a
-request =
+request : NetworkAccess -> Http.Request a -> Script Http.Error a
+request networkAccess =
     Http.toTask >> perform
 
 
@@ -516,10 +485,15 @@ fileErrorDecoder =
         (Decode.field "message" Decode.string)
 
 
-readFile : String -> Script { p | read : Allowed } FileError String
-readFile filename =
+encodePath : Path -> Value
+encodePath path =
+    Encode.list (List.map Encode.string path)
+
+
+readFile : File { p | read : Allowed } -> Script FileError String
+readFile (Internal.File path) =
     Invoke "readFile"
-        (Encode.string filename)
+        (encodePath path)
         (Decode.oneOf
             [ Decode.string |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
@@ -527,11 +501,11 @@ readFile filename =
         )
 
 
-writeFile : String -> String -> Script { p | write : Allowed } FileError ()
-writeFile filename contents =
+writeFile : File { p | write : Allowed } -> String -> Script FileError ()
+writeFile (Internal.File path) contents =
     Invoke "writeFile"
         (Encode.object
-            [ ( "filename", Encode.string filename )
+            [ ( "path", encodePath path )
             , ( "contents", Encode.string contents )
             ]
         )
@@ -542,23 +516,27 @@ writeFile filename contents =
         )
 
 
-listFiles : String -> Script { p | read : Allowed } FileError (List String)
-listFiles directory =
+listFiles : Directory { p | read : Allowed } -> Script FileError (List (File { p | read : Allowed }))
+listFiles ((Internal.Directory path) as directory) =
     Invoke "listFiles"
-        (Encode.string directory)
+        (encodePath path)
         (Decode.oneOf
-            [ Decode.list Decode.string |> Decode.map succeed
+            [ Decode.list Decode.string
+                |> Decode.map (List.map (\name -> Directory.file name directory))
+                |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
             ]
         )
 
 
-listSubdirectories : String -> Script { p | read : Allowed } FileError (List String)
-listSubdirectories directory =
+listSubdirectories : Directory { p | read : Allowed } -> Script FileError (List (Directory { p | read : Allowed }))
+listSubdirectories ((Internal.Directory path) as directory) =
     Invoke "listSubdirectories"
-        (Encode.string directory)
+        (encodePath path)
         (Decode.oneOf
-            [ Decode.list Decode.string |> Decode.map succeed
+            [ Decode.list Decode.string
+                |> Decode.map (List.map (\name -> Directory.subdirectory name directory))
+                |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
             ]
         )
@@ -570,8 +548,8 @@ type ProcessError
     | ProcessExitedWithError Int
 
 
-execute : String -> List String -> Script { p | subprocesses : Allowed } ProcessError String
-execute command arguments =
+execute : Shell -> String -> List String -> Script ProcessError String
+execute shell command arguments =
     Invoke "execute"
         (Encode.object
             [ ( "command", Encode.string command )
