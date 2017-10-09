@@ -2,10 +2,11 @@ port module Main exposing (..)
 
 import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
+import Kintail.Script.Process as Process exposing (Process)
 
 
-script : List String -> Script {} Int ()
-script arguments =
+script : Process -> Script Int ()
+script process =
     Script.print "Hello World!"
 
 

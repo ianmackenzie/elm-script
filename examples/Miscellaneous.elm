@@ -4,6 +4,7 @@ import Http
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Allowed, Script)
+import Kintail.Script.Process as Process exposing (Process)
 import Time exposing (Time)
 
 

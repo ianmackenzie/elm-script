@@ -1,19 +1,36 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, FileError, Script)
+import Kintail.Script as Script exposing (FileError, Script)
+import Kintail.Script.File as File exposing (File)
+import Kintail.Script.FileSystem as FileSystem
+import Kintail.Script.Permissions exposing (Allowed(Allowed))
+import Kintail.Script.Process as Process exposing (Process)
 
 
-getLineCount : String -> Script { p | read : Allowed } FileError Int
-getLineCount filename =
-    Script.readFile filename
+getLineCount : File { p | read : Allowed } -> Script FileError Int
+getLineCount file =
+    Script.readFile file
         |> Script.map (String.lines >> List.length)
 
 
-script : List String -> Script { read : Allowed } Int ()
-script filenames =
-    Script.collect getLineCount filenames
-        |> Script.map (List.map2 (,) filenames)
+script : Process -> Script Int ()
+script process =
+    let
+        fileSystem =
+            Process.fileSystem process
+
+        toFile path =
+            FileSystem.file { read = Allowed } path fileSystem
+
+        paths =
+            Process.arguments process
+
+        files =
+            List.map toFile paths
+    in
+    Script.collect getLineCount files
+        |> Script.map (List.map2 (,) paths)
         |> Script.andThen
             (Script.forEach
                 (\( filename, lineCount ) ->
@@ -24,7 +41,7 @@ script filenames =
         |> Script.onError (.message >> handleError)
 
 
-handleError : String -> Script p Int ()
+handleError : String -> Script Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

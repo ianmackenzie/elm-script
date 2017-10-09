@@ -2,20 +2,26 @@ port module Main exposing (..)
 
 import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Script)
+import Kintail.Script.Process as Process exposing (Process)
 
 
-script : List String -> Script {} Int ()
-script =
-    Script.forEach
-        (\argument ->
-            Script.print <|
-                case String.toFloat argument of
-                    Ok value ->
-                        argument ++ " squared is " ++ toString (value * value)
+script : Process -> Script Int ()
+script process =
+    Process.arguments process
+        |> Script.forEach
+            (\argument ->
+                Script.print <|
+                    case String.toFloat argument of
+                        Ok value ->
+                            let
+                                squared =
+                                    value * value
+                            in
+                            argument ++ " squared is " ++ toString squared
 
-                    Err _ ->
-                        argument ++ " is not a number!"
-        )
+                        Err _ ->
+                            argument ++ " is not a number!"
+            )
 
 
 port requestPort : Value -> Cmd msg

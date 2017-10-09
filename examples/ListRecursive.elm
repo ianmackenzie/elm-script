@@ -1,10 +1,15 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, FileError, Script)
+import Kintail.Script as Script exposing (FileError, Script)
+import Kintail.Script.Directory as Directory exposing (Directory)
+import Kintail.Script.File as File exposing (File)
+import Kintail.Script.FileSystem as FileSystem
+import Kintail.Script.Permissions exposing (Allowed(Allowed))
+import Kintail.Script.Process as Process exposing (Process)
 
 
-listRecursively : Int -> String -> Script { p | read : Allowed } FileError ()
+listRecursively : Int -> Directory { p | read : Allowed } -> Script FileError ()
 listRecursively level directory =
     let
         indentation =
@@ -17,24 +22,30 @@ listRecursively level directory =
                     (\subdirectory ->
                         Script.do
                             [ Script.print
-                                (indentation ++ subdirectory ++ "/")
-                            , listRecursively (level + 1)
-                                (directory ++ "/" ++ subdirectory)
+                                (indentation ++ Directory.name subdirectory ++ "/")
+                            , listRecursively (level + 1) subdirectory
                             ]
                     )
                 )
         , Script.listFiles directory
             |> Script.andThen
                 (Script.forEach
-                    (\filename -> Script.print (indentation ++ filename))
+                    (\file -> Script.print (indentation ++ File.name file))
                 )
         ]
 
 
-script : List String -> Script { read : Allowed } Int ()
-script arguments =
-    case arguments of
-        [ directory ] ->
+script : Process -> Script Int ()
+script process =
+    case Process.arguments process of
+        [ path ] ->
+            let
+                fileSystem =
+                    Process.fileSystem process
+
+                directory =
+                    FileSystem.directory { read = Allowed } path (Process.fileSystem process)
+            in
             listRecursively 0 directory
                 |> Script.onError (.message >> handleError)
 
@@ -42,7 +53,7 @@ script arguments =
             Script.print "Please supply one directory name"
 
 
-handleError : String -> Script p Int ()
+handleError : String -> Script Int ()
 handleError message =
     Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
 

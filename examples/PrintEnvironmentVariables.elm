@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Json.Encode exposing (Value)
 import Kintail.Script as Script exposing (Allowed, FileError, Script)
+import Kintail.Script.Process as Process exposing (Process)
 
 
 printEnvironmentVariable : String -> Script { p | read : Allowed } x ()
