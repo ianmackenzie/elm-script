@@ -5,9 +5,10 @@ import Kintail.Script as Script exposing (Context, Script)
 import Kintail.Script.Shell as Shell exposing (Shell)
 
 
-abort : String -> Script p Int ()
+abort : String -> Script Int a
 abort message =
-    Script.do [ Script.print message, Script.fail 1 ]
+    Script.print message
+        |> Script.andThen (\() -> Script.fail 1)
 
 
 retry : Shell -> String -> Int -> Script Int ()

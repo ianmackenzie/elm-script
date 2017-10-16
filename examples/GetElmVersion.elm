@@ -29,9 +29,10 @@ toErrorString processError =
             "Process exited with code " ++ toString code
 
 
-handleError : String -> Script Int ()
+handleError : String -> Script Int a
 handleError message =
-    Script.do [ Script.print ("ERROR: " ++ message), Script.fail 1 ]
+    Script.print ("ERROR: " ++ message)
+        |> Script.andThen (\() -> Script.fail 1)
 
 
 port requestPort : Value -> Cmd msg

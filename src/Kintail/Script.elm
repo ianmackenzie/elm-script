@@ -302,16 +302,12 @@ are given:
                 Script.print ("Hello " ++ name ++ "!")
 
             [] ->
-                Script.do
-                    [ Script.print "Please enter a name"
-                    , Script.fail 1
-                    ]
+                Script.print "Please enter a name"
+                    |> Script.andThen (\() -> Script.fail 1)
 
             _ ->
-                Script.do
-                    [ Script.print "Please enter only one name!"
-                    , Script.fail 2
-                    ]
+                Script.print "Please enter only one name!"
+                    |> Script.andThen (\() -> Script.fail 2)
 
 -}
 fail : x -> Script x a

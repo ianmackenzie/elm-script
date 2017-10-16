@@ -12,7 +12,8 @@ script context =
                 if truncate time % 100 > 87 then
                     Script.print "Succeeded"
                 else
-                    Script.do [ Script.print "Failed", Script.fail 1 ]
+                    Script.print "Failed"
+                        |> Script.andThen (\() -> Script.fail 1)
             )
 
 
