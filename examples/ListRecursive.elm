@@ -1,15 +1,14 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (FileError, Script)
+import Kintail.Script as Script exposing (Context, FileError, Script)
 import Kintail.Script.Directory as Directory exposing (Directory)
 import Kintail.Script.File as File exposing (File)
 import Kintail.Script.FileSystem as FileSystem
-import Kintail.Script.Permissions exposing (Allowed(Allowed))
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script.Permissions as Permissions exposing (Read)
 
 
-listRecursively : Int -> Directory { p | read : Allowed } -> Script FileError ()
+listRecursively : Int -> Directory (Read p) -> Script FileError ()
 listRecursively level directory =
     let
         indentation =
@@ -35,18 +34,13 @@ listRecursively level directory =
         ]
 
 
-script : Process -> Script Int ()
-script process =
-    case Process.arguments process of
+script : Context -> Script Int ()
+script { arguments, fileSystem } =
+    case arguments of
         [ path ] ->
-            let
-                fileSystem =
-                    Process.fileSystem process
-
-                directory =
-                    FileSystem.directory { read = Allowed } path (Process.fileSystem process)
-            in
-            listRecursively 0 directory
+            fileSystem
+                |> FileSystem.directory Permissions.readOnly path
+                |> listRecursively 0
                 |> Script.onError (.message >> handleError)
 
         _ ->

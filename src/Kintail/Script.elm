@@ -1,8 +1,8 @@
 module Kintail.Script
     exposing
         ( Arguments
+        , Context
         , FileError
-        , ProcessError(..)
         , Program
         , RequestPort
         , ResponsePort
@@ -14,11 +14,9 @@ module Kintail.Script
         , call
         , collect
         , do
-        , execute
         , fail
         , forEach
         , getCurrentTime
-        , getEnvironmentVariable
         , ignore
         , init
         , listFiles
@@ -32,7 +30,6 @@ module Kintail.Script
         , print
         , program
         , readFile
-        , request
         , return
         , sequence
         , sleep
@@ -45,7 +42,7 @@ module Kintail.Script
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script, Process
+@docs Script, Context
 
 
 # Permissions
@@ -65,7 +62,7 @@ various ways, and turn them into runnable programs.
 
 # Utilities
 
-@docs print, sleep, getEnvironmentVariable, getCurrentTime
+@docs print, sleep, getCurrentTime
 
 
 # Mapping
@@ -88,26 +85,25 @@ various ways, and turn them into runnable programs.
 @docs mapError, attempt, onError
 
 
-# Requests
-
-@docs request
-
-
 # Files
 
 @docs FileError, readFile, writeFile, listFiles, listSubdirectories
 
 -}
 
-import Http
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Kintail.Script.Directory as Directory exposing (Directory)
+import Kintail.Script.EnvironmentVariables exposing (EnvironmentVariables)
 import Kintail.Script.File exposing (File)
+import Kintail.Script.FileSystem as FileSystem exposing (FileSystem)
 import Kintail.Script.Internal as Internal
+import Kintail.Script.NetworkConnection exposing (NetworkConnection)
 import Kintail.Script.Path exposing (Path)
-import Kintail.Script.Permissions exposing (Allowed)
-import Kintail.Script.Process as Process exposing (EnvironmentVariables, NetworkAccess, Process, Shell)
+import Kintail.Script.Permissions exposing (Read, Write)
+import Kintail.Script.Platform as Platform exposing (Platform)
+import Kintail.Script.Shell exposing (Shell)
 import Process
 import Task exposing (Task)
 import Time exposing (Time)
@@ -121,11 +117,25 @@ requiredHostVersion =
 {-| A `Script x a` value defines a script that, when run, will either produce a
 value of type `a` or an error of type `x`.
 -}
-type Script x a
-    = Succeed a
-    | Fail x
-    | Perform (Task Never (Script x a))
-    | Invoke String Value (Decoder (Script x a))
+type alias Script x a =
+    Internal.Script x a
+
+
+type alias Context =
+    { arguments : List String
+    , environmentVariables : EnvironmentVariables
+    , fileSystem : FileSystem
+    , networkConnection : NetworkConnection
+    , shell : Shell
+    , platform : Platform
+    }
+
+
+type alias Flags =
+    { arguments : List String
+    , platformString : String
+    , environmentVariables : List ( String, String )
+    }
 
 
 type alias RequestPort =
@@ -146,10 +156,38 @@ type Msg
 
 
 type alias Program =
-    Platform.Program Internal.Flags Model Msg
+    Platform.Program Flags Model Msg
 
 
-program : (Process -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+toPlatform : String -> Platform
+toPlatform platformString =
+    case platformString of
+        "aix" ->
+            Platform.Posix
+
+        "darwin" ->
+            Platform.Posix
+
+        "freebsd" ->
+            Platform.Posix
+
+        "linux" ->
+            Platform.Posix
+
+        "openbsd" ->
+            Platform.Posix
+
+        "sunos" ->
+            Platform.Posix
+
+        "win32" ->
+            Platform.Windows
+
+        _ ->
+            Debug.crash ("Unrecognized platform '" ++ platformString ++ "'")
+
+
+program : (Context -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkHostVersion =
@@ -163,15 +201,39 @@ program main requestPort responsePort =
                 decoder =
                     Decode.null (succeed ())
             in
-            Invoke "requiredVersion" encodedVersion decoder
+            Internal.Invoke "requiredVersion" encodedVersion decoder
 
         init flags =
             let
-                process =
-                    Internal.Process flags
+                platform =
+                    toPlatform flags.platformString
+
+                environmentVariables =
+                    Internal.EnvironmentVariables platform
+                        (Dict.fromList <|
+                            -- On Windows, capitalize environment variable names
+                            -- so they can be looked up case-insensitively (same
+                            -- behavior as process.env in Node)
+                            case platform of
+                                Platform.Posix ->
+                                    flags.environmentVariables
+
+                                Platform.Windows ->
+                                    List.map (Tuple.mapFirst String.toUpper)
+                                        flags.environmentVariables
+                        )
+
+                context =
+                    { arguments = flags.arguments
+                    , environmentVariables = environmentVariables
+                    , platform = platform
+                    , fileSystem = Internal.FileSystem
+                    , networkConnection = Internal.NetworkConnection
+                    , shell = Internal.Shell
+                    }
 
                 script =
-                    checkHostVersion |> andThen (\() -> main process)
+                    checkHostVersion |> andThen (\() -> main context)
             in
             ( Model script, commands script )
 
@@ -184,16 +246,16 @@ program main requestPort responsePort =
 
         commands script =
             case script of
-                Succeed () ->
+                Internal.Succeed () ->
                     submitRequest "exit" (Encode.int 0)
 
-                Fail errorCode ->
+                Internal.Fail errorCode ->
                     submitRequest "exit" (Encode.int errorCode)
 
-                Perform task ->
+                Internal.Perform task ->
                     Task.perform Updated task
 
-                Invoke name value _ ->
+                Internal.Invoke name value _ ->
                     submitRequest name value
 
         update message (Model current) =
@@ -203,7 +265,7 @@ program main requestPort responsePort =
 
                 Response value ->
                     case current of
-                        Invoke _ _ decoder ->
+                        Internal.Invoke _ _ decoder ->
                             case Decode.decodeValue decoder value of
                                 Ok updated ->
                                     ( Model updated, commands updated )
@@ -225,7 +287,7 @@ program main requestPort responsePort =
 -}
 succeed : a -> Script x a
 succeed =
-    Succeed
+    Internal.Succeed
 
 
 {-| A script that fails immediately with the given value. The following script
@@ -254,7 +316,7 @@ are given:
 -}
 fail : x -> Script x a
 fail =
-    Fail
+    Internal.Fail
 
 
 {-| Synonym for `succeed` that reads better when used to 'kick off' a script:
@@ -271,19 +333,12 @@ init =
 
 print : String -> Script x ()
 print string =
-    Invoke "print" (Encode.string string) (Decode.null (succeed ()))
+    Internal.Invoke "print" (Encode.string string) (Decode.null (succeed ()))
 
 
 sleep : Time -> Script x ()
 sleep time =
-    Perform (Task.map succeed (Process.sleep time))
-
-
-getEnvironmentVariable : EnvironmentVariables { p | read : Allowed } -> String -> Script x (Maybe String)
-getEnvironmentVariable environmentVariables name =
-    Invoke "getEnvironmentVariable"
-        (Encode.string name)
-        (Decode.nullable Decode.string |> Decode.map succeed)
+    Internal.Perform (Task.map succeed (Process.sleep time))
 
 
 getCurrentTime : Script x Time
@@ -364,17 +419,17 @@ collect function values =
 andThen : (a -> Script x b) -> Script x a -> Script x b
 andThen function script =
     case script of
-        Succeed value ->
+        Internal.Succeed value ->
             function value
 
-        Fail error ->
+        Internal.Fail error ->
             fail error
 
-        Perform task ->
-            Perform (Task.map (andThen function) task)
+        Internal.Perform task ->
+            Internal.Perform (Task.map (andThen function) task)
 
-        Invoke name value decoder ->
-            Invoke name value (Decode.map (andThen function) decoder)
+        Internal.Invoke name value decoder ->
+            Internal.Invoke name value (Decode.map (andThen function) decoder)
 
 
 aside : (a -> Script x ()) -> Script x a -> Script x a
@@ -449,27 +504,22 @@ attempt =
 onError : (x -> Script y a) -> Script x a -> Script y a
 onError recover script =
     case script of
-        Succeed value ->
+        Internal.Succeed value ->
             succeed value
 
-        Fail error ->
+        Internal.Fail error ->
             recover error
 
-        Perform task ->
-            Perform (Task.map (onError recover) task)
+        Internal.Perform task ->
+            Internal.Perform (Task.map (onError recover) task)
 
-        Invoke name value decoder ->
-            Invoke name value (Decode.map (onError recover) decoder)
+        Internal.Invoke name value decoder ->
+            Internal.Invoke name value (Decode.map (onError recover) decoder)
 
 
 perform : Task x a -> Script x a
 perform =
-    Task.map succeed >> Task.onError (fail >> Task.succeed) >> Perform
-
-
-request : NetworkAccess -> Http.Request a -> Script Http.Error a
-request networkAccess =
-    Http.toTask >> perform
+    Task.map succeed >> Task.onError (fail >> Task.succeed) >> Internal.Perform
 
 
 type alias FileError =
@@ -490,9 +540,9 @@ encodePath path =
     Encode.list (List.map Encode.string path)
 
 
-readFile : File { p | read : Allowed } -> Script FileError String
+readFile : File (Read p) -> Script FileError String
 readFile (Internal.File path) =
-    Invoke "readFile"
+    Internal.Invoke "readFile"
         (encodePath path)
         (Decode.oneOf
             [ Decode.string |> Decode.map succeed
@@ -501,9 +551,9 @@ readFile (Internal.File path) =
         )
 
 
-writeFile : File { p | write : Allowed } -> String -> Script FileError ()
+writeFile : File (Write p) -> String -> Script FileError ()
 writeFile (Internal.File path) contents =
-    Invoke "writeFile"
+    Internal.Invoke "writeFile"
         (Encode.object
             [ ( "path", encodePath path )
             , ( "contents", Encode.string contents )
@@ -516,9 +566,9 @@ writeFile (Internal.File path) contents =
         )
 
 
-listFiles : Directory { p | read : Allowed } -> Script FileError (List (File { p | read : Allowed }))
+listFiles : Directory (Read p) -> Script FileError (List (File (Read p)))
 listFiles ((Internal.Directory path) as directory) =
-    Invoke "listFiles"
+    Internal.Invoke "listFiles"
         (encodePath path)
         (Decode.oneOf
             [ Decode.list Decode.string
@@ -529,53 +579,14 @@ listFiles ((Internal.Directory path) as directory) =
         )
 
 
-listSubdirectories : Directory { p | read : Allowed } -> Script FileError (List (Directory { p | read : Allowed }))
+listSubdirectories : Directory (Read p) -> Script FileError (List (Directory (Read p)))
 listSubdirectories ((Internal.Directory path) as directory) =
-    Invoke "listSubdirectories"
+    Internal.Invoke "listSubdirectories"
         (encodePath path)
         (Decode.oneOf
             [ Decode.list Decode.string
                 |> Decode.map (List.map (\name -> Directory.subdirectory name directory))
                 |> Decode.map succeed
             , fileErrorDecoder |> Decode.map fail
-            ]
-        )
-
-
-type ProcessError
-    = ProcessFailed String
-    | ProcessWasTerminated
-    | ProcessExitedWithError Int
-
-
-execute : Shell -> String -> List String -> Script ProcessError String
-execute shell command arguments =
-    Invoke "execute"
-        (Encode.object
-            [ ( "command", Encode.string command )
-            , ( "arguments", Encode.list (List.map Encode.string arguments) )
-            ]
-        )
-        (Decode.oneOf
-            [ Decode.string |> Decode.map succeed
-            , Decode.field "error" Decode.string
-                |> Decode.andThen
-                    (\error ->
-                        case error of
-                            "failed" ->
-                                Decode.field "message" Decode.string
-                                    |> Decode.map ProcessFailed
-
-                            "terminated" ->
-                                Decode.succeed ProcessWasTerminated
-
-                            "exited" ->
-                                Decode.field "code" Decode.int
-                                    |> Decode.map ProcessExitedWithError
-
-                            _ ->
-                                Decode.fail "Unexpected execution error type"
-                    )
-                |> Decode.map fail
             ]
         )

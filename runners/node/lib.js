@@ -21,7 +21,7 @@ function listEntities(request, responsePort, statsPredicate) {
   }
 }
 
-function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
+function runCompiledJs(compiledJs, commandLineArgs) {
   // Set up browser-like context in which to run compiled Elm code
   global.XMLHttpRequest = require("xhr2");
   global.setTimeout = require("timers").setTimeout;
@@ -31,7 +31,8 @@ function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
   // Create Elm worker and get its request/response ports
   let flags = {};
   flags["arguments"] = commandLineArgs;
-  flags["workingDirectory"] = workingDirectory;
+  flags["platformString"] = process.platform;
+  flags["environmentVariables"] = Object.entries(process.env);
   let script = global["Elm"].Main.worker(flags);
   let requestPort = script.ports.requestPort;
   let responsePort = script.ports.responsePort;
@@ -101,9 +102,6 @@ function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
           responsePort.send({ code: error.code, message: error.message });
         }
         break;
-      case "getEnvironmentVariable":
-        responsePort.send(process.env[request.value] || null);
-        break;
       case "listFiles":
         listEntities(request, responsePort, stats => stats.isFile());
         break;
@@ -112,13 +110,8 @@ function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
         break;
       case "execute":
         try {
-          let command = request.value.command;
-          let args = request.value.arguments;
           let options = { encoding: "utf8", maxBuffer: 1024 * 1024 * 1024 };
-          let output = child_process.execSync(
-            command + " " + args.join(" "),
-            options
-          );
+          let output = child_process.execSync(request.value, options);
           responsePort.send(output);
         } catch (error) {
           if (error.status !== null) {
@@ -141,13 +134,12 @@ function runCompiledJs(compiledJs, commandLineArgs, workingDirectory) {
 }
 
 module.exports = function(elmFileName, commandLineArgs) {
-  let workingDirectory = process.cwd();
   let absolutePath = path.resolve(elmFileName);
   let directory = path.dirname(absolutePath);
   let compileOptions = { yes: true, cwd: directory };
   compileToString(absolutePath, compileOptions)
     .then(function(compiledJs) {
-      runCompiledJs(compiledJs, commandLineArgs, workingDirectory);
+      runCompiledJs(compiledJs, commandLineArgs);
     })
     .catch(function(error) {
       console.log(error.message);

@@ -1,15 +1,18 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.FileSystem as FileSystem
+import Kintail.Script.Permissions as Permissions
 
 
-script : List String -> Script { read : Allowed } Int ()
-script arguments =
+script : Context -> Script Int ()
+script { arguments, fileSystem } =
     case arguments of
-        [ filename ] ->
-            Script.readFile filename
+        [ path ] ->
+            fileSystem
+                |> FileSystem.file Permissions.readOnly path
+                |> Script.readFile
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen

@@ -1,6 +1,7 @@
-module Kintail.Script.Path exposing (Path, name)
+module Kintail.Script.Path exposing (Path, name, separator)
 
 import Kintail.Script.Internal as Internal
+import Kintail.Script.Platform as Platform exposing (Platform)
 import Regex exposing (Regex)
 
 
@@ -26,3 +27,13 @@ name path =
 
         _ ->
             ""
+
+
+separator : Platform -> String
+separator platform =
+    case platform of
+        Platform.Posix ->
+            "/"
+
+        Platform.Windows ->
+            "\\"

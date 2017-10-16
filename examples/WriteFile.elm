@@ -1,18 +1,28 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.FileSystem as FileSystem
+import Kintail.Script.Permissions as Permissions
 
 
-script : List String -> Script { read : Allowed, write : Allowed } Int ()
-script arguments =
-    Script.readFile "test.txt"
+script : Context -> Script Int ()
+script { fileSystem } =
+    let
+        inputFile =
+            fileSystem
+                |> FileSystem.file Permissions.readOnly "test.txt"
+
+        outputFile =
+            fileSystem
+                |> FileSystem.file Permissions.writeOnly "reversed.txt"
+    in
+    Script.readFile inputFile
         |> Script.map String.lines
         |> Script.map List.reverse
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.map (String.join "\n")
-        |> Script.andThen (Script.writeFile "reversed.txt")
+        |> Script.andThen (Script.writeFile outputFile)
         |> Script.onError (.message >> handleError)
 
 

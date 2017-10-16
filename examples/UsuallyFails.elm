@@ -1,13 +1,11 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
-import Time
+import Kintail.Script as Script exposing (Context, Script)
 
 
-script : List String -> Script {} Int ()
-script _ =
+script : Context -> Script Int ()
+script context =
     Script.getCurrentTime
         |> Script.andThen
             (\time ->

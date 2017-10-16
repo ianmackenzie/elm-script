@@ -1,12 +1,11 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
 import Time
 
 
-computeProduct : Script p x Int
+computeProduct : Script x Int
 computeProduct =
     Script.with (Script.succeed 3)
         |> Script.andWith (Script.succeed "four")
@@ -17,8 +16,8 @@ computeProduct =
             )
 
 
-script : List String -> Script {} Int ()
-script arguments =
+script : Context -> Script Int ()
+script context =
     Script.with computeProduct
         |> Script.andWith Script.getCurrentTime
         |> Script.yield

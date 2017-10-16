@@ -1,14 +1,16 @@
 module Kintail.Script.Internal exposing (..)
 
+import Dict exposing (Dict)
+import Json.Decode exposing (Decoder, Value)
+import Kintail.Script.Platform as Platform exposing (Platform)
+import Task exposing (Task)
 
-type Process
-    = Process Flags
 
-
-type alias Flags =
-    { arguments : List String
-    , workingDirectory : String
-    }
+type Script x a
+    = Succeed a
+    | Fail x
+    | Perform (Task Never (Script x a))
+    | Invoke String Value (Decoder (Script x a))
 
 
 type FileSystem
@@ -27,12 +29,12 @@ type File p
     = File Path
 
 
-type EnvironmentVariables p
-    = EnvironmentVariables
+type EnvironmentVariables
+    = EnvironmentVariables Platform (Dict String String)
 
 
-type NetworkAccess
-    = NetworkAccess
+type NetworkConnection
+    = NetworkConnection
 
 
 type Shell

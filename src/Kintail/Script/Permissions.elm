@@ -1,8 +1,10 @@
 module Kintail.Script.Permissions
     exposing
-        ( Allowed(Allowed)
+        ( Allowed
+        , Read
         , ReadOnly
         , ReadWrite
+        , Write
         , WriteOnly
         , readOnly
         , readWrite
@@ -12,6 +14,14 @@ module Kintail.Script.Permissions
 
 type Allowed
     = Allowed
+
+
+type alias Read p =
+    { p | read : Allowed }
+
+
+type alias Write p =
+    { p | write : Allowed }
 
 
 type alias ReadOnly =

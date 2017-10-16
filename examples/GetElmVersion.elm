@@ -1,13 +1,13 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (ProcessError(..), Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.Shell as Shell exposing (ProcessError(..))
 
 
-script : Process -> Script Int ()
-script process =
-    Script.execute (Process.shell process) "elm" [ "--version" ]
+script : Context -> Script Int ()
+script { shell } =
+    Shell.execute "elm --version" shell
         |> Script.map String.trim
         |> Script.andThen
             (\versionString ->

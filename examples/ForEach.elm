@@ -1,13 +1,12 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
 
 
-script : Process -> Script Int ()
-script process =
-    Process.arguments process
+script : Context -> Script Int ()
+script { arguments } =
+    arguments
         |> Script.forEach
             (\argument ->
                 Script.print <|

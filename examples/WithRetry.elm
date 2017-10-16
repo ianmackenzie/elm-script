@@ -1,8 +1,8 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.Shell as Shell exposing (Shell)
 
 
 abort : String -> Script p Int ()
@@ -10,42 +10,42 @@ abort message =
     Script.do [ Script.print message, Script.fail 1 ]
 
 
-retry : String -> List String -> Int -> Script { p | subprocesses : Allowed } Int ()
-retry executable arguments maxCount =
-    Script.execute executable arguments
+retry : Shell -> String -> Int -> Script Int ()
+retry shell command count =
+    Shell.execute command shell
         |> Script.andThen Script.print
         |> Script.onError
             (\error ->
-                if maxCount > 0 then
+                if count > 0 then
                     case error of
-                        Script.ProcessExitedWithError _ ->
-                            Script.do
-                                [ Script.print
-                                    "Process exited with error, retrying..."
-                                , retry executable arguments (maxCount - 1)
-                                ]
+                        Shell.ProcessExitedWithError _ ->
+                            Script.print "Process exited with error, retrying..."
+                                |> Script.andThen
+                                    (\() -> retry shell command (count - 1))
 
-                        Script.ProcessWasTerminated ->
+                        Shell.ProcessWasTerminated ->
                             abort "Process was terminated"
 
-                        Script.ProcessFailed message ->
+                        Shell.ProcessFailed message ->
                             abort ("Process could not be run: " ++ message)
                 else
                     abort "Process failed too many times"
             )
 
 
-script : List String -> Script { subprocesses : Allowed } Int ()
-script arguments =
+script : Context -> Script Int ()
+script { arguments, shell } =
     case arguments of
-        executable :: rest ->
-            retry executable rest 5
-
         [] ->
-            Script.do
-                [ Script.print "Please enter an executable to run"
-                , Script.fail 1
-                ]
+            Script.print "Please enter an executable to run"
+                |> Script.andThen (\() -> Script.fail 1)
+
+        _ ->
+            let
+                command =
+                    String.join " " arguments
+            in
+            retry shell command 5
 
 
 port requestPort : Value -> Cmd msg

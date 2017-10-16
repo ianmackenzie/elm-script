@@ -1,36 +1,26 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (FileError, Script)
+import Kintail.Script as Script exposing (Context, FileError, Script)
 import Kintail.Script.File as File exposing (File)
 import Kintail.Script.FileSystem as FileSystem
-import Kintail.Script.Permissions exposing (Allowed(Allowed))
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script.Permissions as Permissions exposing (Read, ReadOnly)
 
 
-getLineCount : File { p | read : Allowed } -> Script FileError Int
+getLineCount : File (Read p) -> Script FileError Int
 getLineCount file =
     Script.readFile file
         |> Script.map (String.lines >> List.length)
 
 
-script : Process -> Script Int ()
-script process =
+script : Context -> Script Int ()
+script { arguments, fileSystem } =
     let
-        fileSystem =
-            Process.fileSystem process
-
         toFile path =
-            FileSystem.file { read = Allowed } path fileSystem
-
-        paths =
-            Process.arguments process
-
-        files =
-            List.map toFile paths
+            FileSystem.file Permissions.readOnly path fileSystem
     in
-    Script.collect getLineCount files
-        |> Script.map (List.map2 (,) paths)
+    Script.collect getLineCount (List.map toFile arguments)
+        |> Script.map (List.map2 (,) arguments)
         |> Script.andThen
             (Script.forEach
                 (\( filename, lineCount ) ->

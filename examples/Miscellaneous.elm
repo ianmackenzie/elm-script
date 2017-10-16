@@ -3,19 +3,19 @@ port module Main exposing (..)
 import Http
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.NetworkConnection as NetworkConnection exposing (NetworkConnection)
 import Time exposing (Time)
 
 
-script : List String -> Script { http : Allowed } Int ()
-script arguments =
+script : Context -> Script Int ()
+script { networkConnection } =
     Script.init { text = "A", number = 2 }
         |> Script.aside
             (\model ->
                 Script.do
                     [ Script.print model.text
-                    , printCurrentTime
+                    , printCurrentTime networkConnection
                     , Script.sleep (0.5 * Time.second)
                     ]
             )
@@ -24,9 +24,9 @@ script arguments =
             (\number ->
                 Script.do
                     [ Script.print (toString number)
-                    , printCurrentTime
+                    , printCurrentTime networkConnection
                     , Script.sleep (0.5 * Time.second)
-                    , getCurrentTime |> Script.ignore
+                    , getCurrentTime networkConnection |> Script.ignore
                     ]
             )
         |> Script.andThen
@@ -39,8 +39,8 @@ script arguments =
         |> Script.onError handleError
 
 
-getCurrentTime : Script { p | http : Allowed } String String
-getCurrentTime =
+getCurrentTime : NetworkConnection -> Script String String
+getCurrentTime networkConnection =
     let
         url =
             "http://time.jsontest.com/"
@@ -48,13 +48,14 @@ getCurrentTime =
         decoder =
             Decode.field "time" Decode.string
     in
-    Script.request (Http.get url decoder)
+    networkConnection
+        |> NetworkConnection.sendRequest (Http.get url decoder)
         |> Script.mapError (always "HTTP request failed")
 
 
-printCurrentTime : Script { p | http : Allowed } String ()
-printCurrentTime =
-    getCurrentTime |> Script.andThen Script.print
+printCurrentTime : NetworkConnection -> Script String ()
+printCurrentTime networkConnection =
+    getCurrentTime networkConnection |> Script.andThen Script.print
 
 
 handleError : String -> Script p Int ()

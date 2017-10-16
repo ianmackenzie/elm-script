@@ -1,20 +1,23 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Allowed, FileError, Script)
-import Kintail.Script.Process as Process exposing (Process)
+import Kintail.Script as Script exposing (Context, Script)
+import Kintail.Script.EnvironmentVariables as EnvironmentVariables exposing (EnvironmentVariables)
 
 
-printEnvironmentVariable : String -> Script { p | read : Allowed } x ()
-printEnvironmentVariable name =
-    Script.getEnvironmentVariable name
-        |> Script.map (Maybe.withDefault "not defined")
-        |> Script.andThen (\value -> Script.print (name ++ ": " ++ value))
+printEnvironmentVariable : EnvironmentVariables -> String -> Script x ()
+printEnvironmentVariable environmentVariables name =
+    let
+        value =
+            EnvironmentVariables.get name environmentVariables
+                |> Maybe.withDefault "not defined"
+    in
+    Script.print (name ++ ": " ++ value)
 
 
-script : List String -> Script { read : Allowed } Int ()
-script names =
-    names |> Script.forEach printEnvironmentVariable
+script : Context -> Script Int ()
+script { arguments, environmentVariables } =
+    arguments |> Script.forEach (printEnvironmentVariable environmentVariables)
 
 
 port requestPort : Value -> Cmd msg
