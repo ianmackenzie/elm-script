@@ -1,4 +1,4 @@
-## kintail/script
+## ianmackenzie/script
 
 This package allows you define command-line scripts in Elm that can read and
 write files, accept command-line arguments, and perform any other tasks that are
@@ -8,11 +8,11 @@ This package is currently experimental - expect breaking changes.
 
 # Getting started
 
-`kintail/script` has not yet been published, so right now if you want to play
-around with it you'll have to check out this repository. You can then either
-just experiment with the files in the `examples` directory, or add the `src`
-directory of this package to the `source-directories` field in your package's
-`elm-package.json`.
+`ianmackenzie/script` has not yet been published, so right now if you want to
+play around with it you'll have to check out this repository. You can then
+either just experiment with the files in the `examples` directory, or add the
+`src` directory of this package to the `source-directories` field in your
+package's `elm-package.json`.
 
 To create a new script, create a `Main.elm` file that looks like this:
 
@@ -49,7 +49,7 @@ directory run `npm link` to use the current version. You should then be able to
 run your script with:
 
 ```
-elm-run main.js
+elm-run Main.elm
 ```
 
 Refer to the API documentation for more details, or check out some more

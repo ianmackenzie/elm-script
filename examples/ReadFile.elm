@@ -1,9 +1,9 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Context, Script)
-import Kintail.Script.FileSystem as FileSystem
-import Kintail.Script.Permissions as Permissions
+import Script exposing (Context, Script)
+import Script.FileSystem as FileSystem
+import Script.Permissions as Permissions
 
 
 script : Context -> Script Int ()

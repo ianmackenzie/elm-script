@@ -1,8 +1,8 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Context, Script)
-import Kintail.Script.Shell as Shell exposing (Shell)
+import Script exposing (Context, Script)
+import Script.Shell as Shell exposing (Shell)
 
 
 abort : String -> Script Int a

@@ -1,4 +1,4 @@
-module Kintail.Script.Platform
+module Script.Platform
     exposing
         ( Platform(..)
         , lineSeparator

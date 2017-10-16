@@ -1,11 +1,11 @@
-module Kintail.Script.NetworkConnection
+module Script.NetworkConnection
     exposing
         ( NetworkConnection
         , sendRequest
         )
 
 import Http
-import Kintail.Script.Internal as Internal
+import Script.Internal as Internal
 import Task
 
 

@@ -1,4 +1,4 @@
-module Kintail.Script.Directory
+module Script.Directory
     exposing
         ( Directory
         , file
@@ -6,9 +6,9 @@ module Kintail.Script.Directory
         , subdirectory
         )
 
-import Kintail.Script.File as File exposing (File)
-import Kintail.Script.Internal as Internal
-import Kintail.Script.Path as Path
+import Script.File as File exposing (File)
+import Script.Internal as Internal
+import Script.Path as Path
 
 
 type alias Directory p =

@@ -1,4 +1,4 @@
-module Kintail.Script
+module Script
     exposing
         ( Arguments
         , Context
@@ -94,17 +94,17 @@ various ways, and turn them into runnable programs.
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Kintail.Script.Directory as Directory exposing (Directory)
-import Kintail.Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Kintail.Script.File exposing (File)
-import Kintail.Script.FileSystem as FileSystem exposing (FileSystem)
-import Kintail.Script.Internal as Internal
-import Kintail.Script.NetworkConnection exposing (NetworkConnection)
-import Kintail.Script.Path exposing (Path)
-import Kintail.Script.Permissions exposing (Read, Write)
-import Kintail.Script.Platform as Platform exposing (Platform)
-import Kintail.Script.Shell exposing (Shell)
 import Process
+import Script.Directory as Directory exposing (Directory)
+import Script.EnvironmentVariables exposing (EnvironmentVariables)
+import Script.File exposing (File)
+import Script.FileSystem as FileSystem exposing (FileSystem)
+import Script.Internal as Internal
+import Script.NetworkConnection exposing (NetworkConnection)
+import Script.Path exposing (Path)
+import Script.Permissions exposing (Read, Write)
+import Script.Platform as Platform exposing (Platform)
+import Script.Shell exposing (Shell)
 import Task exposing (Task)
 import Time exposing (Time)
 

@@ -1,8 +1,8 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Context, Script)
-import Kintail.Script.EnvironmentVariables as EnvironmentVariables exposing (EnvironmentVariables)
+import Script exposing (Context, Script)
+import Script.EnvironmentVariables as EnvironmentVariables exposing (EnvironmentVariables)
 
 
 printEnvironmentVariable : EnvironmentVariables -> String -> Script x ()

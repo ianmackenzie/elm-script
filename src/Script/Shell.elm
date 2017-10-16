@@ -1,8 +1,8 @@
-module Kintail.Script.Shell exposing (ProcessError(..), Shell, execute)
+module Script.Shell exposing (ProcessError(..), Shell, execute)
 
 import Json.Decode as Decode
 import Json.Encode as Encode
-import Kintail.Script.Internal as Internal
+import Script.Internal as Internal
 
 
 type alias Shell =

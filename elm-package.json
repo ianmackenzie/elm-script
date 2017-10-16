@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
     "summary": "Experimental command-line scripting in Elm",
-    "repository": "https://github.com/kintail/script.git",
+    "repository": "https://github.com/ianmackenzie/script.git",
     "license": "MPL-2.0",
     "source-directories": [
         "src"

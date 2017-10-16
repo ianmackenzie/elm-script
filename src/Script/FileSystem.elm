@@ -1,4 +1,4 @@
-module Kintail.Script.FileSystem
+module Script.FileSystem
     exposing
         ( FileSystem
         , directory
@@ -6,11 +6,11 @@ module Kintail.Script.FileSystem
         , pathSeparator
         )
 
-import Kintail.Script.Directory as Directory exposing (Directory)
-import Kintail.Script.File as File exposing (File)
-import Kintail.Script.Internal as Internal
-import Kintail.Script.Path as Path
-import Kintail.Script.Platform as Platform exposing (Platform)
+import Script.Directory as Directory exposing (Directory)
+import Script.File as File exposing (File)
+import Script.Internal as Internal
+import Script.Path as Path
+import Script.Platform as Platform exposing (Platform)
 
 
 type alias FileSystem =

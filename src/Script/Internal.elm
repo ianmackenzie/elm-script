@@ -1,8 +1,8 @@
-module Kintail.Script.Internal exposing (..)
+module Script.Internal exposing (..)
 
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value)
-import Kintail.Script.Platform as Platform exposing (Platform)
+import Script.Platform as Platform exposing (Platform)
 import Task exposing (Task)
 
 

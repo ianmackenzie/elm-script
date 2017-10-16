@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Context, Script)
+import Script exposing (Context, Script)
 
 
 script : Context -> Script Int ()

@@ -1,4 +1,4 @@
-module Kintail.Script.Permissions
+module Script.Permissions
     exposing
         ( Allowed
         , Read

@@ -1,8 +1,8 @@
-module Kintail.Script.EnvironmentVariables exposing (EnvironmentVariables, get)
+module Script.EnvironmentVariables exposing (EnvironmentVariables, get)
 
 import Dict
-import Kintail.Script.Internal as Internal
-import Kintail.Script.Platform as Platform exposing (Platform(..))
+import Script.Internal as Internal
+import Script.Platform as Platform exposing (Platform(..))
 
 
 type alias EnvironmentVariables =

@@ -1,11 +1,11 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Kintail.Script as Script exposing (Context, FileError, Script)
-import Kintail.Script.Directory as Directory exposing (Directory)
-import Kintail.Script.File as File exposing (File)
-import Kintail.Script.FileSystem as FileSystem
-import Kintail.Script.Permissions as Permissions exposing (Read)
+import Script exposing (Context, FileError, Script)
+import Script.Directory as Directory exposing (Directory)
+import Script.File as File exposing (File)
+import Script.FileSystem as FileSystem
+import Script.Permissions as Permissions exposing (Read)
 
 
 listRecursively : Int -> Directory (Read p) -> Script FileError ()

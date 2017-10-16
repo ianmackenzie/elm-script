@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "kintail/script examples",
-    "repository": "https://github.com/kintail/script.git",
+    "summary": "ianmackenzie/script examples",
+    "repository": "https://github.com/ianmackenzie/script.git",
     "license": "MPL-2.0",
     "source-directories": [
         ".",
