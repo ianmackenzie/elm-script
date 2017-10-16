@@ -1,10 +1,35 @@
 ## ianmackenzie/script
 
-This package allows you define command-line scripts in Elm that can read and
-write files, accept command-line arguments, and perform any other tasks that are
-possible in Elm such as making HTTP requests.
+*EXPERIMENTAL* - expect breaking changes.
 
-This package is currently experimental - expect breaking changes.
+This package allows you define command-line scripts in Elm that can
+
+  - Read and write files
+  - Accept command-line arguments
+  - Read environment variables
+  - Make HTTP requests
+  - Run subprocesses
+
+One of they key features of this package is very explicit control over
+permissions - the top-level script has full access to all of the above
+functionality, but it can choose exactly how much access to give to helper
+scripts. A `Script` cannot by default do anything other than a few harmless
+things like getting the current time and printing to the console; in order to do
+anything more, it must explicitly be given read access to a particular
+directory, write access to a particular file, network access etc. So if you see
+a function like
+
+```elm
+countLines : Directory (Read p) -> Script Error Int
+```
+
+then you know that the returned script can read files within the directory that
+you pass it, but it can't read any files outside of that directory, it can't
+write to any files at all, and it can't access the network (to, say, send the
+contents of `passwords.txt` to a nefarious server somewhere). My hope is that
+this will make it possible to share scripting functionality via the Elm package
+system without worrying that some script written by a stranger is going to
+format your hard drive.
 
 # Getting started
 
