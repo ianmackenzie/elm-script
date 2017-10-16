@@ -19,11 +19,11 @@ To create a new script, create a `Main.elm` file that looks like this:
 ```elm
 port module Main exposing (..)
 
-import Kintail.Script as Script
+import Script exposing (Script, Context)
 import Json.Encode exposing (Value)
 
-script : List String -> Script Int ()
-script arguments =
+script : Context -> Script Int ()
+script context =
     Script.print "Hello World!"
 
 port requestPort : Value -> Cmd msg
@@ -37,11 +37,7 @@ main =
 (The top-level script must have the type `Script Int ()`, i.e. the script must
 either fail with an integer error code or succeed with the unit value, but it
 can be composed out of smaller scripts that produce any kinds of errors and
-success values.) Compile this file with:
-
-```
-elm make --output main.js Main.elm
-```
+success values.)
 
 To actually run the compiled script, you will need the Node-based `elm-run`
 runner script. This has also not yet been published, so in the `runners/node`
