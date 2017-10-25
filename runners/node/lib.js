@@ -9,9 +9,28 @@ let path = require("path");
 let child_process = require("child_process");
 let compileToString = require("node-elm-compiler").compileToString;
 
+function resolvePath(components) {
+  if (components.length == 0) {
+    throw { code: "ENOENT", message: "Empty path given" };
+  }
+
+  let result = path.normalize(components[0]);
+  for (var i = 1; i < components.length; i++) {
+    let childPath = path.resolve(result, components[i]);
+    if (path.relative(result, childPath).startsWith("..")) {
+      throw {
+        code: "EACCES",
+        message: components[i] + " does not specify a child path"
+      };
+    }
+    result = childPath;
+  }
+  return result;
+}
+
 function listEntities(request, responsePort, statsPredicate) {
   try {
-    let directoryPath = path.join(...request.value);
+    let directoryPath = resolvePath(request.value);
     let results = fs.readdirSync(directoryPath).filter(function(entity) {
       return statsPredicate(fs.statSync(path.resolve(directoryPath, entity)));
     });
@@ -85,7 +104,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
         process.exit(request.value);
       case "readFile":
         try {
-          let filePath = path.join(...request.value);
+          let filePath = resolvePath(request.value);
           let contents = fs.readFileSync(filePath, "utf8");
           responsePort.send(contents);
         } catch (error) {
@@ -94,7 +113,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
         break;
       case "writeFile":
         try {
-          let filePath = path.join(...request.value.path);
+          let filePath = resolvePath(request.value.path);
           let contents = request.value.contents;
           fs.writeFileSync(filePath, contents, "utf8");
           responsePort.send(null);
