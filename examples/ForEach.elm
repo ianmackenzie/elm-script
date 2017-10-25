@@ -9,7 +9,7 @@ script { arguments } =
     arguments
         |> Script.forEach
             (\argument ->
-                Script.print <|
+                Script.printLine <|
                     case String.toFloat argument of
                         Ok value ->
                             let

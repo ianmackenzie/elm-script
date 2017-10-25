@@ -29,7 +29,7 @@ script { fileSystem } =
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

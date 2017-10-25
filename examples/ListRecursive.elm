@@ -20,7 +20,7 @@ listRecursively level directory =
                 (Script.forEach
                     (\subdirectory ->
                         Script.do
-                            [ Script.print
+                            [ Script.printLine
                                 (indentation ++ Directory.name subdirectory ++ "/")
                             , listRecursively (level + 1) subdirectory
                             ]
@@ -29,7 +29,7 @@ listRecursively level directory =
         , Directory.listFiles directory
             |> Script.andThen
                 (Script.forEach
-                    (\file -> Script.print (indentation ++ File.name file))
+                    (\file -> Script.printLine (indentation ++ File.name file))
                 )
         ]
 
@@ -44,12 +44,12 @@ script { arguments, fileSystem } =
                 |> Script.onError (.message >> handleError)
 
         _ ->
-            Script.print "Please supply one directory name"
+            Script.printLine "Please supply one directory name"
 
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

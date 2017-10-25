@@ -23,8 +23,8 @@ script context =
         |> Script.yield
             (\product time ->
                 Script.do
-                    [ Script.print ("Product: " ++ toString product)
-                    , Script.print
+                    [ Script.printLine ("Product: " ++ toString product)
+                    , Script.printLine
                         ("Current time: " ++ toString (Time.inSeconds time))
                     ]
             )

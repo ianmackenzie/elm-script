@@ -1,6 +1,6 @@
 "use strict";
 
-let majorVersion = 2;
+let majorVersion = 3;
 let minorVersion = 0;
 
 let vm = require("vm");
@@ -96,8 +96,8 @@ function runCompiledJs(compiledJs, commandLineArgs) {
           responsePort.send(null);
         }
         break;
-      case "print":
-        console.log(request.value);
+      case "stdout":
+        process.stdout.write(request.value);
         responsePort.send(null);
         break;
       case "exit":

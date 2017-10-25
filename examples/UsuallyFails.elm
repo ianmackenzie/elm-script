@@ -10,9 +10,9 @@ script context =
         |> Script.andThen
             (\time ->
                 if truncate time % 100 > 87 then
-                    Script.print "Succeeded"
+                    Script.printLine "Succeeded"
                 else
-                    Script.print "Failed"
+                    Script.printLine "Failed"
                         |> Script.andThen (\() -> Script.fail 1)
             )
 

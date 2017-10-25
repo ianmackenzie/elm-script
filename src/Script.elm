@@ -22,7 +22,7 @@ module Script
         , map4
         , mapError
         , onError
-        , print
+        , printLine
         , program
         , return
         , sequence
@@ -50,7 +50,7 @@ various ways, and turn them into runnable programs.
 
 # Utilities
 
-@docs print, sleep, getCurrentTime
+@docs printLine, sleep, getCurrentTime
 
 
 # Mapping
@@ -90,7 +90,7 @@ import Time exposing (Time)
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 2, 0 )
+    ( 3, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
@@ -299,14 +299,14 @@ are given:
     script args =
         case args of
             [ name ] ->
-                Script.print ("Hello " ++ name ++ "!")
+                Script.printLine ("Hello " ++ name ++ "!")
 
             [] ->
-                Script.print "Please enter a name"
+                Script.printLine "Please enter a name"
                     |> Script.andThen (\() -> Script.fail 1)
 
             _ ->
-                Script.print "Please enter only one name!"
+                Script.printLine "Please enter only one name!"
                     |> Script.andThen (\() -> Script.fail 2)
 
 -}
@@ -315,9 +315,18 @@ fail =
     Internal.Fail
 
 
-print : String -> Script x ()
-print string =
-    Internal.Invoke "print" (Encode.string string) (Decode.null (succeed ()))
+printLine : String -> Script x ()
+printLine string =
+    let
+        stringWithNewline =
+            if String.endsWith "\n" string then
+                string
+            else
+                string ++ "\n"
+    in
+    Internal.Invoke "stdout"
+        (Encode.string stringWithNewline)
+        (Decode.null (succeed ()))
 
 
 sleep : Time -> Script x ()

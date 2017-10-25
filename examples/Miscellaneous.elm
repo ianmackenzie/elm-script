@@ -14,7 +14,7 @@ script { networkConnection } =
         |> Script.aside
             (\model ->
                 Script.do
-                    [ Script.print model.text
+                    [ Script.printLine model.text
                     , printCurrentTime networkConnection
                     , Script.sleep (0.5 * Time.second)
                     ]
@@ -23,7 +23,7 @@ script { networkConnection } =
         |> Script.aside
             (\number ->
                 Script.do
-                    [ Script.print (toString number)
+                    [ Script.printLine (toString number)
                     , printCurrentTime networkConnection
                     , Script.sleep (0.5 * Time.second)
                     , getCurrentTime networkConnection |> Script.ignore
@@ -55,12 +55,12 @@ getCurrentTime networkConnection =
 
 printCurrentTime : NetworkConnection -> Script String ()
 printCurrentTime networkConnection =
-    getCurrentTime networkConnection |> Script.andThen Script.print
+    getCurrentTime networkConnection |> Script.andThen Script.printLine
 
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

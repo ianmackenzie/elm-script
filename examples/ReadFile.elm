@@ -17,17 +17,17 @@ script { arguments, fileSystem } =
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen
-                    (Script.forEach (String.toUpper >> Script.print))
+                    (Script.forEach (String.toUpper >> Script.printLine))
                 |> Script.onError (.message >> handleError)
 
         _ ->
-            Script.print "Please supply the path of one file to read"
+            Script.printLine "Please supply the path of one file to read"
                 |> Script.andThen (\() -> Script.fail 1)
 
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

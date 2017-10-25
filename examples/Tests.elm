@@ -13,15 +13,15 @@ test shell testCases =
                 Shell.execute command shell
                     |> Script.onError
                         (\processError ->
-                            Script.print ("Running '" ++ command ++ "' failed")
+                            Script.printLine ("Running '" ++ command ++ "' failed")
                                 |> Script.andThen (\() -> Script.fail 1)
                         )
                     |> Script.andThen
                         (\output ->
                             if String.trim output == expectedOutput then
-                                Script.print ("PASSED: " ++ command)
+                                Script.printLine ("PASSED: " ++ command)
                             else
-                                Script.print
+                                Script.printLine
                                     ("FAILED: "
                                         ++ command
                                         ++ "\n\n"
@@ -29,14 +29,13 @@ test shell testCases =
                                         ++ expectedOutput
                                         ++ "\n\nActual output:\n\n"
                                         ++ String.trim output
-                                        ++ "\n"
                                     )
                                     |> Script.andThen (\() -> Script.fail 1)
                         )
             )
         |> Script.andThen
             (\() ->
-                Script.print <|
+                Script.printLine <|
                     "Success! "
                         ++ toString (List.length testCases)
                         ++ " tests passed"

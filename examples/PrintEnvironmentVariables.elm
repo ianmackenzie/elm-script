@@ -12,7 +12,7 @@ printEnvironmentVariable environmentVariables name =
             EnvironmentVariables.get name environmentVariables
                 |> Maybe.withDefault "not defined"
     in
-    Script.print (name ++ ": " ++ value)
+    Script.printLine (name ++ ": " ++ value)
 
 
 script : Script.Context -> Script Int ()

@@ -13,7 +13,7 @@ niceScript directory =
     File.read (directory |> Directory.file "test.txt")
         |> Script.andThen
             (\contents ->
-                Script.print <|
+                Script.printLine <|
                     toString (String.length contents)
                         ++ " characters in test.txt"
             )
@@ -42,13 +42,13 @@ script { arguments, fileSystem } =
                 ]
 
         _ ->
-            Script.print "Please supply the path of one directory to read"
+            Script.printLine "Please supply the path of one directory to read"
                 |> Script.andThen (\() -> Script.fail 1)
 
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

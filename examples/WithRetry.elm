@@ -7,20 +7,20 @@ import Script.Shell as Shell exposing (Shell)
 
 abort : String -> Script Int a
 abort message =
-    Script.print message
+    Script.printLine message
         |> Script.andThen (\() -> Script.fail 1)
 
 
 retry : Shell -> String -> Int -> Script Int ()
 retry shell command count =
     Shell.execute command shell
-        |> Script.andThen Script.print
+        |> Script.andThen Script.printLine
         |> Script.onError
             (\error ->
                 if count > 0 then
                     case error of
                         Shell.ProcessExitedWithError _ ->
-                            Script.print "Process exited with error, retrying..."
+                            Script.printLine "Process exited with error, retrying..."
                                 |> Script.andThen
                                     (\() -> retry shell command (count - 1))
 
@@ -38,7 +38,7 @@ script : Script.Context -> Script Int ()
 script { arguments, shell } =
     case arguments of
         [] ->
-            Script.print "Please enter an executable to run"
+            Script.printLine "Please enter an executable to run"
                 |> Script.andThen (\() -> Script.fail 1)
 
         _ ->

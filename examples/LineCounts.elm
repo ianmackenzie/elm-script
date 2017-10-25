@@ -24,7 +24,7 @@ script { arguments, fileSystem } =
         |> Script.andThen
             (Script.forEach
                 (\( filename, lineCount ) ->
-                    Script.print
+                    Script.printLine
                         (filename ++ ": " ++ toString lineCount ++ " lines")
                 )
             )
@@ -33,7 +33,7 @@ script { arguments, fileSystem } =
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 

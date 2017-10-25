@@ -11,7 +11,7 @@ script { shell } =
         |> Script.map String.trim
         |> Script.andThen
             (\versionString ->
-                Script.print ("Current Elm version: " ++ versionString)
+                Script.printLine ("Current Elm version: " ++ versionString)
             )
         |> Script.onError (toErrorString >> handleError)
 
@@ -31,7 +31,7 @@ toErrorString processError =
 
 handleError : String -> Script Int a
 handleError message =
-    Script.print ("ERROR: " ++ message)
+    Script.printLine ("ERROR: " ++ message)
         |> Script.andThen (\() -> Script.fail 1)
 
 
