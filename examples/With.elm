@@ -11,8 +11,8 @@ computeProduct =
         |> Script.andWith (Script.succeed "four")
         |> Script.andWith (Script.succeed [ 1, 2, 3, 4, 5 ])
         |> Script.return
-            (\num str lst ->
-                num * String.length str * List.length lst
+            (\number string list ->
+                number * String.length string * List.length list
             )
 
 
