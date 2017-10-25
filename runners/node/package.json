@@ -1,14 +1,14 @@
 {
   "name": "@ianmackenzie/elm-run",
   "version": "0.1.0",
-  "description": "Node runner for Elm scripts created using the ianmackenzie/script package",
+  "description": "Node runner for Elm scripts created using the ianmackenzie/script-experiment package",
   "main": "lib.js",
   "bin": {
     "elm-run": "./cli.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ianmackenzie/script.git"
+    "url": "git+https://github.com/ianmackenzie/script-experiment.git"
   },
   "keywords": [
     "elm",
@@ -18,9 +18,9 @@
   "author": "Ian Mackenzie <ian.e.mackenzie@gmail.com>",
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/ianmackenzie/script/issues"
+    "url": "https://github.com/ianmackenzie/script-experiment/issues"
   },
-  "homepage": "https://github.com/ianmackenzie/script#readme",
+  "homepage": "https://github.com/ianmackenzie/script-experiment#readme",
   "dependencies": {
     "xhr2": "0.1.4",
     "node-elm-compiler": "4.3.3"

@@ -1,4 +1,4 @@
-## ianmackenzie/script
+## ianmackenzie/script-experiment
 
 **EXPERIMENTAL** - expect breaking changes.
 
@@ -34,10 +34,10 @@ format your hard drive.
 
 # Getting started
 
-`ianmackenzie/script` has not yet been published, so right now if you want to
-play around with it you'll have to check out this repository. You can then
-either just experiment with the files in the `examples` directory, or add the
-`src` directory of this package to the `source-directories` field in your
+`ianmackenzie/script-experiment` has not yet been published, so right now if you
+want to play around with it you'll have to check out this repository. You can
+then either just experiment with the files in the `examples` directory, or add
+the `src` directory of this package to the `source-directories` field in your
 package's `elm-package.json`.
 
 To create a new script, create a `Main.elm` file that looks like this:

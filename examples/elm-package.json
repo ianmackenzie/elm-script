@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "ianmackenzie/script examples",
-    "repository": "https://github.com/ianmackenzie/script.git",
+    "summary": "ianmackenzie/script-experiment examples",
+    "repository": "https://github.com/ianmackenzie/script-experiment.git",
     "license": "MPL-2.0",
     "source-directories": [
         ".",

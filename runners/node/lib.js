@@ -59,7 +59,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
             console.log("Please update to a newer version of elm-run");
           } else {
             console.log(
-              "Please update script to use a newer version of the ianmackenzie/script package"
+              "Please update script to use a newer version of the ianmackenzie/script-experiment package"
             );
           }
           process.exit(1);
@@ -126,7 +126,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
       default:
         console.log("Internal error - unexpected request: " + request);
         console.log(
-          "Try updating to newer versions of elm-run and the ianmackenzie/script package"
+          "Try updating to newer versions of elm-run and the ianmackenzie/script-experiment package"
         );
         process.exit(1);
     }
