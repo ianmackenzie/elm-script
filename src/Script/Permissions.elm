@@ -1,6 +1,7 @@
 module Script.Permissions
     exposing
         ( Allowed
+        , Permissions
         , Read
         , ReadOnly
         , ReadWrite
@@ -10,6 +11,10 @@ module Script.Permissions
         , readWrite
         , writeOnly
         )
+
+
+type Permissions p
+    = Permissions
 
 
 type Allowed
@@ -36,16 +41,16 @@ type alias ReadWrite =
     { read : Allowed, write : Allowed }
 
 
-readOnly : ReadOnly
+readOnly : Permissions ReadOnly
 readOnly =
-    { read = Allowed }
+    Permissions
 
 
-writeOnly : WriteOnly
+writeOnly : Permissions WriteOnly
 writeOnly =
-    { write = Allowed }
+    Permissions
 
 
-readWrite : ReadWrite
+readWrite : Permissions ReadWrite
 readWrite =
-    { read = Allowed, write = Allowed }
+    Permissions
