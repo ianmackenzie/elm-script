@@ -54,7 +54,7 @@ import Json.Encode exposing (Value)
 
 script : Script.Context -> Script Int ()
 script context =
-    Script.print "Hello World!"
+    Script.printLine "Hello World!"
 
 port requestPort : Value -> Cmd msg
 
