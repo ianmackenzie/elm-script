@@ -24,13 +24,17 @@ countLines : Directory (Read p) -> Script Error Int
 ```
 
 then you know that the returned script can read files within the directory that
-you pass it (`Directory (Read p)` should be read as "directory with read
-permissions"), but it can't read any files outside of that directory, it can't
-write to any files at all, and it can't access the network (to, say, send the
-contents of `passwords.txt` to a nefarious server somewhere). My hope is that
-this will make it possible to share scripting functionality via the Elm package
-system without worrying that some script written by a stranger is going to
-format your hard drive.
+you pass it (the `Directory (Read p)` type should be read as "directory with
+read permissions"), but it can't read any files outside of that directory, it
+can't write to any files at all, and it can't access the network (to, say, send
+the contents of `passwords.txt` to a nefarious server somewhere).
+
+My hope is that this will make it possible to share scripting functionality via
+the Elm package system without worrying that some script written by a stranger
+is going to format your hard drive. Even when just writing your own scripts, the
+type system helps keep track of which parts of your code are doing file I/O (to
+what files, in what directories), which parts are performing network requests,
+which parts are running potentially dangerous subprocesses, etc.
 
 # Getting started
 
