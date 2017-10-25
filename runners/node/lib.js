@@ -20,7 +20,7 @@ function resolvePath(components) {
     if (path.relative(result, childPath).startsWith("..")) {
       throw {
         code: "EACCES",
-        message: components[i] + " does not specify a child path"
+        message: components[i] + " is not a proper relative path"
       };
     }
     result = childPath;
