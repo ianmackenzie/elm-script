@@ -1,13 +1,13 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.File as File
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { fileSystem } =
     let
         inputFile =

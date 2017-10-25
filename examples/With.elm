@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Time
 
 
@@ -16,7 +16,7 @@ computeProduct =
             )
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script context =
     Script.with computeProduct
         |> Script.andWith Script.getCurrentTime

@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File exposing (File)
 import Script.FileSystem as FileSystem
@@ -34,7 +34,7 @@ listRecursively level directory =
         ]
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     case arguments of
         [ path ] ->

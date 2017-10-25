@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.EnvironmentVariables as EnvironmentVariables exposing (EnvironmentVariables)
 
 
@@ -15,7 +15,7 @@ printEnvironmentVariable environmentVariables name =
     Script.print (name ++ ": " ++ value)
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { arguments, environmentVariables } =
     arguments |> Script.forEach (printEnvironmentVariable environmentVariables)
 

@@ -1,7 +1,7 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.File as File exposing (File)
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions exposing (Read, ReadOnly)
@@ -13,7 +13,7 @@ getLineCount file =
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     let
         toFile path =

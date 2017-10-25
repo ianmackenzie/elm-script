@@ -3,12 +3,12 @@ port module Main exposing (..)
 import Http
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.NetworkConnection as NetworkConnection exposing (NetworkConnection)
 import Time exposing (Time)
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { networkConnection } =
     Script.init { text = "A", number = 2 }
         |> Script.aside

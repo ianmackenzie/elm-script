@@ -1,11 +1,11 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, Script)
+import Script exposing (Script)
 import Script.Shell as Shell exposing (ProcessError(..))
 
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script { shell } =
     Shell.execute "elm --version" shell
         |> Script.map String.trim
