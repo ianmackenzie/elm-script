@@ -116,6 +116,9 @@ type alias Script x a =
     Internal.Script x a
 
 
+{-| The context in which a `Script` is running. The function you pass to
+`Script.program` will get a `Context` value passed to it at startup.
+-}
 type alias Context =
     { arguments : List String
     , environmentVariables : EnvironmentVariables
@@ -133,10 +136,28 @@ type alias Flags =
     }
 
 
+{-| The type of port that scripts use to send requests to the external runner.
+You will need to declare a compatible port named `requestPort` in your top-level
+Elm file, like so:
+
+    port requestPort : Value -> Cmd msg
+
+(Note the lower-case `msg` since this is the format Elm requires for ports.)
+
+-}
 type alias RequestPort =
     Value -> Cmd Msg
 
 
+{-| The type of port that scripts use to receive responses from the external
+runner. You will need to declare a compatible port named `responsePort` in your
+top-level Elm file, like so:
+
+    port responsePort : (Value -> msg) -> Sub msg
+
+(Note the lower-case `msg` since this is the format Elm requires for ports.)
+
+-}
 type alias ResponsePort =
     (Value -> Msg) -> Sub Msg
 
