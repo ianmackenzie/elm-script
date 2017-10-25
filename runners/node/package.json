@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/ianmackenzie/script#readme",
   "dependencies": {
-    "xhr2": "*",
-    "node-elm-compiler": "*"
+    "xhr2": "0.1.4",
+    "node-elm-compiler": "4.3.3"
   }
 }
