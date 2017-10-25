@@ -10,7 +10,7 @@ import Time exposing (Time)
 
 script : Script.Context -> Script Int ()
 script { networkConnection } =
-    Script.init { text = "A", number = 2 }
+    Script.succeed { text = "A", number = 2 }
         |> Script.aside
             (\model ->
                 Script.do

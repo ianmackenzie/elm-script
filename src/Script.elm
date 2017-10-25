@@ -17,7 +17,6 @@ module Script
         , forEach
         , getCurrentTime
         , ignore
-        , init
         , map
         , map2
         , map3
@@ -47,7 +46,7 @@ various ways, and turn them into runnable programs.
 
 # Basics
 
-@docs succeed, fail, init
+@docs succeed, fail
 
 
 # Utilities
@@ -315,18 +314,6 @@ are given:
 fail : x -> Script x a
 fail =
     Internal.Fail
-
-
-{-| Synonym for `succeed` that reads better when used to 'kick off' a script:
-
-    Script.init { a = 3, b = 4 }
-        |> Script.map .a
-    --> Script.succeed 3
-
--}
-init : a -> Script x a
-init =
-    succeed
 
 
 print : String -> Script x ()
