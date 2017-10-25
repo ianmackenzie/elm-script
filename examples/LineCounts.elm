@@ -1,15 +1,15 @@
 port module Main exposing (..)
 
 import Json.Encode exposing (Value)
-import Script exposing (Context, FileError, Script)
+import Script exposing (Context, Script)
 import Script.File as File exposing (File)
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions exposing (Read, ReadOnly)
 
 
-getLineCount : File (Read p) -> Script FileError Int
+getLineCount : File (Read p) -> Script File.Error Int
 getLineCount file =
-    Script.readFile file
+    File.read file
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
 

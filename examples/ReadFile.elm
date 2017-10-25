@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Json.Encode exposing (Value)
 import Script exposing (Context, Script)
+import Script.File as File
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions
 
@@ -12,7 +13,7 @@ script { arguments, fileSystem } =
         [ path ] ->
             fileSystem
                 |> FileSystem.file Permissions.readOnly path
-                |> Script.readFile
+                |> File.read
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen

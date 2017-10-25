@@ -2,7 +2,6 @@ module Script
     exposing
         ( Arguments
         , Context
-        , FileError
         , Program
         , RequestPort
         , ResponsePort
@@ -19,8 +18,6 @@ module Script
         , getCurrentTime
         , ignore
         , init
-        , listFiles
-        , listSubdirectories
         , map
         , map2
         , map3
@@ -29,13 +26,11 @@ module Script
         , onError
         , print
         , program
-        , readFile
         , return
         , sequence
         , sleep
         , succeed
         , with
-        , writeFile
         , yield
         )
 
@@ -79,25 +74,16 @@ various ways, and turn them into runnable programs.
 
 @docs mapError, attempt, onError
 
-
-# Files
-
-@docs FileError, readFile, writeFile, listFiles, listSubdirectories
-
 -}
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Process
-import Script.Directory as Directory exposing (Directory)
 import Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Script.File exposing (File)
-import Script.FileSystem as FileSystem exposing (FileSystem)
+import Script.FileSystem exposing (FileSystem)
 import Script.Internal as Internal
 import Script.NetworkConnection exposing (NetworkConnection)
-import Script.Path exposing (Path)
-import Script.Permissions exposing (Read, Write)
 import Script.Platform as Platform exposing (Platform)
 import Script.Shell exposing (Shell)
 import Task exposing (Task)
@@ -532,73 +518,3 @@ onError recover script =
 perform : Task x a -> Script x a
 perform =
     Task.map succeed >> Task.onError (fail >> Task.succeed) >> Internal.Perform
-
-
-type alias FileError =
-    { code : String
-    , message : String
-    }
-
-
-fileErrorDecoder : Decoder FileError
-fileErrorDecoder =
-    Decode.map2 FileError
-        (Decode.field "code" Decode.string)
-        (Decode.field "message" Decode.string)
-
-
-encodePath : Path -> Value
-encodePath path =
-    Encode.list (List.map Encode.string path)
-
-
-readFile : File (Read p) -> Script FileError String
-readFile (Internal.File path) =
-    Internal.Invoke "readFile"
-        (encodePath path)
-        (Decode.oneOf
-            [ Decode.string |> Decode.map succeed
-            , fileErrorDecoder |> Decode.map fail
-            ]
-        )
-
-
-writeFile : File (Write p) -> String -> Script FileError ()
-writeFile (Internal.File path) contents =
-    Internal.Invoke "writeFile"
-        (Encode.object
-            [ ( "path", encodePath path )
-            , ( "contents", Encode.string contents )
-            ]
-        )
-        (Decode.oneOf
-            [ Decode.null (succeed ())
-            , fileErrorDecoder |> Decode.map fail
-            ]
-        )
-
-
-listFiles : Directory (Read p) -> Script FileError (List (File (Read p)))
-listFiles ((Internal.Directory path) as directory) =
-    Internal.Invoke "listFiles"
-        (encodePath path)
-        (Decode.oneOf
-            [ Decode.list Decode.string
-                |> Decode.map (List.map (\name -> Directory.file name directory))
-                |> Decode.map succeed
-            , fileErrorDecoder |> Decode.map fail
-            ]
-        )
-
-
-listSubdirectories : Directory (Read p) -> Script FileError (List (Directory (Read p)))
-listSubdirectories ((Internal.Directory path) as directory) =
-    Internal.Invoke "listSubdirectories"
-        (encodePath path)
-        (Decode.oneOf
-            [ Decode.list Decode.string
-                |> Decode.map (List.map (\name -> Directory.subdirectory name directory))
-                |> Decode.map succeed
-            , fileErrorDecoder |> Decode.map fail
-            ]
-        )

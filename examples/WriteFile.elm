@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Json.Encode exposing (Value)
 import Script exposing (Context, Script)
+import Script.File as File
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions
 
@@ -17,12 +18,12 @@ script { fileSystem } =
             fileSystem
                 |> FileSystem.file Permissions.writeOnly "reversed.txt"
     in
-    Script.readFile inputFile
+    File.read inputFile
         |> Script.map String.lines
         |> Script.map List.reverse
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.map (String.join "\n")
-        |> Script.andThen (Script.writeFile outputFile)
+        |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (.message >> handleError)
 
 

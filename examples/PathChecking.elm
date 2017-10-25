@@ -3,13 +3,14 @@ port module Main exposing (..)
 import Json.Encode exposing (Value)
 import Script exposing (Context, Script)
 import Script.Directory as Directory exposing (Directory)
+import Script.File as File
 import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions exposing (Read)
 
 
 niceScript : Directory (Read p) -> Script Int ()
 niceScript directory =
-    Script.readFile (directory |> Directory.file "test.txt")
+    File.read (directory |> Directory.file "test.txt")
         |> Script.andThen
             (\contents ->
                 Script.print <|
@@ -21,7 +22,7 @@ niceScript directory =
 
 evilScript : Directory (Read p) -> Script Int ()
 evilScript directory =
-    Script.readFile (directory |> Directory.file "C:/passwords.txt")
+    File.read (directory |> Directory.file "C:/passwords.txt")
         |> Script.ignore
         |> Script.onError (.message >> handleError)
 

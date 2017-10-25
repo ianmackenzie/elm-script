@@ -1,5 +1,6 @@
-module Script.Path exposing (Path, name, separator)
+module Script.Path exposing (Path, encode, name)
 
+import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
 import Script.Internal as Internal
 
@@ -28,3 +29,6 @@ name path =
             ""
 
 
+encode : Path -> Value
+encode path =
+    Encode.list (List.map Encode.string path)
