@@ -6,14 +6,16 @@ module Script.Directory
         , listFiles
         , listSubdirectories
         , name
+        , readOnly
         , subdirectory
+        , writeOnly
         )
 
 import Json.Decode as Decode exposing (Decoder)
 import Script.File as File exposing (File)
 import Script.Internal as Internal
 import Script.Path as Path
-import Script.Permissions exposing (Read)
+import Script.Permissions exposing (Read, ReadOnly, Write, WriteOnly)
 
 
 type alias Directory p =
@@ -36,6 +38,16 @@ errorDecoder =
 name : Directory p -> String
 name (Internal.Directory path) =
     Path.name path
+
+
+readOnly : Directory (Read p) -> Directory ReadOnly
+readOnly (Internal.Directory path) =
+    Internal.Directory path
+
+
+writeOnly : Directory (Write p) -> Directory WriteOnly
+writeOnly (Internal.Directory path) =
+    Internal.Directory path
 
 
 subdirectory : String -> Directory p -> Directory p
