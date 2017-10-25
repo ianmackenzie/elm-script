@@ -45,10 +45,10 @@ To create a new script, create a `Main.elm` file that looks like this:
 ```elm
 port module Main exposing (..)
 
-import Script exposing (Script, Context)
+import Script exposing (Script)
 import Json.Encode exposing (Value)
 
-script : Context -> Script Int ()
+script : Script.Context -> Script Int ()
 script context =
     Script.print "Hello World!"
 
