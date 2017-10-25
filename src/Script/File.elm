@@ -6,6 +6,7 @@ module Script.File
         , read
         , readOnly
         , write
+        , writeOnly
         , writeTo
         )
 
