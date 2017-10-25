@@ -6,9 +6,9 @@ module Script.Directory
         , listFiles
         , listSubdirectories
         , name
-        , readOnly
         , subdirectory
-        , writeOnly
+        , toReadOnly
+        , toWriteOnly
         )
 
 import Json.Decode as Decode exposing (Decoder)
@@ -40,13 +40,13 @@ name (Internal.Directory path) =
     Path.name path
 
 
-readOnly : Directory (Read p) -> Directory ReadOnly
-readOnly (Internal.Directory path) =
+toReadOnly : Directory (Read p) -> Directory ReadOnly
+toReadOnly (Internal.Directory path) =
     Internal.Directory path
 
 
-writeOnly : Directory (Write p) -> Directory WriteOnly
-writeOnly (Internal.Directory path) =
+toWriteOnly : Directory (Write p) -> Directory WriteOnly
+toWriteOnly (Internal.Directory path) =
     Internal.Directory path
 
 

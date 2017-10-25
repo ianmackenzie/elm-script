@@ -4,9 +4,9 @@ module Script.File
         , File
         , name
         , read
-        , readOnly
+        , toReadOnly
+        , toWriteOnly
         , write
-        , writeOnly
         , writeTo
         )
 
@@ -39,13 +39,13 @@ name (Internal.File path) =
     Path.name path
 
 
-readOnly : File (Read p) -> File ReadOnly
-readOnly (Internal.File path) =
+toReadOnly : File (Read p) -> File ReadOnly
+toReadOnly (Internal.File path) =
     Internal.File path
 
 
-writeOnly : File (Write p) -> File WriteOnly
-writeOnly (Internal.File path) =
+toWriteOnly : File (Write p) -> File WriteOnly
+toWriteOnly (Internal.File path) =
     Internal.File path
 
 
