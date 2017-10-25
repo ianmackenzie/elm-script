@@ -1,6 +1,7 @@
 ## ianmackenzie/script-experiment
 
-**EXPERIMENTAL** - expect breaking changes.
+**EXPERIMENTAL** - expect breaking changes, missing functionality, incomplete
+documentation etc.
 
 This package allows you define command-line scripts in Elm that can
 
