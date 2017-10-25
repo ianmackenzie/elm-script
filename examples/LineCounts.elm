@@ -10,7 +10,7 @@ import Script.Permissions as Permissions exposing (Read, ReadOnly)
 getLineCount : File (Read p) -> Script FileError Int
 getLineCount file =
     Script.readFile file
-        |> Script.map (String.lines >> List.length)
+        |> Script.map (String.trimRight >> String.lines >> List.length)
 
 
 script : Context -> Script Int ()
