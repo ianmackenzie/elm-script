@@ -7,6 +7,23 @@ import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions
 
 
+reverseLines : String -> String
+reverseLines input =
+    input
+        -- Remove trailing newline (having one messes up String.lines)
+        |> String.trimRight
+        -- Split into lines
+        |> String.lines
+        -- Remove trailing whitespace on each line (nobody wants that)
+        |> List.map String.trimRight
+        -- Actually reverse lines
+        |> List.reverse
+        -- Join back into one string
+        |> String.join "\n"
+        -- Add back trailing newline (every good file should have one)
+        |> (\string -> string ++ "\n")
+
+
 script : Script.Context -> Script Int ()
 script { fileSystem } =
     let
@@ -19,10 +36,7 @@ script { fileSystem } =
                 |> FileSystem.file Permissions.writeOnly "reversed.txt"
     in
     File.read inputFile
-        |> Script.map String.lines
-        |> Script.map (List.filter (not << String.isEmpty))
-        |> Script.map List.reverse
-        |> Script.map (String.join "\n")
+        |> Script.map reverseLines
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (.message >> handleError)
 
