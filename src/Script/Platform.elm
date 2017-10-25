@@ -2,6 +2,7 @@ module Script.Platform
     exposing
         ( Platform(..)
         , lineSeparator
+        , pathSeparator
         )
 
 
@@ -18,3 +19,13 @@ lineSeparator platform =
 
         Windows ->
             "\x0D\n"
+
+
+pathSeparator : Platform -> String
+pathSeparator platform =
+    case platform of
+        Posix ->
+            "/"
+
+        Windows ->
+            "\\"
