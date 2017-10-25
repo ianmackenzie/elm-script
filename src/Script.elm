@@ -417,16 +417,16 @@ andThen function script =
 
 
 aside : (a -> Script x ()) -> Script x a -> Script x a
-aside doSomethingWith script =
+aside doSomething script =
     -- Run the given script...
     script
         |> andThen
             (\value ->
                 -- ...as an 'aside' do something with the generated value
                 -- (logging, printing to console etc)...
-                doSomethingWith value
+                doSomething value
                     |> andThen
-                        -- ...finally, return the original generated value
+                        -- ...finally, succeed with the original generated value
                         -- (not the unit return value of the 'aside' script)
                         (\() -> succeed value)
             )
