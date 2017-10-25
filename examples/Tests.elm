@@ -5,8 +5,8 @@ import Script exposing (Script)
 import Script.Shell as Shell exposing (Shell)
 
 
-test : Shell -> List ( String, String ) -> Script Int ()
-test shell testCases =
+runTestCases : Shell -> List ( String, String ) -> Script Int ()
+runTestCases shell testCases =
     testCases
         |> Script.forEach
             (\( command, expectedOutput ) ->
@@ -44,18 +44,18 @@ test shell testCases =
 
 script : Script.Context -> Script Int ()
 script { shell } =
-    test shell
-        [ ( "elm-run ForEach.elm 1 2 undefined 3.5"
-          , "1 squared is 1\n2 squared is 4\nundefined is not a number!\n3.5 squared is 12.25"
+    runTestCases shell
+        [ ( "elm-run HelloWorld.elm"
+          , "Hello World!"
           )
         , ( "elm-run GetElmVersion.elm"
           , "Current Elm version: 0.18.0"
           )
-        , ( "elm-run HelloWorld.elm"
-          , "Hello World!"
-          )
         , ( "elm-run LineCounts.elm test.txt"
           , "test.txt: 3 lines"
+          )
+        , ( "elm-run ForEach.elm 1 2 undefined 3.5"
+          , "1 squared is 1\n2 squared is 4\nundefined is not a number!\n3.5 squared is 12.25"
           )
         ]
 
