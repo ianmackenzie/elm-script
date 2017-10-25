@@ -20,8 +20,8 @@ script { fileSystem } =
     in
     File.read inputFile
         |> Script.map String.lines
-        |> Script.map List.reverse
         |> Script.map (List.filter (not << String.isEmpty))
+        |> Script.map List.reverse
         |> Script.map (String.join "\n")
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (.message >> handleError)
