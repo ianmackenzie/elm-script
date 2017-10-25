@@ -45,11 +45,6 @@ various ways, and turn them into runnable programs.
 @docs Script, Context
 
 
-# Permissions
-
-@docs Allowed, Safe, Sandboxed, ReadOnly
-
-
 # Running
 
 @docs RequestPort, ResponsePort, Model, Msg, program
