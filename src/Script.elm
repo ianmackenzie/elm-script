@@ -10,7 +10,6 @@ module Script
         , andWith
         , aside
         , attempt
-        , call
         , collect
         , do
         , fail
@@ -61,7 +60,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, forEach, sequence, collect, andThen, aside, call
+@docs do, forEach, sequence, collect, andThen, aside
 
 
 # Combining
@@ -430,20 +429,6 @@ aside doSomethingWith script =
                         -- ...finally, return the original generated value
                         -- (not the unit return value of the 'aside' script)
                         (\() -> succeed value)
-            )
-
-
-call : (() -> Result x a) -> Script x a
-call function =
-    perform (Task.succeed ())
-        |> andThen
-            (\() ->
-                case function () of
-                    Ok result ->
-                        succeed result
-
-                    Err error ->
-                        fail error
             )
 
 
