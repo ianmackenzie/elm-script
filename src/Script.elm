@@ -47,7 +47,7 @@ various ways, and turn them into runnable programs.
 
 # Running
 
-@docs RequestPort, ResponsePort, Model, Msg, program
+@docs RequestPort, ResponsePort, program
 
 
 # Basics
