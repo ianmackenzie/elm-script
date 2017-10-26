@@ -20,16 +20,16 @@ script { arguments, fileSystem } =
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen
                     (Script.forEach (String.toUpper >> Script.printLine))
-                |> Script.onError (.message >> handleError)
+                |> Script.onError (handleError .message)
 
         _ ->
             Script.printLine "Please supply the path of one file to read"
                 |> Script.andThen (\() -> Script.fail 1)
 
 
-handleError : String -> Script Int a
-handleError message =
-    Script.printLine ("ERROR: " ++ message)
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 

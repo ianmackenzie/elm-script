@@ -13,7 +13,7 @@ script { shell } =
             (\versionString ->
                 Script.printLine ("Current Elm version: " ++ versionString)
             )
-        |> Script.onError (toErrorString >> handleError)
+        |> Script.onError (handleError toErrorString)
 
 
 toErrorString : ProcessError -> String
@@ -29,9 +29,9 @@ toErrorString processError =
             "Process exited with code " ++ toString code
 
 
-handleError : String -> Script Int a
-handleError message =
-    Script.printLine ("ERROR: " ++ message)
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 

@@ -17,14 +17,14 @@ niceScript directory =
                     toString (String.length contents)
                         ++ " characters in test.txt"
             )
-        |> Script.onError (.message >> handleError)
+        |> Script.onError (handleError .message)
 
 
 evilScript : Directory (Read p) -> Script Int ()
 evilScript directory =
     File.read (directory |> Directory.file "C:/passwords.txt")
         |> Script.ignore
-        |> Script.onError (.message >> handleError)
+        |> Script.onError (handleError .message)
 
 
 script : Script.Context -> Script Int ()
@@ -46,9 +46,9 @@ script { arguments, fileSystem } =
                 |> Script.andThen (\() -> Script.fail 1)
 
 
-handleError : String -> Script Int a
-handleError message =
-    Script.printLine ("ERROR: " ++ message)
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 

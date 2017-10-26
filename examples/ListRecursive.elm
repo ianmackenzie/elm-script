@@ -41,15 +41,15 @@ script { arguments, fileSystem } =
             fileSystem
                 |> FileSystem.directory Permissions.readOnly path
                 |> listRecursively 0
-                |> Script.onError (.message >> handleError)
+                |> Script.onError (handleError .message)
 
         _ ->
             Script.printLine "Please supply one directory name"
 
 
-handleError : String -> Script Int a
-handleError message =
-    Script.printLine ("ERROR: " ++ message)
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 
