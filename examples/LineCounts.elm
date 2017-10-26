@@ -16,10 +16,13 @@ getLineCount file =
 script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     let
+        toFile : String -> File ReadOnly
         toFile path =
             FileSystem.file Permissions.readOnly path fileSystem
     in
-    Script.collect getLineCount (List.map toFile arguments)
+    List.map toFile arguments
+        |> Script.collect getLineCount
+        |> Script.onError (handleError .message)
         |> Script.map (List.map2 (,) arguments)
         |> Script.andThen
             (Script.forEach
@@ -28,12 +31,11 @@ script { arguments, fileSystem } =
                         (filename ++ ": " ++ toString lineCount ++ " lines")
                 )
             )
-        |> Script.onError (.message >> handleError)
 
 
-handleError : String -> Script Int a
-handleError message =
-    Script.printLine ("ERROR: " ++ message)
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 
