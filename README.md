@@ -20,7 +20,7 @@ script context =
 ```
 
 And here's a slightly more realistic/useful script that counts the number of
-lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/LineCounts.elm):
+lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/LineCounts.elm)):
 
 ```elm
 getLineCount : File (Read p) -> Script File.Error Int
