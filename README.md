@@ -11,24 +11,62 @@ This package allows you define command-line scripts in Elm that can
   - Make HTTP requests
   - Run subprocesses
 
-One of they key features of this package is very explicit control over
-permissions - the top-level script has full access to all of the above
-functionality, but it can choose exactly how much access to give to helper
-scripts. A `Script` cannot by default do anything other than a few harmless
-things like getting the current time and printing to the console; in order to do
-anything more, it must explicitly be given read access to a particular
-directory, write access to a particular file, network access etc. So if you see
-a function like
+Here's "Hello World" (from [examples/HelloWorld.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/HelloWorld.elm)):
 
 ```elm
-countLines : Directory (Read p) -> Script Error Int
+script : Script.Context -> Script Int ()
+script context =
+    Script.printLine "Hello World!"
 ```
 
-then you know that the returned script can read files within the directory that
-you pass it (the `Directory (Read p)` type should be read as "directory with
-read permissions"), but it can't read any files outside of that directory, it
-can't write to any files at all, and it can't access the network (to, say, send
-the contents of `passwords.txt` to a nefarious server somewhere).
+And here's a slightly more realistic/useful script that counts the number of
+lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/LineCounts.elm):
+
+```elm
+getLineCount : File (Read p) -> Script File.Error Int
+getLineCount file =
+    File.read file
+        |> Script.map (String.trimRight >> String.lines >> List.length)
+
+
+script : Script.Context -> Script Int ()
+script { arguments, fileSystem } =
+    let
+        toFile : String -> File ReadOnly
+        toFile path =
+            FileSystem.file Permissions.readOnly path fileSystem
+    in
+    List.map toFile arguments
+        |> Script.collect getLineCount
+        |> Script.onError (handleError .message)
+        |> Script.map (List.map2 (,) arguments)
+        |> Script.andThen
+            (Script.forEach
+                (\( filename, lineCount ) ->
+                    Script.printLine
+                        (filename ++ ": " ++ toString lineCount ++ " lines")
+                )
+            )
+
+
+handleError : (x -> String) -> x -> Script Int a
+handleError toMessage error =
+    Script.printLine ("ERROR: " ++ toMessage error)
+        |> Script.andThen (\() -> Script.fail 1)
+```
+
+One of they key features of this package is very explicit control over
+permissions. The top-level script has full access to the file system,
+environment variables etc. but it can choose exactly how much access to give to
+helper scripts. A `Script` cannot by default do anything other than a few
+harmless things like getting the current time and printing to the console; in
+order to do anything more, it must explicitly be given read access to a
+particular directory, write access to a particular file, network access etc. In
+the above example, you can know just from the type signature of `getLineCount`
+that the returned script can read the file that you pass it (the `File (Read p)`
+type should be read as "file with read permissions"), but it can't read any
+other files, it can't write to any files at all, and it can't access the network
+(to, say, send the contents of `passwords.txt` to a nefarious server somewhere).
 
 My hope is that this will make it possible to share scripting functionality via
 the Elm package system without worrying that some script written by a stranger
