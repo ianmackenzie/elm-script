@@ -11,9 +11,11 @@ script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
-            fileSystem
-                |> FileSystem.file Permissions.readOnly path
-                |> File.read
+            let
+                inputFile =
+                    FileSystem.file Permissions.readOnly path fileSystem
+            in
+            File.read inputFile
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen
