@@ -90,7 +90,7 @@ import Time exposing (Time)
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 3, 0 )
+    ( 4, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
@@ -115,7 +115,7 @@ type alias Context =
 
 type alias Flags =
     { arguments : List String
-    , platformString : String
+    , platform : String
     , environmentVariables : List ( String, String )
     }
 
@@ -159,34 +159,6 @@ type alias Program =
     Platform.Program Flags Model Msg
 
 
-toPlatform : String -> Platform
-toPlatform platformString =
-    case platformString of
-        "aix" ->
-            Platform.Posix
-
-        "darwin" ->
-            Platform.Posix
-
-        "freebsd" ->
-            Platform.Posix
-
-        "linux" ->
-            Platform.Posix
-
-        "openbsd" ->
-            Platform.Posix
-
-        "sunos" ->
-            Platform.Posix
-
-        "win32" ->
-            Platform.Windows
-
-        _ ->
-            Debug.crash ("Unrecognized platform '" ++ platformString ++ "'")
-
-
 program : (Context -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
@@ -201,12 +173,20 @@ program main requestPort responsePort =
                 decoder =
                     Decode.null (succeed ())
             in
-            Internal.Invoke "requiredVersion" encodedVersion decoder
+            Internal.Invoke "checkVersion" encodedVersion decoder
 
         init flags =
             let
                 platform =
-                    toPlatform flags.platformString
+                    case flags.platform of
+                        "posix" ->
+                            Platform.Posix
+
+                        "windows" ->
+                            Platform.Windows
+
+                        _ ->
+                            Debug.crash ("Unrecognized platform '" ++ flags.platform ++ "'")
 
                 environmentVariables =
                     Internal.EnvironmentVariables platform
@@ -324,7 +304,7 @@ printLine string =
             else
                 string ++ "\n"
     in
-    Internal.Invoke "stdout"
+    Internal.Invoke "writeStdout"
         (Encode.string stringWithNewline)
         (Decode.null (succeed ()))
 

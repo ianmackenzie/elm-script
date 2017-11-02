@@ -1,6 +1,6 @@
 "use strict";
 
-let majorVersion = 3;
+let majorVersion = 4;
 let minorVersion = 0;
 
 let vm = require("vm");
@@ -50,7 +50,22 @@ function runCompiledJs(compiledJs, commandLineArgs) {
   // Create Elm worker and get its request/response ports
   let flags = {};
   flags["arguments"] = commandLineArgs;
-  flags["platformString"] = process.platform;
+  switch (process.platform) {
+    case "aix":
+    case "darwin":
+    case "freebsd":
+    case "linux":
+    case "openbsd":
+    case "sunos":
+      flags["platform"] = "posix";
+      break;
+    case "win32":
+      flags["platform"] = "windows";
+      break;
+    default:
+      console.log("Unrecognized platform '" + process.platform + "'");
+      process.exit(1);
+  }
   flags["environmentVariables"] = Object.entries(process.env);
   let script = global["Elm"].Main.worker(flags);
   let requestPort = script.ports.requestPort;
@@ -59,7 +74,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
   // Listen for requests, send responses when required
   requestPort.subscribe(function(request) {
     switch (request.name) {
-      case "requiredVersion":
+      case "checkVersion":
         let requiredMajorVersion = request.value[0];
         let requiredMinorVersion = request.value[1];
         let describeCurrentVersion =
@@ -96,7 +111,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
           responsePort.send(null);
         }
         break;
-      case "stdout":
+      case "writeStdout":
         process.stdout.write(request.value);
         responsePort.send(null);
         break;
