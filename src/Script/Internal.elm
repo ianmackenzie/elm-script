@@ -13,6 +13,11 @@ type Script x a
     | Invoke String Value (Decoder (Script x a))
 
 
+perform : Task x a -> Script x a
+perform =
+    Task.map Succeed >> Task.onError (Fail >> Task.succeed) >> Perform
+
+
 type FileSystem
     = FileSystem
 

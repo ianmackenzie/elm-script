@@ -366,7 +366,7 @@ sleep time =
 -}
 getCurrentTime : Script x Time
 getCurrentTime =
-    perform Time.now
+    Internal.perform Time.now
 
 
 {-| Map the value produced by a script; to get a list of lines from a file
@@ -663,8 +663,3 @@ onError recover script =
 
         Internal.Invoke name value decoder ->
             Internal.Invoke name value (Decode.map (onError recover) decoder)
-
-
-perform : Task x a -> Script x a
-perform =
-    Task.map succeed >> Task.onError (fail >> Task.succeed) >> Internal.Perform
