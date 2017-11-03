@@ -155,10 +155,26 @@ type Msg
     | Response Value
 
 
+{-| The type of program returned by `Script.program`.
+-}
 type alias Program =
     Platform.Program Flags Model Msg
 
 
+{-| Actually create a runnable script program! Your top-level script file should
+have `main` defined as
+
+    main : Script.Program
+    main =
+        Script.program script requestPort responsePort
+
+The function provided as the first argument to `Script.program` must accept a
+`Context` value and produce a `Script Int ()`. If this script succeeds with
+`()`, then a value of 0 will be returned to the operating system as the return
+value of the script. If the script fails with an `Int` value, then that value
+will be returned to the operating system instead.
+
+-}
 program : (Context -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
@@ -295,6 +311,24 @@ fail =
     Internal.Fail
 
 
+{-| Print a line to the console. A newline will be added to the given string if
+it does not already have one, so all of the following are equivalent:
+
+    Script.do
+        [ Script.printLine "Hello"
+        , Script.printLine "World"
+        ]
+
+    Script.do
+        [ Script.printLine "Hello\n"
+        , Script.printLine "World\n"
+        ]
+
+    Script.printLine "Hello\nWorld"
+
+    Script.printLine "Hello\nWorld\n"
+
+-}
 printLine : String -> Script x ()
 printLine string =
     let
@@ -309,21 +343,48 @@ printLine string =
         (Decode.null (succeed ()))
 
 
+{-| Sleep (pause) for the given amount of time.
+
+    Script.sleep (5 * Time.second)
+
+-}
 sleep : Time -> Script x ()
 sleep time =
     Internal.Perform (Task.map succeed (Process.sleep time))
 
 
+{-| Get the current time.
+
+    Script.getCurrentTime
+        |> Script.andThen
+            (\currentTime ->
+                Script.printLine <|
+                    "Number of hours since January 1, 1970: "
+                        ++ toString (Time.inHours currentTime)
+            )
+
+-}
 getCurrentTime : Script x Time
 getCurrentTime =
     perform Time.now
 
 
+{-| Map the value produced by a script; to get a list of lines from a file
+instead of the entire contents as a single string, you might do
+
+    getLines : Script File.Error (List String)
+    getLines =
+        File.read inputFile |> Script.map String.lines
+
+-}
 map : (a -> b) -> Script x a -> Script x b
 map function script =
     script |> andThen (\value -> succeed (function value))
 
 
+{-| Map over the values produced by two scripts. The two scripts will be run in
+sequence.
+-}
 map2 :
     (a -> b -> c)
     -> Script x a
@@ -333,6 +394,9 @@ map2 function scriptA scriptB =
     scriptA |> andThen (\valueA -> map (function valueA) scriptB)
 
 
+{-| Map over the values produced by three scripts. The three scripts will be run
+in sequence.
+-}
 map3 :
     (a -> b -> c -> d)
     -> Script x a
@@ -343,6 +407,9 @@ map3 function scriptA scriptB scriptC =
     scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
+{-| Map over the values produced by four scripts. The four scripts will be run
+in sequence.
+-}
 map4 :
     (a -> b -> c -> d -> e)
     -> Script x a
@@ -354,11 +421,45 @@ map4 function scriptA scriptB scriptC scriptD =
     scriptA |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
+{-| Explicitly ignore the value produced by a script. This is sometimes useful
+when using a function like `Script.do` that expects all of its arguments to have
+the type `Script x ()` (a script that produces no meaningful output):
+
+    Script.do
+        [ Script.printLine "Reading file..."
+        , Script.readFile inputFile |> Script.ignore
+        , Script.printLine "Read file!"
+        ]
+
+(Why would you want to read a file without doing anything with the output,
+though?)
+
+-}
 ignore : Script x a -> Script x ()
 ignore =
     map (always ())
 
 
+{-| Execute a list of scripts in sequence. `Script.do` expects each given script
+to have a return type of `()` (no meaningful output), and so itself has a return
+type of `()`.
+
+    Script.do
+        [ Script.printLine "Reading a file..."
+        , File.read inputFile
+            |> Script.map String.lines
+            |> Script.andThen
+                (\lines ->
+                    Script.printLine <|
+                        toString (List.length lines)
+                            ++ " lines"
+                )
+        ]
+
+If you need to execute a list of scripts but collect their return values, use
+`Script.sequence` instead.
+
+-}
 do : List (Script x ()) -> Script x ()
 do scripts =
     case scripts of
@@ -369,11 +470,46 @@ do scripts =
             first |> andThen (\() -> do rest)
 
 
+{-| For every value in a given list, call the given function and run the
+script that it creates. From `examples/ForEach.elm`:
+
+    script : Script.Context -> Script Int ()
+    script { arguments } =
+        arguments
+            |> Script.forEach
+                (\argument ->
+                    Script.printLine <|
+                        case String.toFloat argument of
+                            Ok value ->
+                                let
+                                    squared =
+                                        value * value
+                                in
+                                argument ++ " squared is " ++ toString squared
+
+                            Err _ ->
+                                argument ++ " is not a number!"
+                )
+
+Often works well with `Script.andThen` if the previous script produces a list of
+values:
+
+    Directory.listFiles directory
+        |> Script.andThen
+            (Script.forEach
+                (\file ->
+                    Script.printLine (File.name file)
+                )
+            )
+
+-}
 forEach : (a -> Script x ()) -> List a -> Script x ()
 forEach function values =
     do (List.map function values)
 
 
+{-| Run a list of scripts in sequence and collect their results into a list.
+-}
 sequence : List (Script x a) -> Script x (List a)
 sequence scripts =
     case scripts of
@@ -384,11 +520,35 @@ sequence scripts =
             first |> andThen (\value -> sequence rest |> map ((::) value))
 
 
+{-| For every value in a given list, call the given function and run the script
+that it creates, then collect the results of all those scripts into a list.
+
+    readAll : Script File.Error (List String)
+    readAll =
+        Script.collect File.read
+            [ file1, file2, file3 ]
+
+-}
 collect : (a -> Script x b) -> List a -> Script x (List b)
 collect function values =
     sequence (List.map function values)
 
 
+{-| Take the output from one script and feed it into a second script:
+
+    File.read inputFile
+        |> Script.andThen
+            (\fileContents ->
+                Script.printLine contents
+            )
+
+This is the most fundamental way to chain scripts together! Pretty much all
+other combinators in this module (`forEach`, `do`, `map` etc.) can be
+implemented in terms of `andThen`, so if there's some custom behavior you need
+that is not covered by one of those functions you should be able to implement it
+using `andThen`.
+
+-}
 andThen : (a -> Script x b) -> Script x a -> Script x b
 andThen function script =
     case script of
@@ -405,6 +565,35 @@ andThen function script =
             Internal.Invoke name value (Decode.map (andThen function) decoder)
 
 
+{-| Sometimes you can run into problems chaining scripts together using
+`andThen` if you want to do 'auxiliary' things like print to the console, log to
+a file etc. For example, the following will **not** work:
+
+    File.read inputFile
+        |> Script.andThen
+            (\contents -> Script.print "OK, read file")
+        |> Script.andThen
+            (\contents -> ...)
+
+`File.read inputFile` succeeds with a `String` which is passed into the first
+`andThen`, but since `Script.print` succeeds with just the unit value `()` that
+is what gets passed into the second `andThen`!
+
+You can use `aside` for this purpose, which lets you run a script on some
+produced value but then 'pass it through' to the next script:
+
+    File.read inputFile
+        |> Script.aside
+            (\contents -> Script.print "OK, read file")
+        |> Script.andThen
+            (\contents ->
+                ...
+            )
+
+This is safe because `aside` enforces that the first script produces `()` - that
+is, it doesn't actually produce any useful output that you might want anway.
+
+-}
 aside : (a -> Script x ()) -> Script x a -> Script x a
 aside doSomething script =
     -- Run the given script...
