@@ -18,7 +18,7 @@ lineSeparator platform =
             "\n"
 
         Windows ->
-            "\x0D\n"
+            "\r\n"
 
 
 pathSeparator : Platform -> String

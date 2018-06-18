@@ -11,14 +11,16 @@ script { arguments } =
             (\argument ->
                 Script.printLine <|
                     case String.toFloat argument of
-                        Ok value ->
+                        Just value ->
                             let
                                 squared =
                                     value * value
                             in
-                            argument ++ " squared is " ++ toString squared
+                            argument
+                                ++ " squared is "
+                                ++ String.fromFloat squared
 
-                        Err _ ->
+                        Nothing ->
                             argument ++ " is not a number!"
             )
 

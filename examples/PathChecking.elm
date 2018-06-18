@@ -14,7 +14,7 @@ niceScript directory =
         |> Script.andThen
             (\contents ->
                 Script.printLine <|
-                    toString (String.length contents)
+                    String.fromInt (String.length contents)
                         ++ " characters in test.txt"
             )
         |> Script.onError (handleError .message)

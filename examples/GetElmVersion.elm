@@ -26,7 +26,7 @@ toErrorString processError =
             "Process was terminated"
 
         ProcessExitedWithError code ->
-            "Process exited with code " ++ toString code
+            "Process exited with code " ++ String.fromInt code
 
 
 handleError : (x -> String) -> x -> Script Int a

@@ -11,16 +11,17 @@ type alias Path =
 
 nameRegex : Regex
 nameRegex =
-    Regex.regex "([^\\\\/]+)[\\\\/]*$"
+    Regex.fromString "([^\\\\/]+)[\\\\/]*$"
+        |> Maybe.withDefault Regex.never
 
 
 name : Path -> String
 name path =
-    case Regex.find (Regex.AtMost 1) nameRegex (String.join "/" path) of
+    case Regex.find nameRegex (String.join "/" path) of
         [ { match, submatches } ] ->
             case submatches of
-                [ Just name ] ->
-                    name
+                [ Just name_ ] ->
+                    name_
 
                 _ ->
                     ""
@@ -31,4 +32,4 @@ name path =
 
 encode : Path -> Value
 encode path =
-    Encode.list (List.map Encode.string path)
+    Encode.list Encode.string path

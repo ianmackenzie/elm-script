@@ -5,7 +5,7 @@ import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Script exposing (Script)
 import Script.NetworkConnection as NetworkConnection exposing (NetworkConnection)
-import Time exposing (Time)
+import Time
 
 
 script : Script.Context -> Script Int ()
@@ -16,16 +16,16 @@ script { networkConnection } =
                 Script.do
                     [ Script.printLine model.text
                     , printCurrentTime networkConnection
-                    , Script.sleep (0.5 * Time.second)
+                    , Script.sleep 500
                     ]
             )
         |> Script.map .number
         |> Script.aside
             (\number ->
                 Script.do
-                    [ Script.printLine (toString number)
+                    [ Script.printLine (String.fromInt number)
                     , printCurrentTime networkConnection
-                    , Script.sleep (0.5 * Time.second)
+                    , Script.sleep 500
                     , getCurrentTime networkConnection |> Script.ignore
                     ]
             )

@@ -37,7 +37,7 @@ runTestCases shell testCases =
             (\() ->
                 Script.printLine <|
                     "Success! "
-                        ++ toString (List.length testCases)
+                        ++ String.fromInt (List.length testCases)
                         ++ " tests passed"
             )
 

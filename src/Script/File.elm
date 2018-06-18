@@ -76,5 +76,5 @@ write contents (Internal.File path) =
 
 
 writeTo : File (Write p) -> String -> Internal.Script Error ()
-writeTo =
-    flip write
+writeTo file contents =
+    write contents file

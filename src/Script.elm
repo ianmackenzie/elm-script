@@ -85,7 +85,7 @@ import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Platform as Platform exposing (Platform)
 import Script.Shell exposing (Shell)
 import Task exposing (Task)
-import Time exposing (Time)
+import Time
 
 
 requiredHostVersion : ( Int, Int )
@@ -184,7 +184,7 @@ program main requestPort responsePort =
                     requiredHostVersion
 
                 encodedVersion =
-                    Encode.list [ Encode.int major, Encode.int minor ]
+                    Encode.list Encode.int [ major, minor ]
 
                 decoder =
                     Decode.null (succeed ())
@@ -194,15 +194,10 @@ program main requestPort responsePort =
         init flags =
             let
                 platform =
-                    case flags.platform of
-                        "posix" ->
-                            Platform.Posix
-
-                        "windows" ->
-                            Platform.Windows
-
-                        _ ->
-                            Debug.crash ("Unrecognized platform '" ++ flags.platform ++ "'")
+                    if flags.platform == "windows" then
+                        Platform.Windows
+                    else
+                        Platform.Posix
 
                 environmentVariables =
                     Internal.EnvironmentVariables platform
@@ -254,6 +249,13 @@ program main requestPort responsePort =
                 Internal.Invoke name value _ ->
                     submitRequest name value
 
+        crash message =
+            let
+                printError =
+                    printLine ("ERROR: " ++ message) |> andThen (\() -> fail 1)
+            in
+            ( Model printError, commands printError )
+
         update message (Model current) =
             case message of
                 Updated updated ->
@@ -266,13 +268,13 @@ program main requestPort responsePort =
                                 Ok updated ->
                                     ( Model updated, commands updated )
 
-                                Err message ->
-                                    Debug.crash ("Failed to decode response from JavaScript: " ++ message)
+                                Err decodeError ->
+                                    crash ("Failed to decode response from JavaScript: " ++ Decode.errorToString decodeError)
 
                         _ ->
-                            Debug.crash ("Received unexpected response from JavaScript: " ++ toString value)
+                            crash ("Received unexpected response from JavaScript: " ++ Encode.encode 0 value)
     in
-    Platform.programWithFlags
+    Platform.worker
         { init = init
         , update = update
         , subscriptions = always (responsePort Response)
@@ -343,12 +345,13 @@ printLine string =
         (Decode.null (succeed ()))
 
 
-{-| Sleep (pause) for the given amount of time.
+{-| Sleep (pause) for the given number of milliseconds.
 
-    Script.sleep (5 * Time.second)
+    -- Sleep for 5 seconds
+    Script.sleep 5000
 
 -}
-sleep : Time -> Script x ()
+sleep : Float -> Script x ()
 sleep time =
     Internal.Perform (Task.map succeed (Process.sleep time))
 
@@ -364,7 +367,7 @@ sleep time =
             )
 
 -}
-getCurrentTime : Script x Time
+getCurrentTime : Script x Time.Posix
 getCurrentTime =
     Internal.perform Time.now
 

@@ -66,7 +66,7 @@ listFiles ((Internal.Directory path) as directory) =
         (Path.encode path)
         (Decode.oneOf
             [ Decode.list Decode.string
-                |> Decode.map (List.map (\name -> file name directory))
+                |> Decode.map (List.map (\fileName -> file fileName directory))
                 |> Decode.map Internal.Succeed
             , errorDecoder |> Decode.map Internal.Fail
             ]
@@ -79,7 +79,10 @@ listSubdirectories ((Internal.Directory path) as directory) =
         (Path.encode path)
         (Decode.oneOf
             [ Decode.list Decode.string
-                |> Decode.map (List.map (\name -> subdirectory name directory))
+                |> Decode.map
+                    (List.map
+                        (\directoryName -> subdirectory directoryName directory)
+                    )
                 |> Decode.map Internal.Succeed
             , errorDecoder |> Decode.map Internal.Fail
             ]

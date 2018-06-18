@@ -10,9 +10,16 @@ script context =
     Script.getCurrentTime
         |> Script.andThen
             (\currentTime ->
+                let
+                    millisecondsSinceEpoch =
+                        toFloat (Time.posixToMillis currentTime)
+
+                    hoursSinceEpoch =
+                        millisecondsSinceEpoch / (1000 * 60 * 60)
+                in
                 Script.printLine <|
                     "Number of hours since January 1, 1970: "
-                        ++ toString (Time.inHours currentTime)
+                        ++ String.fromFloat hoursSinceEpoch
             )
 
 

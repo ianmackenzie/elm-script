@@ -23,12 +23,16 @@ script { arguments, fileSystem } =
     List.map toFile arguments
         |> Script.collect getLineCount
         |> Script.onError (handleError .message)
-        |> Script.map (List.map2 (,) arguments)
+        |> Script.map (List.map2 Tuple.pair arguments)
         |> Script.andThen
             (Script.forEach
                 (\( filename, lineCount ) ->
                     Script.printLine
-                        (filename ++ ": " ++ toString lineCount ++ " lines")
+                        (filename
+                            ++ ": "
+                            ++ String.fromInt lineCount
+                            ++ " lines"
+                        )
                 )
             )
 
