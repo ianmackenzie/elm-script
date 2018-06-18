@@ -167,15 +167,23 @@ function runCompiledJs(compiledJs, commandLineArgs) {
   });
 }
 
-module.exports = function(elmFileName, commandLineArgs) {
-  let absolutePath = path.resolve(elmFileName);
+module.exports = function(inputFileName, commandLineArgs) {
+  let absolutePath = path.resolve(inputFileName);
   let directory = path.dirname(absolutePath);
-  let compileOptions = { yes: true, cwd: directory };
-  compileToString(absolutePath, compileOptions)
-    .then(function(compiledJs) {
-      runCompiledJs(compiledJs, commandLineArgs);
-    })
-    .catch(function(error) {
-      console.log(error.message);
+  if (path.extname(absolutePath) === ".js") {
+    fs.readFile(absolutePath, "utf8", (error, compiledJs) => {
+      if (error) {
+        console.log(error.message);
+      } else {
+        runCompiledJs(compiledJs, commandLineArgs);
+      }
     });
+  } else {
+    let compileOptions = { yes: true, cwd: directory };
+    compileToString(absolutePath, compileOptions)
+      .then((compiledJs) => {
+        runCompiledJs(compiledJs, commandLineArgs);
+      })
+      .catch((error) => console.log(error.message));
+  }
 };
