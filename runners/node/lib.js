@@ -67,7 +67,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
       process.exit(1);
   }
   flags["environmentVariables"] = Object.entries(process.env);
-  let script = global["Elm"].Main.worker(flags);
+  let script = global["Elm"].Main.init({flags: flags});
   let requestPort = script.ports.requestPort;
   let responsePort = script.ports.responsePort;
 
