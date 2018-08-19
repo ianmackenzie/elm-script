@@ -2,6 +2,11 @@ module Script.File
     exposing
         ( Error
         , File
+        , copy
+        , copyInto
+        , delete
+        , move
+        , moveInto
         , name
         , read
         , toReadOnly
@@ -12,9 +17,11 @@ module Script.File
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Script
+import Script.Directory as Directory exposing (Directory)
 import Script.Internal as Internal
 import Script.Path as Path
-import Script.Permissions exposing (Read, ReadOnly, Write, WriteOnly)
+import Script.Permissions exposing (Read, ReadOnly, ReadWrite, Write, WriteOnly)
 
 
 type alias File p =
@@ -82,3 +89,48 @@ write contents (Internal.File path) =
 writeTo : File (Write p) -> String -> Internal.Script Error ()
 writeTo file contents =
     write contents file
+
+
+copy : File (Read sourcePermissions) -> File (Write destinationPermissions) -> Internal.Script Error ()
+copy (Internal.File sourcePath) (Internal.File destinationPath) =
+    Internal.Invoke "copyFile"
+        (Encode.object
+            [ ( "sourcePath", Path.encode sourcePath )
+            , ( "destinationPath", Path.encode destinationPath )
+            ]
+        )
+        decodeNullResult
+
+
+move : File ReadWrite -> File (Write destinationPermissions) -> Internal.Script Error ()
+move (Internal.File sourcePath) (Internal.File destinationPath) =
+    Internal.Invoke "moveFile"
+        (Encode.object
+            [ ( "sourcePath", Path.encode sourcePath )
+            , ( "destinationPath", Path.encode destinationPath )
+            ]
+        )
+        decodeNullResult
+
+
+delete : File (Write p) -> Internal.Script Error ()
+delete (Internal.File path) =
+    Internal.Invoke "deleteFile" (Path.encode path) decodeNullResult
+
+
+copyInto : Directory (Write directoryPermissions) -> File (Read filePermissions) -> Internal.Script Error (File (Write directoryPermissions))
+copyInto directory file =
+    let
+        destination =
+            Directory.file (name file) directory
+    in
+    copy file destination |> Script.andThen (\() -> Script.succeed destination)
+
+
+moveInto : Directory (Write directoryPermissions) -> File ReadWrite -> Internal.Script Error (File (Write directoryPermissions))
+moveInto directory file =
+    let
+        destination =
+            Directory.file (name file) directory
+    in
+    move file destination |> Script.andThen (\() -> Script.succeed destination)

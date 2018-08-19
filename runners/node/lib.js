@@ -1,7 +1,7 @@
 "use strict";
 
 let majorVersion = 4;
-let minorVersion = 0;
+let minorVersion = 1;
 
 let vm = require("vm");
 let fs = require("fs");
@@ -167,6 +167,35 @@ function runCompiledJs(absolutePath, commandLineArgs) {
           } else {
             responsePort.send({ error: "failed", message: error.message });
           }
+        }
+        break;
+      case "copyFile":
+        try {
+          let sourcePath = resolvePath(request.value.sourcePath);
+          let destinationPath = resolvePath(request.value.destinationPath);
+          fs.copyFileSync(sourcePath, destinationPath);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "moveFile":
+        try {
+          let sourcePath = resolvePath(request.value.sourcePath);
+          let destinationPath = resolvePath(request.value.destinationPath);
+          fs.renameSync(sourcePath, destinationPath);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "deleteFile":
+        try {
+          let path = resolvePath(request.value);
+          fs.unlinkSync(path);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
         }
         break;
       default:
