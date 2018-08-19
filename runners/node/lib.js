@@ -218,8 +218,6 @@ module.exports = function(inputFileName, commandLineArgs) {
     try {
       child_process.execFileSync(elmExecutable, ["make", "--optimize", "--output=" + outputJsFile, absolutePath], {cwd: elmJsonDirectory, encoding: "utf8"})
     } catch (error) {
-      console.log("Elm compilation failed:");
-      console.log(error.stderr);
       process.exit(1);
     }
 
