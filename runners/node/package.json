@@ -29,5 +29,8 @@
   },
   "devDependencies": {
     "prettier": "^1.14.2"
+  },
+  "scripts": {
+    "prettier": "prettier --write **/*.js"
   }
 }

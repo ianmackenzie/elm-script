@@ -79,7 +79,7 @@ function runCompiledJs(absolutePath, commandLineArgs) {
       process.exit(1);
   }
   flags["environmentVariables"] = Object.entries(process.env);
-  let script = global["Elm"].Main.init({flags: flags});
+  let script = global["Elm"].Main.init({ flags: flags });
   let requestPort = script.ports.requestPort;
   let responsePort = script.ports.responsePort;
 
@@ -216,9 +216,11 @@ module.exports = function(inputFileName, commandLineArgs) {
     runCompiledJs(absolutePath, commandLineArgs);
   } else if (extension === ".elm") {
     // Find path to corresponding elm.json
-    let elmJsonPath = findUp.sync("elm.json", {cwd: directory});
+    let elmJsonPath = findUp.sync("elm.json", { cwd: directory });
     if (elmJsonPath == null) {
-      console.log("Could not find elm.json in parent directory of " + absolutePath);
+      console.log(
+        "Could not find elm.json in parent directory of " + absolutePath
+      );
       process.exit(1);
     }
     let elmJsonDirectory = path.dirname(elmJsonPath);
@@ -231,21 +233,27 @@ module.exports = function(inputFileName, commandLineArgs) {
     // Switch back to original working directory
     process.chdir(cwd);
     if (elmExecutable == null) {
-      console.log("Could not find Elm executable in " + elmJsonDirectory + " or PATH");
+      console.log(
+        "Could not find Elm executable in " + elmJsonDirectory + " or PATH"
+      );
       process.exit(1);
     }
 
     // Create temporary JS file for Elm compiler output
     let outputJsFile = null;
     try {
-      outputJsFile = tmp.fileSync({postfix: ".js"}).name;
+      outputJsFile = tmp.fileSync({ postfix: ".js" }).name;
     } catch (error) {
-      console.log("Could not create temporary JavaScript file")
+      console.log("Could not create temporary JavaScript file");
     }
 
     // Try to compile Elm file
     try {
-      child_process.execFileSync(elmExecutable, ["make", "--optimize", "--output=" + outputJsFile, absolutePath], {cwd: elmJsonDirectory, encoding: "utf8"})
+      child_process.execFileSync(
+        elmExecutable,
+        ["make", "--optimize", "--output=" + outputJsFile, absolutePath],
+        { cwd: elmJsonDirectory, encoding: "utf8" }
+      );
     } catch (error) {
       process.exit(1);
     }
@@ -253,7 +261,11 @@ module.exports = function(inputFileName, commandLineArgs) {
     // Run the compiled JS
     runCompiledJs(outputJsFile, commandLineArgs);
   } else {
-    console.log("Unrecognized source file extension " + extension + " (expecting .elm or .js");
+    console.log(
+      "Unrecognized source file extension " +
+        extension +
+        " (expecting .elm or .js"
+    );
     process.exit(1);
   }
 };
