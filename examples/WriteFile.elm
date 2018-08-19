@@ -1,6 +1,6 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Common exposing (handleError, requestPort, responsePort)
 import Script exposing (Script)
 import Script.File as File
 import Script.FileSystem as FileSystem
@@ -39,18 +39,6 @@ script { fileSystem } =
         |> Script.map reverseLines
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (handleError .message)
-
-
-handleError : (x -> String) -> x -> Script Int a
-handleError toMessage error =
-    Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
 
 
 main : Script.Program
