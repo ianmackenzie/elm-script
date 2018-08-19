@@ -7,7 +7,9 @@ let vm = require("vm");
 let fs = require("fs");
 let path = require("path");
 let child_process = require("child_process");
-let compileToString = require("node-elm-compiler").compileToString;
+let which = require("which");
+let findUp = require("find-up");
+let tmp = require("tmp");
 
 function resolvePath(components) {
   if (components.length == 0) {
@@ -40,10 +42,20 @@ function listEntities(request, responsePort, statsPredicate) {
   }
 }
 
-function runCompiledJs(compiledJs, commandLineArgs) {
+function runCompiledJs(absolutePath, commandLineArgs) {
   // Set up browser-like context in which to run compiled Elm code
   global.XMLHttpRequest = require("xhr2");
   global.setTimeout = require("timers").setTimeout;
+
+  // Read compiled JS from file
+  var compiledJs = null;
+  try {
+    compiledJs = fs.readFileSync(absolutePath, "utf8");
+  } catch (error) {
+    console.log(error.message);
+    process.exit(1);
+  }
+
   // Run Elm code to create the 'Elm' object
   vm.runInThisContext(compiledJs);
 
@@ -170,20 +182,51 @@ function runCompiledJs(compiledJs, commandLineArgs) {
 module.exports = function(inputFileName, commandLineArgs) {
   let absolutePath = path.resolve(inputFileName);
   let directory = path.dirname(absolutePath);
-  if (path.extname(absolutePath) === ".js") {
-    fs.readFile(absolutePath, "utf8", (error, compiledJs) => {
-      if (error) {
-        console.log(error.message);
-      } else {
-        runCompiledJs(compiledJs, commandLineArgs);
-      }
-    });
+  let extension = path.extname(absolutePath);
+  if (extension === ".js") {
+    runCompiledJs(absolutePath, commandLineArgs);
+  } else if (extension === ".elm") {
+    // Find path to corresponding elm.json
+    let elmJsonPath = findUp.sync("elm.json", {cwd: directory});
+    if (elmJsonPath == null) {
+      console.log("Could not find elm.json in parent directory of " + absolutePath);
+      process.exit(1);
+    }
+    let elmJsonDirectory = path.dirname(elmJsonPath);
+
+    // Find Elm executable
+    let cwd = process.cwd();
+    // Switch to elm.json directory to find Elm executable
+    process.chdir(elmJsonDirectory);
+    let elmExecutable = which.sync("elm");
+    // Switch back to original working directory
+    process.chdir(cwd);
+    if (elmExecutable == null) {
+      console.log("Could not find Elm executable in " + elmJsonDirectory + " or PATH");
+      process.exit(1);
+    }
+
+    // Create temporary JS file for Elm compiler output
+    let outputJsFile = null;
+    try {
+      outputJsFile = tmp.fileSync({postfix: ".js"}).name;
+    } catch (error) {
+      console.log("Could not create temporary JavaScript file")
+    }
+
+    // Try to compile Elm file
+    try {
+      child_process.execFileSync(elmExecutable, ["make", "--optimize", "--output=" + outputJsFile, absolutePath], {cwd: elmJsonDirectory, encoding: "utf8"})
+    } catch (error) {
+      console.log("Elm compilation failed:");
+      console.log(error.stderr);
+      process.exit(1);
+    }
+
+    // Run the compiled JS
+    runCompiledJs(outputJsFile, commandLineArgs);
   } else {
-    let compileOptions = { yes: true, cwd: directory };
-    compileToString(absolutePath, compileOptions)
-      .then((compiledJs) => {
-        runCompiledJs(compiledJs, commandLineArgs);
-      })
-      .catch((error) => console.log(error.message));
+    console.log("Unrecognized source file extension " + extension + " (expecting .elm or .js");
+    process.exit(1);
   }
 };
