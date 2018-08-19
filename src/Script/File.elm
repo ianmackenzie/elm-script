@@ -60,6 +60,14 @@ read (Internal.File path) =
         )
 
 
+decodeNullResult : Decoder (Internal.Script Error ())
+decodeNullResult =
+    Decode.oneOf
+        [ Decode.null (Internal.Succeed ())
+        , errorDecoder |> Decode.map Internal.Fail
+        ]
+
+
 write : String -> File (Write p) -> Internal.Script Error ()
 write contents (Internal.File path) =
     Internal.Invoke "writeFile"
@@ -68,11 +76,7 @@ write contents (Internal.File path) =
             , ( "path", Path.encode path )
             ]
         )
-        (Decode.oneOf
-            [ Decode.null (Internal.Succeed ())
-            , errorDecoder |> Decode.map Internal.Fail
-            ]
-        )
+        decodeNullResult
 
 
 writeTo : File (Write p) -> String -> Internal.Script Error ()
