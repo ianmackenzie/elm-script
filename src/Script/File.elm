@@ -1,9 +1,11 @@
 module Script.File
     exposing
         ( Error
+        , Existence(..)
         , File
         , asReadOnly
         , asWriteOnly
+        , checkExistence
         , copy
         , copyInto
         , delete
@@ -32,6 +34,12 @@ type alias Error =
     { code : String
     , message : String
     }
+
+
+type Existence
+    = Exists
+    | DoesNotExist
+    | IsNotAFile
 
 
 errorDecoder : Decoder Error
@@ -134,3 +142,23 @@ moveInto directory file =
             Directory.file (name file) directory
     in
     move file destination |> Script.andThen (\() -> Script.succeed destination)
+
+
+checkExistence : File (Read p) -> Internal.Script Error Existence
+checkExistence (Internal.File path) =
+    Path.stat path
+        |> Script.map
+            (\stat ->
+                case stat of
+                    Path.File ->
+                        Exists
+
+                    Path.Nonexistent ->
+                        DoesNotExist
+
+                    Path.Directory ->
+                        IsNotAFile
+
+                    Path.Other ->
+                        IsNotAFile
+            )
