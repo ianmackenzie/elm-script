@@ -2,6 +2,8 @@ module Script.File
     exposing
         ( Error
         , File
+        , asReadOnly
+        , asWriteOnly
         , copy
         , copyInto
         , delete
@@ -9,8 +11,6 @@ module Script.File
         , moveInto
         , name
         , read
-        , toReadOnly
-        , toWriteOnly
         , write
         , writeTo
         )
@@ -46,13 +46,13 @@ name (Internal.File path) =
     Path.name path
 
 
-toReadOnly : File (Read p) -> File ReadOnly
-toReadOnly (Internal.File path) =
+asReadOnly : File (Read p) -> File ReadOnly
+asReadOnly (Internal.File path) =
     Internal.File path
 
 
-toWriteOnly : File (Write p) -> File WriteOnly
-toWriteOnly (Internal.File path) =
+asWriteOnly : File (Write p) -> File WriteOnly
+asWriteOnly (Internal.File path) =
     Internal.File path
 
 

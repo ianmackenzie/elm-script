@@ -3,6 +3,8 @@ module Script.Directory
         ( Directory
         , Error
         , Existence(..)
+        , asReadOnly
+        , asWriteOnly
         , checkExistence
         , create
         , createTemporary
@@ -13,8 +15,6 @@ module Script.Directory
         , obliterate
         , remove
         , subdirectory
-        , toReadOnly
-        , toWriteOnly
         )
 
 import Json.Decode as Decode exposing (Decoder)
@@ -53,13 +53,13 @@ name (Internal.Directory path) =
     Path.name path
 
 
-toReadOnly : Directory (Read p) -> Directory ReadOnly
-toReadOnly (Internal.Directory path) =
+asReadOnly : Directory (Read p) -> Directory ReadOnly
+asReadOnly (Internal.Directory path) =
     Internal.Directory path
 
 
-toWriteOnly : Directory (Write p) -> Directory WriteOnly
-toWriteOnly (Internal.Directory path) =
+asWriteOnly : Directory (Write p) -> Directory WriteOnly
+asWriteOnly (Internal.Directory path) =
     Internal.Directory path
 
 
