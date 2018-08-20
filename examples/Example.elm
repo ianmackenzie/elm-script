@@ -1,4 +1,4 @@
-port module Example exposing (handleError, ensureDirectory, program)
+port module Example exposing (ensureDirectory, handleError, program)
 
 import Json.Encode exposing (Value)
 import Script exposing (Script)
