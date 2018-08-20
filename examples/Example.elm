@@ -45,6 +45,6 @@ port requestPort : Value -> Cmd msg
 port responsePort : (Value -> msg) -> Sub msg
 
 
-program : Script Int () -> Script.program
+program : (Script.Context -> Script Int ()) -> Script.Program
 program script =
     Script.program script requestPort responsePort
