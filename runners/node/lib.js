@@ -16,7 +16,7 @@ function resolvePath(components) {
     throw { code: "ENOENT", message: "Empty path given" };
   }
 
-  let result = path.normalize(components[0]);
+  let result = path.resolve(components[0]);
   for (var i = 1; i < components.length; i++) {
     let childPath = path.resolve(result, components[i]);
     if (path.relative(result, childPath).startsWith("..")) {
