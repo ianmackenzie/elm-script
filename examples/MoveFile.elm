@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Example
 import Script exposing (Script)
+import Script.Directory as Directory
 import Script.File as File
 
 
