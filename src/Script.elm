@@ -82,6 +82,7 @@ import Script.EnvironmentVariables exposing (EnvironmentVariables)
 import Script.FileSystem exposing (FileSystem)
 import Script.Internal as Internal
 import Script.NetworkConnection exposing (NetworkConnection)
+import Script.Permissions exposing (ReadWrite)
 import Script.Platform as Platform exposing (Platform)
 import Script.Shell exposing (Shell)
 import Task exposing (Task)
@@ -107,6 +108,7 @@ type alias Context =
     { arguments : List String
     , environmentVariables : EnvironmentVariables
     , fileSystem : FileSystem
+    , workingDirectory : Internal.Directory ReadWrite
     , networkConnection : NetworkConnection
     , shell : Shell
     , platform : Platform
@@ -219,6 +221,7 @@ program main requestPort responsePort =
                     , environmentVariables = environmentVariables
                     , platform = platform
                     , fileSystem = Internal.FileSystem
+                    , workingDirectory = Internal.Directory [ "." ]
                     , networkConnection = Internal.NetworkConnection
                     , shell = Internal.Shell
                     }
