@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Example
 import Script exposing (Script)
 import Script.File as File exposing (File)
 import Script.FileSystem as FileSystem
