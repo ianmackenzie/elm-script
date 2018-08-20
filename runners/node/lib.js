@@ -191,8 +191,8 @@ function runCompiledJs(absolutePath, commandLineArgs) {
         break;
       case "deleteFile":
         try {
-          let path = resolvePath(request.value);
-          fs.unlinkSync(path);
+          let filePath = resolvePath(request.value);
+          fs.unlinkSync(filePath);
           responsePort.send(null);
         } catch (error) {
           responsePort.send({ code: error.code, message: error.message });
