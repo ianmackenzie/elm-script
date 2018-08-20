@@ -1,10 +1,10 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Example
 import Script exposing (Script)
-import Script.File as File
+import Script.File as File exposing (File)
 import Script.FileSystem as FileSystem
-import Script.Permissions as Permissions
+import Script.Permissions as Permissions exposing (ReadOnly)
 
 
 script : Script.Context -> Script Int ()
@@ -12,33 +12,22 @@ script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
             let
+                inputFile : File ReadOnly
                 inputFile =
-                    FileSystem.file Permissions.readOnly path fileSystem
+                    fileSystem |> FileSystem.file path
             in
             File.read inputFile
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen
                     (Script.forEach (String.toUpper >> Script.printLine))
-                |> Script.onError (handleError .message)
+                |> Script.onError (Example.handleError .message)
 
         _ ->
             Script.printLine "Please supply the path of one file to read"
                 |> Script.andThen (\() -> Script.fail 1)
 
 
-handleError : (x -> String) -> x -> Script Int a
-handleError toMessage error =
-    Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
-
-
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script

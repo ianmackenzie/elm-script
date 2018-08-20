@@ -1,6 +1,6 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Example
 import Script exposing (Script)
 import Script.Shell as Shell exposing (Shell)
 
@@ -49,7 +49,7 @@ script { shell } =
           , "Hello World!"
           )
         , ( "elm-run GetElmVersion.elm"
-          , "Current Elm version: 0.18.0"
+          , "Current Elm version: 0.19.0"
           )
         , ( "elm-run LineCounts.elm test.txt"
           , "test.txt: 3 lines"
@@ -60,16 +60,6 @@ script { shell } =
         ]
 
 
-
--- Boilerplate
-
-
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
-
-
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script

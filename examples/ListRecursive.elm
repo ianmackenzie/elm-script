@@ -1,6 +1,6 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File exposing (File)
@@ -38,27 +38,17 @@ script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
-            fileSystem
-                |> FileSystem.directory Permissions.readOnly path
-                |> listRecursively 0
-                |> Script.onError (handleError .message)
+            let
+                directory =
+                    fileSystem |> FileSystem.directory path
+            in
+            listRecursively 0 directory
+                |> Script.onError (Example.handleError .message)
 
         _ ->
             Script.printLine "Please supply one directory name"
 
 
-handleError : (x -> String) -> x -> Script Int a
-handleError toMessage error =
-    Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
-
-
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script

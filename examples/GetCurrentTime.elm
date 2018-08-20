@@ -1,6 +1,6 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Example
 import Script exposing (Script)
 import Time
 
@@ -23,12 +23,6 @@ script context =
             )
 
 
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
-
-
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script

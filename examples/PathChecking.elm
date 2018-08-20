@@ -1,11 +1,11 @@
-port module Main exposing (..)
+module Main exposing (..)
 
-import Json.Encode exposing (Value)
+import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File
 import Script.FileSystem as FileSystem
-import Script.Permissions as Permissions exposing (Read)
+import Script.Permissions as Permissions exposing (Read, ReadOnly)
 
 
 niceScript : Directory (Read p) -> Script Int ()
@@ -17,14 +17,14 @@ niceScript directory =
                     String.fromInt (String.length contents)
                         ++ " characters in test.txt"
             )
-        |> Script.onError (handleError .message)
+        |> Script.onError (Example.handleError .message)
 
 
 evilScript : Directory (Read p) -> Script Int ()
 evilScript directory =
     File.read (directory |> Directory.file "C:/passwords.txt")
         |> Script.ignore
-        |> Script.onError (handleError .message)
+        |> Script.onError (Example.handleError .message)
 
 
 script : Script.Context -> Script Int ()
@@ -32,9 +32,9 @@ script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
             let
+                directory : Directory ReadOnly
                 directory =
-                    fileSystem
-                        |> FileSystem.directory Permissions.readOnly path
+                    fileSystem |> FileSystem.directory path
             in
             Script.do
                 [ niceScript directory
@@ -46,18 +46,6 @@ script { arguments, fileSystem } =
                 |> Script.andThen (\() -> Script.fail 1)
 
 
-handleError : (x -> String) -> x -> Script Int a
-handleError toMessage error =
-    Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (\() -> Script.fail 1)
-
-
-port requestPort : Value -> Cmd msg
-
-
-port responsePort : (Value -> msg) -> Sub msg
-
-
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script

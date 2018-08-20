@@ -1,23 +1,20 @@
 module Main exposing (..)
 
-import Common exposing (handleError, requestPort, responsePort)
+import Example
 import Script exposing (Script)
 import Script.Directory as Directory
-import Script.FileSystem as FileSystem
-import Script.Permissions as Permissions
 
 
 script : Script.Context -> Script Int ()
-script { fileSystem } =
+script { workingDirectory } =
     let
         subdirectory =
-            fileSystem
-                |> FileSystem.directory Permissions.readWrite "subdirectory"
+            workingDirectory |> Directory.subdirectory "subdirectory"
     in
     Directory.remove subdirectory
-        |> Script.onError (handleError .message)
+        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program
 main =
-    Script.program script requestPort responsePort
+    Example.program script
