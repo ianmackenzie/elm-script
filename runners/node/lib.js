@@ -1,7 +1,7 @@
 "use strict";
 
 let majorVersion = 4;
-let minorVersion = 1;
+let minorVersion = 2;
 
 let vm = require("vm");
 let fs = require("fs");
@@ -10,6 +10,8 @@ let child_process = require("child_process");
 let which = require("which");
 let findUp = require("find-up");
 let tmp = require("tmp");
+let rimraf = require("rimraf");
+let os = require("os");
 
 function resolvePath(components) {
   if (components.length == 0) {
@@ -194,6 +196,64 @@ function runCompiledJs(absolutePath, commandLineArgs) {
           let filePath = resolvePath(request.value);
           fs.unlinkSync(filePath);
           responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "stat":
+        try {
+          try {
+            let entityPath = resolvePath(request.value);
+            let stats = fs.statSync(entityPath);
+            if (stats.isFile()) {
+              responsePort.send("file");
+            } else if (stats.isDirectory()) {
+              responsePort.send("directory");
+            } else {
+              responsePort.send("other");
+            }
+          } catch (error) {
+            responsePort.send("nonexistent");
+          }
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "createDirectory":
+        try {
+          let directoryPath = resolvePath(request.value);
+          fs.mkdirSync(directoryPath);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "removeDirectory":
+        try {
+          let directoryPath = resolvePath(request.value);
+          fs.rmdirSync(directoryPath);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "obliterateDirectory":
+        try {
+          let directoryPath = resolvePath(request.value);
+          rimraf.sync(directoryPath);
+          responsePort.send(null);
+        } catch (error) {
+          responsePort.send({ code: error.code, message: error.message });
+        }
+        break;
+      case "createTemporaryDirectory":
+        try {
+          let template = path.join(os.tmpdir(), "elm-run-XXXXXX");
+          let directoryPath = tmp.dirSync({
+            template: template,
+            unsafeCleanup: true
+          }).name;
+          responsePort.send(directoryPath);
         } catch (error) {
           responsePort.send({ code: error.code, message: error.message });
         }

@@ -1,12 +1,27 @@
-module Script.Path exposing (Path, encode, name)
+module Script.Path exposing (Path, Stat(..), encode, name, stat)
 
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
+import Script exposing (Script)
 import Script.Internal as Internal
 
 
 type alias Path =
     Internal.Path
+
+
+type alias Error =
+    { code : String
+    , message : String
+    }
+
+
+type Stat
+    = Nonexistent
+    | File
+    | Directory
+    | Other
 
 
 nameRegex : Regex
@@ -33,3 +48,44 @@ name path =
 encode : Path -> Value
 encode path =
     Encode.list Encode.string path
+
+
+statDecoder : Decoder Stat
+statDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "nonexistent" ->
+                        Decode.succeed Nonexistent
+
+                    "file" ->
+                        Decode.succeed File
+
+                    "directory" ->
+                        Decode.succeed Directory
+
+                    "other" ->
+                        Decode.succeed Other
+
+                    _ ->
+                        Decode.fail ("Unrecognized stat value '" ++ string ++ "'")
+            )
+
+
+errorDecoder : Decoder Error
+errorDecoder =
+    Decode.map2 Error
+        (Decode.field "code" Decode.string)
+        (Decode.field "message" Decode.string)
+
+
+stat : Path -> Script Error Stat
+stat path =
+    Internal.Invoke "stat"
+        (encode path)
+        (Decode.oneOf
+            [ statDecoder |> Decode.map Internal.Succeed
+            , errorDecoder |> Decode.map Internal.Fail
+            ]
+        )
