@@ -1,4 +1,4 @@
-port module Common exposing (..)
+port module Example exposing (handleError, ensureDirectory, program)
 
 import Json.Encode exposing (Value)
 import Script exposing (Script)
@@ -43,3 +43,8 @@ port requestPort : Value -> Cmd msg
 
 
 port responsePort : (Value -> msg) -> Sub msg
+
+
+program : Script Int () -> Script.program
+program script =
+    Script.program script requestPort responsePort
