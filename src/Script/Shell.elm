@@ -1,8 +1,17 @@
-module Script.Shell exposing (ProcessError(..), Shell, execute)
+module Script.Shell exposing
+    ( Option
+    , ProcessError(..)
+    , Shell
+    , execute
+    , executeWith
+    , workingDirectory
+    )
 
 import Json.Decode as Decode
-import Json.Encode as Encode
-import Script.Internal as Internal
+import Json.Encode as Encode exposing (Value)
+import Script.Internal as Internal exposing (Directory)
+import Script.Path as Path
+import Script.Permissions as Permissions exposing (ReadWrite)
 
 
 type alias Shell =
@@ -15,10 +24,18 @@ type ProcessError
     | ProcessExitedWithError Int
 
 
-execute : String -> Shell -> Internal.Script ProcessError String
-execute command shell =
+type Option
+    = WorkingDirectory (Directory ReadWrite)
+
+
+executeWith : List Option -> String -> Shell -> Internal.Script ProcessError String
+executeWith options command shell =
+    let
+        fields =
+            ( "command", Encode.string command ) :: List.map toField options
+    in
     Internal.Invoke "execute"
-        (Encode.string command)
+        (Encode.object fields)
         (Decode.oneOf
             [ Decode.string |> Decode.map Internal.Succeed
             , Decode.field "error" Decode.string
@@ -42,3 +59,20 @@ execute command shell =
                 |> Decode.map Internal.Fail
             ]
         )
+
+
+execute : String -> Shell -> Internal.Script ProcessError String
+execute =
+    executeWith []
+
+
+workingDirectory : Directory ReadWrite -> Option
+workingDirectory directory =
+    WorkingDirectory directory
+
+
+toField : Option -> ( String, Value )
+toField option =
+    case option of
+        WorkingDirectory (Internal.Directory path) ->
+            ( "workingDirectory", Path.encode path )

@@ -3,7 +3,6 @@ module Script.Path exposing (Path, Stat(..), encode, name, stat)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
-import Script exposing (Script)
 import Script.Internal as Internal
 
 
@@ -80,7 +79,7 @@ errorDecoder =
         (Decode.field "message" Decode.string)
 
 
-stat : Path -> Script Error Stat
+stat : Path -> Internal.Script Error Stat
 stat path =
     Internal.Invoke "stat"
         (encode path)
