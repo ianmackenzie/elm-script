@@ -1,7 +1,7 @@
 "use strict";
 
-let majorVersion = 4;
-let minorVersion = 2;
+let majorVersion = 5;
+let minorVersion = 0;
 
 let vm = require("vm");
 let fs = require("fs");
@@ -159,7 +159,11 @@ function runCompiledJs(absolutePath, commandLineArgs) {
       case "execute":
         try {
           let options = { encoding: "utf8", maxBuffer: 1024 * 1024 * 1024 };
-          let output = child_process.execSync(request.value, options);
+          let workingDirectory = request.value.options["workingDirectory"];
+          if (workingDirectory != null) {
+            options["cwd"] = resolvePath(workingDirectory);
+          }
+          let output = child_process.execSync(request.value.command, options);
           responsePort.send(output);
         } catch (error) {
           if (error.status !== null) {

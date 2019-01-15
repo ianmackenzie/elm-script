@@ -30,12 +30,12 @@ type Option
 
 executeWith : List Option -> String -> Shell -> Internal.Script ProcessError String
 executeWith options command shell =
-    let
-        fields =
-            ( "command", Encode.string command ) :: List.map toField options
-    in
     Internal.Invoke "execute"
-        (Encode.object fields)
+        (Encode.object
+            [ ( "command", Encode.string command )
+            , ( "options", Encode.object (List.map toField options) )
+            ]
+        )
         (Decode.oneOf
             [ Decode.string |> Decode.map Internal.Succeed
             , Decode.field "error" Decode.string
