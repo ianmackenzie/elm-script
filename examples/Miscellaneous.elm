@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Example
 import Http
@@ -33,6 +33,7 @@ script { networkConnection } =
             (\number ->
                 if number > 2 then
                     Script.succeed ()
+
                 else
                     Script.fail "Ugh, number is too small"
             )

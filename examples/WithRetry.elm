@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Example
 import Script exposing (Script)
@@ -29,6 +29,7 @@ retry shell command count =
 
                         Shell.ProcessFailed message ->
                             abort ("Process could not be run: " ++ message)
+
                 else
                     abort "Process failed too many times"
             )

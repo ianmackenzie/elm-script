@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Example
 import Script exposing (Script)
@@ -20,6 +20,7 @@ runTestCases shell testCases =
                         (\output ->
                             if String.trim output == expectedOutput then
                                 Script.printLine ("PASSED: " ++ command)
+
                             else
                                 Script.printLine
                                     ("FAILED: "

@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Example
 import Script exposing (Script)
@@ -12,6 +12,7 @@ script context =
             (\time ->
                 if (Time.posixToMillis time |> modBy 100) > 87 then
                     Script.printLine "Succeeded"
+
                 else
                     Script.printLine "Failed"
                         |> Script.andThen (\() -> Script.fail 1)
