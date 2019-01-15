@@ -7,6 +7,7 @@ module Script.NetworkConnection exposing
     , post
     )
 
+import Duration exposing (Duration)
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
@@ -56,3 +57,25 @@ post : { url : String, body : Http.Body, expect : Expect a } -> NetworkConnectio
 post { url, body, expect } networkConnection =
     Internal.Do <|
         Http.post { url = url, body = body, expect = toHttpExpect expect }
+
+
+request :
+    { method : String
+    , headers : List Http.Header
+    , url : String
+    , body : Http.Body
+    , expect : Expect a
+    , timeout : Maybe Duration
+    }
+    -> Internal.Script Http.Error a
+request { method, headers, url, body, expect, timeout } =
+    Internal.Do <|
+        Http.request
+            { method = method
+            , headers = headers
+            , url = url
+            , body = body
+            , expect = toHttpExpect expect
+            , timeout = Maybe.map Duration.inMilliseconds timeout
+            , tracker = Nothing
+            }
