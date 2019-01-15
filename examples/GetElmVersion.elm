@@ -6,8 +6,10 @@ import Script.Shell as Shell
 
 
 script : Script.Context -> Script Int ()
-script { shell } =
-    Shell.execute "elm --version" shell
+script { shell, workingDirectory } =
+    shell
+        |> Shell.executeWith [ Shell.workingDirectory workingDirectory ]
+            "elm --version"
         |> Script.map String.trim
         |> Script.andThen
             (\versionString ->
