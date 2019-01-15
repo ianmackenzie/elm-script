@@ -1,21 +1,20 @@
-module Script.Directory
-    exposing
-        ( Directory
-        , Error
-        , Existence(..)
-        , asReadOnly
-        , asWriteOnly
-        , checkExistence
-        , create
-        , createTemporary
-        , file
-        , listFiles
-        , listSubdirectories
-        , name
-        , obliterate
-        , remove
-        , subdirectory
-        )
+module Script.Directory exposing
+    ( Directory
+    , Error
+    , Existence(..)
+    , asReadOnly
+    , asWriteOnly
+    , checkExistence
+    , create
+    , createTemporary
+    , file
+    , listFiles
+    , listSubdirectories
+    , name
+    , obliterate
+    , remove
+    , subdirectory
+    )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

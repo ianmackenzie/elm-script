@@ -1,4 +1,14 @@
-module Script.Internal exposing (..)
+module Script.Internal exposing
+    ( Directory(..)
+    , EnvironmentVariables(..)
+    , File(..)
+    , FileSystem(..)
+    , NetworkConnection(..)
+    , Path
+    , Script(..)
+    , Shell(..)
+    , perform
+    )
 
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value)

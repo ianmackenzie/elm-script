@@ -1,9 +1,8 @@
-module Script.Platform
-    exposing
-        ( Platform(..)
-        , lineSeparator
-        , pathSeparator
-        )
+module Script.Platform exposing
+    ( Platform(..)
+    , lineSeparator
+    , pathSeparator
+    )
 
 
 type Platform
@@ -18,7 +17,7 @@ lineSeparator platform =
             "\n"
 
         Windows ->
-            "\r\n"
+            "\u{000D}\n"
 
 
 pathSeparator : Platform -> String

@@ -1,8 +1,7 @@
-module Script.NetworkConnection
-    exposing
-        ( NetworkConnection
-        , sendRequest
-        )
+module Script.NetworkConnection exposing
+    ( NetworkConnection
+    , sendRequest
+    )
 
 import Http
 import Script.Internal as Internal

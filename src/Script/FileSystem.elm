@@ -1,9 +1,8 @@
-module Script.FileSystem
-    exposing
-        ( FileSystem
-        , directory
-        , file
-        )
+module Script.FileSystem exposing
+    ( FileSystem
+    , directory
+    , file
+    )
 
 import Script.Internal as Internal
 
