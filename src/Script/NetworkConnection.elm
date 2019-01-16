@@ -3,6 +3,7 @@ module Script.NetworkConnection exposing
     , NetworkConnection
     , expectJson
     , expectString
+    , expectStringResponse
     , get
     , post
     )
@@ -45,6 +46,11 @@ expectString =
 expectJson : Decoder a -> Expect Http.Error a
 expectJson decoder =
     Expect (Http.expectJson resultToScript decoder)
+
+
+expectStringResponse : (Http.Response String -> Result x a) -> Expect x a
+expectStringResponse handler =
+    Expect (Http.expectStringResponse resultToScript handler)
 
 
 get : { url : String, expect : Expect x a } -> NetworkConnection -> Internal.Script x a
