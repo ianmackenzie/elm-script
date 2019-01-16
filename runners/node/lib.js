@@ -46,7 +46,9 @@ function listEntities(request, responsePort, statsPredicate) {
 
 function runCompiledJs(absolutePath, commandLineArgs) {
   // Set up browser-like context in which to run compiled Elm code
-  global.XMLHttpRequest = require("xhr2");
+  let xhr2 = require("xhr2-with-formdata");
+  global.XMLHttpRequest = xhr2.XMLHttpRequest;
+  global.FormData = xhr2.FormData;
   global.setTimeout = require("timers").setTimeout;
 
   // Read compiled JS from file
