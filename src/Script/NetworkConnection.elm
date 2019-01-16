@@ -18,16 +18,16 @@ type alias NetworkConnection =
     Internal.NetworkConnection
 
 
-type Expect a
-    = Expect (Http.Expect (Internal.Script Http.Error a))
+type Expect x a
+    = Expect (Http.Expect (Internal.Script x a))
 
 
-toHttpExpect : Expect a -> Http.Expect (Internal.Script Http.Error a)
+toHttpExpect : Expect x a -> Http.Expect (Internal.Script x a)
 toHttpExpect (Expect httpExpect) =
     httpExpect
 
 
-resultToScript : Result Http.Error a -> Internal.Script Http.Error a
+resultToScript : Result x a -> Internal.Script x a
 resultToScript result =
     case result of
         Ok value ->
@@ -37,23 +37,23 @@ resultToScript result =
             Internal.Fail error
 
 
-expectString : Expect String
+expectString : Expect Http.Error String
 expectString =
     Expect (Http.expectString resultToScript)
 
 
-expectJson : Decoder a -> Expect a
+expectJson : Decoder a -> Expect Http.Error a
 expectJson decoder =
     Expect (Http.expectJson resultToScript decoder)
 
 
-get : { url : String, expect : Expect a } -> NetworkConnection -> Internal.Script Http.Error a
+get : { url : String, expect : Expect x a } -> NetworkConnection -> Internal.Script x a
 get { url, expect } networkConnection =
     Internal.Do <|
         Http.get { url = url, expect = toHttpExpect expect }
 
 
-post : { url : String, body : Http.Body, expect : Expect a } -> NetworkConnection -> Internal.Script Http.Error a
+post : { url : String, body : Http.Body, expect : Expect x a } -> NetworkConnection -> Internal.Script x a
 post { url, body, expect } networkConnection =
     Internal.Do <|
         Http.post { url = url, body = body, expect = toHttpExpect expect }
@@ -64,10 +64,10 @@ request :
     , headers : List Http.Header
     , url : String
     , body : Http.Body
-    , expect : Expect a
+    , expect : Expect x a
     , timeout : Maybe Duration
     }
-    -> Internal.Script Http.Error a
+    -> Internal.Script x a
 request { method, headers, url, body, expect, timeout } =
     Internal.Do <|
         Http.request
