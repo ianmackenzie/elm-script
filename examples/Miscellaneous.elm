@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Miscellaneous exposing (..)
 
 import Example
 import Http

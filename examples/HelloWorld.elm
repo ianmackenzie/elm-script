@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module HelloWorld exposing (..)
 
 import Json.Encode exposing (Value)
 import Script exposing (Script)

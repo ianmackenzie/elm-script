@@ -1,4 +1,4 @@
-module Main exposing (..)
+module MoveFile exposing (..)
 
 import Example
 import Script exposing (Script)
