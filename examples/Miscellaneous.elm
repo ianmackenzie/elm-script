@@ -33,6 +33,7 @@ script { networkConnection } =
             (\number ->
                 if number > 2 then
                     Script.succeed ()
+
                 else
                     Script.fail "Ugh, number is too small"
             )

@@ -20,6 +20,7 @@ runTestCases shell testCases =
                         (\output ->
                             if String.trim output == expectedOutput then
                                 Script.printLine ("PASSED: " ++ command)
+
                             else
                                 Script.printLine
                                     ("FAILED: "
