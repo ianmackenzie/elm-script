@@ -28,11 +28,13 @@ type Option
     = WorkingDirectory (Directory ReadWrite)
 
 
-executeWith : List Option -> String -> Shell -> Internal.Script ProcessError String
-executeWith options command shell =
+executeWith : List Option -> String -> List String -> Shell -> Internal.Script ProcessError String
+executeWith options command arguments shell =
     let
         fields =
-            ( "command", Encode.string command ) :: List.map toField options
+            ( "command", Encode.string command )
+                :: ( "arguments", Encode.list Encode.string arguments )
+                :: List.map toField options
     in
     Internal.Invoke "execute"
         (Encode.object fields)
@@ -61,7 +63,7 @@ executeWith options command shell =
         )
 
 
-execute : String -> Shell -> Internal.Script ProcessError String
+execute : String -> List String -> Shell -> Internal.Script ProcessError String
 execute =
     executeWith []
 

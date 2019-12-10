@@ -11,9 +11,9 @@ abort message =
         |> Script.andThen (\() -> Script.fail 1)
 
 
-retry : Shell -> String -> Int -> Script Int ()
-retry shell command count =
-    Shell.execute command shell
+retry : Shell -> String -> List String -> Int -> Script Int ()
+retry shell command arguments count =
+    Shell.execute command arguments shell
         |> Script.andThen Script.printLine
         |> Script.onError
             (\error ->
@@ -22,7 +22,7 @@ retry shell command count =
                         Shell.ProcessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
                                 |> Script.andThen
-                                    (\() -> retry shell command (count - 1))
+                                    (\() -> retry shell command arguments (count - 1))
 
                         Shell.ProcessWasTerminated ->
                             abort "Process was terminated"
@@ -42,12 +42,8 @@ script { arguments, shell } =
             Script.printLine "Please enter an executable to run"
                 |> Script.andThen (\() -> Script.fail 1)
 
-        _ ->
-            let
-                command =
-                    String.join " " arguments
-            in
-            retry shell command 5
+        command :: rest ->
+            retry shell command rest 5
 
 
 main : Script.Program

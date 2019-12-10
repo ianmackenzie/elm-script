@@ -69,7 +69,7 @@ import Time
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 4, 1 )
+    ( 5, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a

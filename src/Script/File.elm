@@ -30,8 +30,7 @@ type alias File p =
 
 
 type alias Error =
-    { code : String
-    , message : String
+    { message : String
     }
 
 
@@ -43,9 +42,7 @@ type Existence
 
 errorDecoder : Decoder Error
 errorDecoder =
-    Decode.map2 Error
-        (Decode.field "code" Decode.string)
-        (Decode.field "message" Decode.string)
+    Decode.map Error (Decode.field "message" Decode.string)
 
 
 name : File p -> String

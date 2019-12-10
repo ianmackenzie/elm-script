@@ -11,8 +11,7 @@ type alias Path =
 
 
 type alias Error =
-    { code : String
-    , message : String
+    { message : String
     }
 
 
@@ -74,9 +73,7 @@ statDecoder =
 
 errorDecoder : Decoder Error
 errorDecoder =
-    Decode.map2 Error
-        (Decode.field "code" Decode.string)
-        (Decode.field "message" Decode.string)
+    Decode.map Error (Decode.field "message" Decode.string)
 
 
 stat : Path -> Internal.Script Error Stat

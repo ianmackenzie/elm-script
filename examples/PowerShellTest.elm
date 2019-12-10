@@ -7,7 +7,7 @@ import Script.Shell as Shell
 
 script : Script.Context -> Script Int ()
 script { shell } =
-    Shell.execute "PowerShell -Command Get-ChildItem -Name -Path *.elm" shell
+    Shell.execute "PowerShell" [ "-Command", "Get-ChildItem", "-Name", "-Path", "*.elm" ] shell
         |> Script.map String.lines
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))
