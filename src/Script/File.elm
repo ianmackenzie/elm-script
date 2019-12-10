@@ -1,21 +1,20 @@
-module Script.File
-    exposing
-        ( Error
-        , Existence(..)
-        , File
-        , asReadOnly
-        , asWriteOnly
-        , checkExistence
-        , copy
-        , copyInto
-        , delete
-        , move
-        , moveInto
-        , name
-        , read
-        , write
-        , writeTo
-        )
+module Script.File exposing
+    ( Error
+    , Existence(..)
+    , File
+    , asReadOnly
+    , asWriteOnly
+    , checkExistence
+    , copy
+    , copyInto
+    , delete
+    , move
+    , moveInto
+    , name
+    , read
+    , write
+    , writeTo
+    )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode

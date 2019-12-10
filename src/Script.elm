@@ -1,36 +1,14 @@
-module Script
-    exposing
-        ( Arguments
-        , Context
-        , Program
-        , RequestPort
-        , ResponsePort
-        , Script
-        , andThen
-        , andWith
-        , aside
-        , attempt
-        , collect
-        , do
-        , fail
-        , forEach
-        , getCurrentTime
-        , ignore
-        , map
-        , map2
-        , map3
-        , map4
-        , mapError
-        , onError
-        , printLine
-        , program
-        , return
-        , sequence
-        , sleep
-        , succeed
-        , with
-        , yield
-        )
+module Script exposing
+    ( Script, Context
+    , RequestPort, ResponsePort, program
+    , succeed, fail
+    , printLine, sleep, getCurrentTime
+    , map, map2, map3, map4, ignore
+    , do, forEach, sequence, collect, andThen, aside
+    , Arguments, with, andWith, yield, return
+    , mapError, attempt, onError
+    , Program
+    )
 
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
@@ -198,6 +176,7 @@ program main requestPort responsePort =
                 platform =
                     if flags.platform == "windows" then
                         Platform.Windows
+
                     else
                         Platform.Posix
 
@@ -340,6 +319,7 @@ printLine string =
         stringWithNewline =
             if String.endsWith "\n" string then
                 string
+
             else
                 string ++ "\n"
     in
