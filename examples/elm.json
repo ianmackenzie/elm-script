@@ -1,13 +1,10 @@
 {
     "type": "application",
-    "version": "1.0.0",
-    "summary": "ianmackenzie/script-experiment examples",
-    "repository": "https://github.com/ianmackenzie/script-experiment.git",
-    "license": "MPL-2.0",
     "source-directories": [
         ".",
         "../src"
     ],
+    "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
             "elm/core": "1.0.2",
@@ -24,6 +21,5 @@
     "test-dependencies": {
         "direct": {},
         "indirect": {}
-    },
-    "elm-version": "0.19.1"
+    }
 }
