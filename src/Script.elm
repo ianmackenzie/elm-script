@@ -1,5 +1,5 @@
 module Script exposing
-    ( Script, Context
+    ( Script, Context, Shell, SubprocessError(..)
     , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
@@ -7,13 +7,12 @@ module Script exposing
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
-    , Shell, SubprocessError(..)
     )
 
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script, Context
+@docs Script, Context, FileSystem, Shell, SubprocessError
 
 
 # Running
@@ -49,11 +48,6 @@ various ways, and turn them into runnable programs.
 # Error handling
 
 @docs mapError, attempt, onError, ignoreError, finally
-
-
-# Running subprocesses
-
-@docs Shell, SubprocessError
 
 -}
 
