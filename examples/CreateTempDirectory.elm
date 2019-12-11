@@ -1,4 +1,4 @@
-module CreateTempDirectory exposing (..)
+module CreateTempDirectory exposing (main)
 
 import Example
 import Script exposing (Script)

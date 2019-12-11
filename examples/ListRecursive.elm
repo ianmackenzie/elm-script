@@ -1,4 +1,4 @@
-module ListRecursive exposing (..)
+module ListRecursive exposing (main)
 
 import Example
 import Script exposing (Script)

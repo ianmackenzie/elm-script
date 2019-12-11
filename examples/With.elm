@@ -1,4 +1,4 @@
-module With exposing (..)
+module With exposing (main)
 
 import Example
 import Script exposing (Script)

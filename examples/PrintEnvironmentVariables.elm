@@ -1,4 +1,4 @@
-module PrintEnvironmentVariables exposing (..)
+module PrintEnvironmentVariables exposing (main)
 
 import Example
 import Script exposing (Script)

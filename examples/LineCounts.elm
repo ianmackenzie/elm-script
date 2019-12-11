@@ -1,4 +1,4 @@
-module LineCounts exposing (..)
+module LineCounts exposing (main)
 
 import Example
 import Script exposing (Script)

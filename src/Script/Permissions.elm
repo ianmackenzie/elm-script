@@ -1,16 +1,15 @@
-module Script.Permissions
-    exposing
-        ( Allowed
-        , Permissions
-        , Read
-        , ReadOnly
-        , ReadWrite
-        , Write
-        , WriteOnly
-        , readOnly
-        , readWrite
-        , writeOnly
-        )
+module Script.Permissions exposing
+    ( Allowed
+    , Permissions
+    , Read
+    , ReadOnly
+    , ReadWrite
+    , Write
+    , WriteOnly
+    , readOnly
+    , readWrite
+    , writeOnly
+    )
 
 
 type Permissions p

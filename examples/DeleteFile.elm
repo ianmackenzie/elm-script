@@ -1,4 +1,4 @@
-module DeleteFile exposing (..)
+module DeleteFile exposing (main)
 
 import Example
 import Script exposing (Script)

@@ -1,4 +1,4 @@
-module PathChecking exposing (..)
+module PathChecking exposing (main)
 
 import Example
 import Script exposing (Script)

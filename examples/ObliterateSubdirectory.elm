@@ -1,4 +1,4 @@
-module ObliterateSubdirectory exposing (..)
+module ObliterateSubdirectory exposing (main)
 
 import Example
 import Script exposing (Script)

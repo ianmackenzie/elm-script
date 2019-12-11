@@ -1,7 +1,18 @@
-module Script.Internal exposing (..)
+module Script.Internal exposing
+    ( Directory(..)
+    , EnvironmentVariables(..)
+    , File(..)
+    , FileSystem(..)
+    , NetworkConnection(..)
+    , Path
+    , Script(..)
+    , Shell(..)
+    , perform
+    )
 
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value)
+import Platform.Cmd exposing (Cmd)
 import Script.Platform as Platform exposing (Platform)
 import Task exposing (Task)
 
@@ -11,6 +22,7 @@ type Script x a
     | Fail x
     | Perform (Task Never (Script x a))
     | Invoke String Value (Decoder (Script x a))
+    | Do (Cmd (Script x a))
 
 
 perform : Task x a -> Script x a

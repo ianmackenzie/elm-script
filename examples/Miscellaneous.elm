@@ -1,4 +1,4 @@
-module Miscellaneous exposing (..)
+module Miscellaneous exposing (main)
 
 import Example
 import Http
@@ -49,7 +49,9 @@ getCurrentTime networkConnection =
         decoder =
             Decode.field "time" Decode.string
     in
-    NetworkConnection.sendRequest (Http.get url decoder) networkConnection
+    networkConnection
+        |> NetworkConnection.get
+            { url = url, expect = NetworkConnection.expectJson decoder }
         |> Script.mapError (always "HTTP request failed")
 
 

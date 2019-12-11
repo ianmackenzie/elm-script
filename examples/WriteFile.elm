@@ -1,4 +1,4 @@
-module WriteFile exposing (..)
+module WriteFile exposing (main)
 
 import Example
 import Script exposing (Script)

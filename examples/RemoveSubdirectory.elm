@@ -1,4 +1,4 @@
-module RemoveSubdirectory exposing (..)
+module RemoveSubdirectory exposing (main)
 
 import Example
 import Script exposing (Script)

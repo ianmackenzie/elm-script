@@ -1,4 +1,4 @@
-module ForEach exposing (..)
+module ForEach exposing (main)
 
 import Example
 import Script exposing (Script)

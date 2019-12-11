@@ -1,4 +1,4 @@
-module ReadFile exposing (..)
+module ReadFile exposing (main)
 
 import Example
 import Script exposing (Script)

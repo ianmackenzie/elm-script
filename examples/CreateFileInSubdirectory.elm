@@ -1,4 +1,4 @@
-module CreateFileInSubdirectory exposing (..)
+module CreateFileInSubdirectory exposing (main)
 
 import Example
 import Script exposing (Script)

@@ -1,4 +1,4 @@
-module PowerShellTest exposing (..)
+module PowerShellTest exposing (main)
 
 import Example
 import Script exposing (Script)

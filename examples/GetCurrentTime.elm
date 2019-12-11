@@ -1,4 +1,4 @@
-module GetCurrentTime exposing (..)
+module GetCurrentTime exposing (main)
 
 import Example
 import Script exposing (Script)

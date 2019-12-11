@@ -1,4 +1,4 @@
-module Tests exposing (..)
+module Tests exposing (main)
 
 import Example
 import Script exposing (Script)

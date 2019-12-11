@@ -1,7 +1,7 @@
 "use strict";
 
-let majorVersion = 4;
-let minorVersion = 2;
+let majorVersion = 5;
+let minorVersion = 0;
 
 let vm = require("vm");
 let fs = require("fs");
@@ -46,7 +46,9 @@ function listEntities(request, responsePort, statsPredicate) {
 
 function runCompiledJs(absolutePath, commandLineArgs) {
   // Set up browser-like context in which to run compiled Elm code
-  global.XMLHttpRequest = require("xhr2");
+  let xhr2 = require("xhr2-with-formdata");
+  global.XMLHttpRequest = xhr2.XMLHttpRequest;
+  global.FormData = xhr2.FormData;
   global.setTimeout = require("timers").setTimeout;
 
   // Read compiled JS from file
@@ -159,7 +161,11 @@ function runCompiledJs(absolutePath, commandLineArgs) {
       case "execute":
         try {
           let options = { encoding: "utf8", maxBuffer: 1024 * 1024 * 1024 };
-          let output = child_process.execSync(request.value, options);
+          let workingDirectory = request.value.options["workingDirectory"];
+          if (workingDirectory != null) {
+            options["cwd"] = resolvePath(workingDirectory);
+          }
+          let output = child_process.execSync(request.value.command, options);
           responsePort.send(output);
         } catch (error) {
           if (error.status !== null) {

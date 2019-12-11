@@ -53,8 +53,10 @@ various ways, and turn them into runnable programs.
 -}
 
 import Dict exposing (Dict)
+import Duration exposing (Duration)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Platform.Cmd as Cmd
 import Process
 import Script.EnvironmentVariables exposing (EnvironmentVariables)
 import Script.FileSystem exposing (FileSystem)
@@ -231,6 +233,9 @@ program main requestPort responsePort =
                 Internal.Invoke name value _ ->
                     submitRequest name value
 
+                Internal.Do command ->
+                    Cmd.map Updated command
+
         crash message =
             let
                 printError =
@@ -331,12 +336,13 @@ printLine string =
 {-| Sleep (pause) for the given number of milliseconds.
 
     -- Sleep for 5 seconds
-    Script.sleep 5000
+    Script.sleep (Duration.milliseconds 5000)
 
 -}
-sleep : Float -> Script x ()
-sleep time =
-    Internal.Perform (Task.map succeed (Process.sleep time))
+sleep : Duration -> Script x ()
+sleep duration =
+    Internal.Perform <|
+        Task.map succeed (Process.sleep (Duration.inMilliseconds duration))
 
 
 {-| Get the current time.
@@ -550,6 +556,9 @@ andThen function script =
         Internal.Invoke name value decoder ->
             Internal.Invoke name value (Decode.map (andThen function) decoder)
 
+        Internal.Do command ->
+            Internal.Do (Cmd.map (andThen function) command)
+
 
 {-| Sometimes you can run into problems chaining scripts together using
 `andThen` if you want to do 'auxiliary' things like print to the console, log to
@@ -649,3 +658,6 @@ onError recover script =
 
         Internal.Invoke name value decoder ->
             Internal.Invoke name value (Decode.map (onError recover) decoder)
+
+        Internal.Do command ->
+            Internal.Do (Cmd.map (onError recover) command)

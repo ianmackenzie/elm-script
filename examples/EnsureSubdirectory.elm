@@ -1,4 +1,4 @@
-module EnsureSubdirectory exposing (..)
+module EnsureSubdirectory exposing (main)
 
 import Example
 import Script exposing (Script)

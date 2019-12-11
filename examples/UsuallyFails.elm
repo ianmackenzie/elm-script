@@ -1,4 +1,4 @@
-module UsuallyFails exposing (..)
+module UsuallyFails exposing (main)
 
 import Example
 import Script exposing (Script)

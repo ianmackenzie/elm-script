@@ -1,4 +1,4 @@
-module CopyFile exposing (..)
+module CopyFile exposing (main)
 
 import Example
 import Script exposing (Script)

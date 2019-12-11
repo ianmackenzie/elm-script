@@ -1,4 +1,4 @@
-module WithRetry exposing (..)
+module WithRetry exposing (main)
 
 import Example
 import Script exposing (Script)
