@@ -18,7 +18,7 @@ function createTemporaryDirectory() {
 
 function exit(code) {
     // First, clean up any temp directories created while running the script
-    for (const directoryPath in tempDirectoriesToRemove) {
+    for (const directoryPath of tempDirectoriesToRemove) {
         try {
             Deno.removeSync(directoryPath, { recursive: true });
         } catch (error) {
