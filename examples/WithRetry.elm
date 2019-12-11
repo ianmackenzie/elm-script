@@ -1,8 +1,7 @@
 module WithRetry exposing (main)
 
 import Example
-import Script exposing (Script)
-import Script.Shell as Shell exposing (Shell)
+import Script exposing (Script, Shell)
 
 
 abort : String -> Script Int a
@@ -13,21 +12,21 @@ abort message =
 
 retry : Shell -> String -> List String -> Int -> Script Int ()
 retry shell command arguments count =
-    Shell.execute command arguments shell
+    shell.execute command arguments
         |> Script.andThen Script.printLine
         |> Script.onError
             (\error ->
                 if count > 0 then
                     case error of
-                        Shell.ProcessExitedWithError _ ->
+                        Script.SubprocessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
                                 |> Script.andThen
                                     (\() -> retry shell command arguments (count - 1))
 
-                        Shell.ProcessWasTerminated ->
+                        Script.SubprocessWasTerminated ->
                             abort "Process was terminated"
 
-                        Shell.ProcessFailed message ->
+                        Script.SubprocessFailed message ->
                             abort ("Process could not be run: " ++ message)
 
                 else

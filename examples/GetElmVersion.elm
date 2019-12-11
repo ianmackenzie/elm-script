@@ -2,15 +2,11 @@ module GetElmVersion exposing (main)
 
 import Example
 import Script exposing (Script)
-import Script.Shell as Shell
 
 
 script : Script.Context -> Script Int ()
-script { shell, workingDirectory } =
-    shell
-        |> Shell.executeWith [ Shell.workingDirectory workingDirectory ]
-            "elm"
-            [ "--version" ]
+script { shell } =
+    shell.execute "elm" [ "--version" ]
         |> Script.map String.trim
         |> Script.andThen
             (\versionString ->
@@ -19,16 +15,16 @@ script { shell, workingDirectory } =
         |> Script.onError (Example.handleError toErrorString)
 
 
-toErrorString : Shell.ProcessError -> String
+toErrorString : Script.SubprocessError -> String
 toErrorString processError =
     case processError of
-        Shell.ProcessFailed message ->
+        Script.SubprocessFailed message ->
             message
 
-        Shell.ProcessWasTerminated ->
+        Script.SubprocessWasTerminated ->
             "Process was terminated"
 
-        Shell.ProcessExitedWithError code ->
+        Script.SubprocessExitedWithError code ->
             "Process exited with code " ++ String.fromInt code
 
 

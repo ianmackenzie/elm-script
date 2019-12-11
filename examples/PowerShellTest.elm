@@ -2,12 +2,11 @@ module PowerShellTest exposing (main)
 
 import Example
 import Script exposing (Script)
-import Script.Shell as Shell
 
 
 script : Script.Context -> Script Int ()
 script { shell } =
-    Shell.execute "PowerShell" [ "-Command", "Get-ChildItem", "-Name", "-Path", "*.elm" ] shell
+    shell.execute "PowerShell" [ "-Command", "Get-ChildItem", "-Name", "-Path", "*.elm" ]
         |> Script.map String.lines
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))
@@ -15,16 +14,16 @@ script { shell } =
         |> Script.onError (Example.handleError toErrorString)
 
 
-toErrorString : Shell.ProcessError -> String
+toErrorString : Script.SubprocessError -> String
 toErrorString processError =
     case processError of
-        Shell.ProcessFailed message ->
+        Script.SubprocessFailed message ->
             message
 
-        Shell.ProcessWasTerminated ->
+        Script.SubprocessWasTerminated ->
             "Process was terminated"
 
-        Shell.ProcessExitedWithError code ->
+        Script.SubprocessExitedWithError code ->
             "Process exited with code " ++ String.fromInt code
 
 

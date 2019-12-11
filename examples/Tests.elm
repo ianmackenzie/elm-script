@@ -1,8 +1,7 @@
 module Tests exposing (main)
 
 import Example
-import Script exposing (Script)
-import Script.Shell as Shell exposing (Shell)
+import Script exposing (Script, Shell)
 
 
 runTestCases : Shell -> List ( String, List String, String ) -> Script Int ()
@@ -10,7 +9,7 @@ runTestCases shell testCases =
     testCases
         |> Script.forEach
             (\( scriptFileName, arguments, expectedOutput ) ->
-                Shell.execute "elm-run" (scriptFileName :: arguments) shell
+                shell.execute "elm-run" (scriptFileName :: arguments)
                     |> Script.onError
                         (\processError ->
                             Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
