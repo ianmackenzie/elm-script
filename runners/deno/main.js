@@ -264,7 +264,8 @@ if (Deno.args.length >= 2) {
         const tempDirectory = Deno.makeTempDirSync();
         const tempFileName = path.resolve(tempDirectory, "main.js");
         const elmProcess = Deno.run({
-            args: ["elm", "make", "--optimize", "--output=" + tempFileName, absolutePath]
+            args: ["elm", "make", "--optimize", "--output=" + tempFileName, absolutePath],
+            stdout: "null"
         });
         const elmResult = await elmProcess.status();
         if (elmResult.success) {
