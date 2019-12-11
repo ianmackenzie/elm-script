@@ -172,14 +172,11 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 listEntities(request, responsePort, fileInfo => fileInfo.isDirectory());
                 break;
             case "execute":
-                const runOptions = {
-                    args: [request.value.command, ...request.value.arguments]
-                };
-                const givenOptions = request.value.options;
-                if (givenOptions.workingDirectory) {
-                    runOptions.cwd = resolvePath(givenOptions.workingDirectory);
-                }
-                const process = Deno.run(runOptions);
+                const process = Deno.run({
+                    args: [request.value.command, ...request.value.arguments],
+                    cwd: resolvePath(request.value.workingDirectory),
+                    stdout: "piped"
+                });
                 const result = await process.status();
                 if (result.success) {
                     const data = await process.output();

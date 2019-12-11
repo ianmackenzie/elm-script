@@ -7,6 +7,7 @@ module Script exposing
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
+    , Shell, SubprocessError(..)
     )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -49,6 +50,11 @@ various ways, and turn them into runnable programs.
 
 @docs mapError, attempt, onError, ignoreError, finally
 
+
+# Running subprocesses
+
+@docs Shell, SubprocessError
+
 -}
 
 import Dict exposing (Dict)
@@ -61,9 +67,9 @@ import Script.EnvironmentVariables exposing (EnvironmentVariables)
 import Script.FileSystem exposing (FileSystem)
 import Script.Internal as Internal
 import Script.NetworkConnection exposing (NetworkConnection)
+import Script.Path as Path
 import Script.Permissions exposing (ReadWrite)
 import Script.Platform as Platform exposing (Platform)
-import Script.Shell exposing (Shell)
 import Task exposing (Task)
 import Time
 
@@ -196,14 +202,20 @@ program main requestPort responsePort =
                                         flags.environmentVariables
                         )
 
+                workingDirectory =
+                    Internal.Directory [ "." ]
+
                 context =
                     { arguments = flags.arguments
                     , environmentVariables = environmentVariables
                     , platform = platform
                     , fileSystem = Internal.FileSystem
-                    , workingDirectory = Internal.Directory [ "." ]
+                    , workingDirectory = workingDirectory
                     , networkConnection = Internal.NetworkConnection
-                    , shell = Internal.Shell
+                    , shell =
+                        { executeIn = executeIn
+                        , execute = executeIn workingDirectory
+                        }
                     }
 
                 script =
@@ -672,3 +684,57 @@ finally cleanup script =
     script
         |> andThen (\result -> cleanup |> onError never |> andThen (\() -> succeed result))
         |> onError (\error -> cleanup |> onError never |> andThen (\() -> fail error))
+
+
+
+----- SUBPROCESS EXECUTION
+
+
+type alias Shell =
+    { execute : String -> List String -> Script SubprocessError String
+    , executeIn : Internal.Directory ReadWrite -> String -> List String -> Script SubprocessError String
+    }
+
+
+type SubprocessError
+    = SubprocessFailed String
+    | SubprocessWasTerminated
+    | SubprocessExitedWithError Int
+
+
+executeIn : Internal.Directory ReadWrite -> String -> List String -> Internal.Script SubprocessError String
+executeIn workingDirectory command arguments =
+    let
+        (Internal.Directory workingPath) =
+            workingDirectory
+    in
+    Internal.Invoke "execute"
+        (Encode.object
+            [ ( "command", Encode.string command )
+            , ( "arguments", Encode.list Encode.string arguments )
+            , ( "workingDirectory", Path.encode workingPath )
+            ]
+        )
+        (Decode.oneOf
+            [ Decode.string |> Decode.map Internal.Succeed
+            , Decode.field "error" Decode.string
+                |> Decode.andThen
+                    (\error ->
+                        case error of
+                            "failed" ->
+                                Decode.field "message" Decode.string
+                                    |> Decode.map SubprocessFailed
+
+                            "terminated" ->
+                                Decode.succeed SubprocessWasTerminated
+
+                            "exited" ->
+                                Decode.field "code" Decode.int
+                                    |> Decode.map SubprocessExitedWithError
+
+                            _ ->
+                                Decode.fail "Unexpected execution error type"
+                    )
+                |> Decode.map Internal.Fail
+            ]
+        )
