@@ -182,7 +182,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 const process = Deno.run(runOptions);
                 const result = await process.status();
                 if (result.success) {
-                    const data = await process.output;
+                    const data = await process.output();
                     const output = new TextDecoder("utf-8").decode(data);
                     responsePort.send(output);
                 } else {
