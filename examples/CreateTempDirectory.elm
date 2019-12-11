@@ -1,5 +1,6 @@
 module CreateTempDirectory exposing (main)
 
+import Duration
 import Example
 import Script exposing (Script)
 import Script.Directory as Directory
@@ -17,7 +18,7 @@ script context =
                 in
                 File.writeTo tempFile "dummy contents"
             )
-        |> Script.andThen (\() -> Script.sleep 10000)
+        |> Script.andThen (\() -> Script.sleep (Duration.seconds 10))
         |> Script.onError (Example.handleError .message)
 
 
