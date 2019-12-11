@@ -1,13 +1,12 @@
 module Script exposing
     ( Script, Context
-    , RequestPort, ResponsePort, program
+    , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
     , map, map2, map3, map4, ignore
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
-    , Program
     )
 
 {-| The functions in this module let you define scripts, chain them together in
@@ -18,7 +17,7 @@ various ways, and turn them into runnable programs.
 
 # Running
 
-@docs RequestPort, ResponsePort, program
+@docs RequestPort, ResponsePort, Program, program
 
 
 # Basics
