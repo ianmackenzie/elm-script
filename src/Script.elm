@@ -6,7 +6,7 @@ module Script exposing
     , map, map2, map3, map4, ignore
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
-    , mapError, attempt, onError, ignoreError
+    , mapError, attempt, onError, ignoreError, finally
     , Program
     )
 
@@ -48,7 +48,7 @@ various ways, and turn them into runnable programs.
 
 # Error handling
 
-@docs mapError, attempt, onError, ignoreError
+@docs mapError, attempt, onError, ignoreError, finally
 
 -}
 
@@ -666,3 +666,10 @@ onError recover script =
 ignoreError : Script x () -> Script y ()
 ignoreError =
     onError (always (succeed ()))
+
+
+finally : Script Never () -> Script x a -> Script x a
+finally cleanup script =
+    script
+        |> andThen (\result -> cleanup |> onError never |> andThen (\() -> succeed result))
+        |> onError (\error -> cleanup |> onError never |> andThen (\() -> fail error))
