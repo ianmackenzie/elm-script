@@ -172,25 +172,34 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 listEntities(request, responsePort, fileInfo => fileInfo.isDirectory());
                 break;
             case "execute":
-                const process = Deno.run({
-                    args: [request.value.command, ...request.value.arguments],
-                    cwd: resolvePath(request.value.workingDirectory),
-                    stdout: "piped"
-                });
-                const result = await process.status();
-                if (result.success) {
-                    const data = await process.output();
-                    const output = new TextDecoder("utf-8").decode(data);
-                    responsePort.send(output);
-                } else {
-                    if (result.code !== null) {
-                        responsePort.send({ error: "exited", code: result.code });
-                    } else if (result.signal !== null) {
-                        responsePort.send({ error: "terminated" });
-                    } else {
-                        const data = await process.stderrOutput;
+                try {
+                    const process = Deno.run({
+                        args: [request.value.command, ...request.value.arguments],
+                        cwd: resolvePath(request.value.workingDirectory),
+                        stdout: "piped"
+                    });
+                    const result = await process.status();
+                    if (result.success) {
+                        const data = await process.output();
                         const output = new TextDecoder("utf-8").decode(data);
-                        responsePort.send({ error: "failed", message: output });
+                        responsePort.send(output);
+                    } else {
+                        if (result.code !== null) {
+                            responsePort.send({ error: "exited", code: result.code });
+                        } else if (result.signal !== null) {
+                            responsePort.send({ error: "terminated" });
+                        } else {
+                            const data = await process.stderrOutput;
+                            const output = new TextDecoder("utf-8").decode(data);
+                            responsePort.send({ error: "failed", message: output });
+                        }
+                    }
+                } catch (error) {
+                    if (error.kind == Deno.ErrorKind.NotFound) {
+                        responsePort.send({ error: "notfound" });
+                    } else {
+                        console.log(error.message);
+                        exit(1);
                     }
                 }
                 break;

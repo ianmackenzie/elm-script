@@ -113,7 +113,8 @@ type alias Shell =
 
 
 type SubprocessError
-    = SubprocessFailed String
+    = ExecutableNotFound
+    | SubprocessFailed String
     | SubprocessWasTerminated
     | SubprocessExitedWithError Int
 
@@ -736,6 +737,9 @@ executeIn workingDirectory command arguments =
                 |> Decode.andThen
                     (\error ->
                         case error of
+                            "notfound" ->
+                                Decode.succeed ExecutableNotFound
+
                             "failed" ->
                                 Decode.field "message" Decode.string
                                     |> Decode.map SubprocessFailed

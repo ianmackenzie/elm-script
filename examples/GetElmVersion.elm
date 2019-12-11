@@ -18,6 +18,9 @@ script { shell } =
 toErrorString : Script.SubprocessError -> String
 toErrorString processError =
     case processError of
+        Script.ExecutableNotFound ->
+            "Process executable not found"
+
         Script.SubprocessFailed message ->
             message
 

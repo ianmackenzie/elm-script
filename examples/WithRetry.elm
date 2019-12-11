@@ -18,6 +18,9 @@ retry shell command arguments count =
             (\error ->
                 if count > 0 then
                     case error of
+                        Script.ExecutableNotFound ->
+                            abort "Process executable not found"
+
                         Script.SubprocessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
                                 |> Script.andThen
