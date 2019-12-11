@@ -83,9 +83,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                     if (requiredMajorVersion > majorVersion) {
                         console.log("Please update to a newer version of elm-run");
                     } else {
-                        console.log(
-                            "Please update script to use a newer version of the ianmackenzie/script-experiment package"
-                        );
+                        console.log("Please update script to use a newer version of the ianmackenzie/script-experiment package");
                     }
                     Deno.exit(1);
                 } else if (requiredMinorVersion > minorVersion) {
