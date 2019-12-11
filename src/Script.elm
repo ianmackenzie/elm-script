@@ -6,7 +6,7 @@ module Script exposing
     , map, map2, map3, map4, ignore
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
-    , mapError, attempt, onError
+    , mapError, attempt, onError, ignoreError
     , Program
     )
 
@@ -48,7 +48,7 @@ various ways, and turn them into runnable programs.
 
 # Error handling
 
-@docs mapError, attempt, onError
+@docs mapError, attempt, onError, ignoreError
 
 -}
 
@@ -661,3 +661,8 @@ onError recover script =
 
         Internal.Do command ->
             Internal.Do (Cmd.map (onError recover) command)
+
+
+ignoreError : Script x () -> Script y ()
+ignoreError =
+    onError (always (succeed ()))
