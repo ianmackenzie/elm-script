@@ -69,7 +69,6 @@ import Script.Internal as Internal
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path
 import Script.Permissions exposing (ReadWrite)
-import Script.Platform as Platform exposing (Platform)
 import Task exposing (Task)
 import Time
 
@@ -104,6 +103,24 @@ type alias Flags =
     { arguments : List String
     , platform : String
     , environmentVariables : List ( String, String )
+    }
+
+
+type alias Shell =
+    { execute : String -> List String -> Script SubprocessError String
+    , executeIn : Internal.Directory ReadWrite -> String -> List String -> Script SubprocessError String
+    }
+
+
+type SubprocessError
+    = SubprocessFailed String
+    | SubprocessWasTerminated
+    | SubprocessExitedWithError Int
+
+
+type alias Platform =
+    { pathSeparator : String
+    , lineSeparator : String
     }
 
 
@@ -182,10 +199,10 @@ program main requestPort responsePort =
             let
                 platform =
                     if flags.platform == "windows" then
-                        Platform.Windows
+                        Internal.Windows
 
                     else
-                        Platform.Posix
+                        Internal.Posix
 
                 environmentVariables =
                     Internal.EnvironmentVariables platform
@@ -194,10 +211,10 @@ program main requestPort responsePort =
                             -- so they can be looked up case-insensitively (same
                             -- behavior as process.env in Node)
                             case platform of
-                                Platform.Posix ->
+                                Internal.Posix ->
                                     flags.environmentVariables
 
-                                Platform.Windows ->
+                                Internal.Windows ->
                                     List.map (Tuple.mapFirst String.toUpper)
                                         flags.environmentVariables
                         )
@@ -208,7 +225,17 @@ program main requestPort responsePort =
                 context =
                     { arguments = flags.arguments
                     , environmentVariables = environmentVariables
-                    , platform = platform
+                    , platform =
+                        case platform of
+                            Internal.Windows ->
+                                { pathSeparator = "\\"
+                                , lineSeparator = "\u{000D}\n"
+                                }
+
+                            Internal.Posix ->
+                                { pathSeparator = "/"
+                                , lineSeparator = "\n"
+                                }
                     , fileSystem = Internal.FileSystem
                     , workingDirectory = workingDirectory
                     , networkConnection = Internal.NetworkConnection
@@ -688,18 +715,6 @@ finally cleanup script =
 
 
 ----- SUBPROCESS EXECUTION
-
-
-type alias Shell =
-    { execute : String -> List String -> Script SubprocessError String
-    , executeIn : Internal.Directory ReadWrite -> String -> List String -> Script SubprocessError String
-    }
-
-
-type SubprocessError
-    = SubprocessFailed String
-    | SubprocessWasTerminated
-    | SubprocessExitedWithError Int
 
 
 executeIn : Internal.Directory ReadWrite -> String -> List String -> Internal.Script SubprocessError String

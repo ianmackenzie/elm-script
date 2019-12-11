@@ -5,6 +5,7 @@ module Script.Internal exposing
     , FileSystem(..)
     , NetworkConnection(..)
     , Path
+    , Platform(..)
     , Script(..)
     , Shell(..)
     , perform
@@ -13,7 +14,6 @@ module Script.Internal exposing
 import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value)
 import Platform.Cmd exposing (Cmd)
-import Script.Platform as Platform exposing (Platform)
 import Task exposing (Task)
 
 
@@ -56,3 +56,8 @@ type NetworkConnection
 
 type Shell
     = Shell
+
+
+type Platform
+    = Posix
+    | Windows
