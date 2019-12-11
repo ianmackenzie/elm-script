@@ -5,7 +5,7 @@ const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
 
-const tempDirectoriesToRemove = []
+const tempDirectoriesToRemove = [];
 
 function createTemporaryDirectory() {
     // Create a new temp directory
