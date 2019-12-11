@@ -134,9 +134,14 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 }
                 break;
             case "writeStdout":
-                const data = new TextEncoder("utf-8").encode(request.value);
-                Deno.stdout.writeSync(data);
-                responsePort.send(null);
+                try {
+                    const data = new TextEncoder("utf-8").encode(request.value);
+                    Deno.stdout.writeSync(data);
+                    responsePort.send(null);
+                } catch (error) {
+                    console.log("Error printing to stdout");
+                    exit(1);
+                }
                 break;
             case "exit":
                 exit(request.value);
