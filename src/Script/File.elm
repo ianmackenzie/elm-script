@@ -22,7 +22,7 @@ import Script
 import Script.Directory as Directory exposing (Directory)
 import Script.Internal as Internal
 import Script.Path as Path
-import Script.Permissions exposing (Read, ReadOnly, ReadWrite, Write, WriteOnly)
+import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
 
 
 type alias File p =
@@ -106,7 +106,7 @@ copy (Internal.File sourcePath) (Internal.File destinationPath) =
         decodeNullResult
 
 
-move : File ReadWrite -> File (Write destinationPermissions) -> Internal.Script Error ()
+move : File Writable -> File (Write destinationPermissions) -> Internal.Script Error ()
 move (Internal.File sourcePath) (Internal.File destinationPath) =
     Internal.Invoke "moveFile"
         (Encode.object
@@ -131,7 +131,7 @@ copyInto directory file =
     copy file destination |> Script.andThen (\() -> Script.succeed destination)
 
 
-moveInto : Directory (Write directoryPermissions) -> File ReadWrite -> Internal.Script Error (File (Write directoryPermissions))
+moveInto : Directory (Write directoryPermissions) -> File Writable -> Internal.Script Error (File (Write directoryPermissions))
 moveInto directory file =
     let
         destination =

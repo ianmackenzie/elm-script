@@ -4,7 +4,6 @@ import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File exposing (File)
-import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions exposing (Read)
 
 
@@ -38,11 +37,7 @@ script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
-            let
-                directory =
-                    fileSystem |> FileSystem.directory path
-            in
-            listRecursively 0 directory
+            listRecursively 0 (fileSystem.readOnlyDirectory path)
                 |> Script.onError (Example.handleError .message)
 
         _ ->

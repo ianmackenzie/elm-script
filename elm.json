@@ -9,7 +9,6 @@
         "Script.Directory",
         "Script.EnvironmentVariables",
         "Script.File",
-        "Script.FileSystem",
         "Script.NetworkConnection",
         "Script.Permissions"
     ],

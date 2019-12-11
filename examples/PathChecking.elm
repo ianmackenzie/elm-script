@@ -4,7 +4,6 @@ import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File
-import Script.FileSystem as FileSystem
 import Script.Permissions as Permissions exposing (Read, ReadOnly)
 
 
@@ -32,9 +31,8 @@ script { arguments, fileSystem } =
     case arguments of
         [ path ] ->
             let
-                directory : Directory ReadOnly
                 directory =
-                    fileSystem |> FileSystem.directory path
+                    fileSystem.readOnlyDirectory path
             in
             Script.do
                 [ niceScript directory

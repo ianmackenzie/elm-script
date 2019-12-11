@@ -64,11 +64,10 @@ import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
 import Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Script.FileSystem exposing (FileSystem)
 import Script.Internal as Internal
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path
-import Script.Permissions exposing (ReadWrite)
+import Script.Permissions exposing (ReadOnly, Writable, WriteOnly)
 import Task exposing (Task)
 import Time
 
@@ -92,7 +91,7 @@ type alias Context =
     { arguments : List String
     , environmentVariables : EnvironmentVariables
     , fileSystem : FileSystem
-    , workingDirectory : Internal.Directory ReadWrite
+    , workingDirectory : Internal.Directory Writable
     , networkConnection : NetworkConnection
     , shell : Shell
     , platform : Platform
@@ -106,9 +105,19 @@ type alias Flags =
     }
 
 
+type alias FileSystem =
+    { readOnlyFile : String -> Internal.File ReadOnly
+    , writableFile : String -> Internal.File Writable
+    , writeOnlyFile : String -> Internal.File WriteOnly
+    , readOnlyDirectory : String -> Internal.Directory ReadOnly
+    , writableDirectory : String -> Internal.Directory Writable
+    , writeOnlyDirectory : String -> Internal.Directory WriteOnly
+    }
+
+
 type alias Shell =
     { execute : String -> List String -> Script SubprocessError String
-    , executeIn : Internal.Directory ReadWrite -> String -> List String -> Script SubprocessError String
+    , executeIn : Internal.Directory Writable -> String -> List String -> Script SubprocessError String
     }
 
 
@@ -237,7 +246,14 @@ program main requestPort responsePort =
                                 { pathSeparator = "/"
                                 , lineSeparator = "\n"
                                 }
-                    , fileSystem = Internal.FileSystem
+                    , fileSystem =
+                        { readOnlyFile = \path -> Internal.File [ path ]
+                        , writableFile = \path -> Internal.File [ path ]
+                        , writeOnlyFile = \path -> Internal.File [ path ]
+                        , readOnlyDirectory = \path -> Internal.Directory [ path ]
+                        , writableDirectory = \path -> Internal.Directory [ path ]
+                        , writeOnlyDirectory = \path -> Internal.Directory [ path ]
+                        }
                     , workingDirectory = workingDirectory
                     , networkConnection = Internal.NetworkConnection
                     , shell =
@@ -718,7 +734,7 @@ finally cleanup script =
 ----- SUBPROCESS EXECUTION
 
 
-executeIn : Internal.Directory ReadWrite -> String -> List String -> Internal.Script SubprocessError String
+executeIn : Internal.Directory Writable -> String -> List String -> Internal.Script SubprocessError String
 executeIn workingDirectory command arguments =
     let
         (Internal.Directory workingPath) =

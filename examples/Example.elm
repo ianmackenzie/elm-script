@@ -3,7 +3,7 @@ port module Example exposing (ensureDirectory, handleError, program)
 import Json.Encode exposing (Value)
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
-import Script.Permissions as Permissions exposing (ReadWrite)
+import Script.Permissions as Permissions exposing (Writable)
 
 
 handleError : (x -> String) -> x -> Script Int a
@@ -12,7 +12,7 @@ handleError toMessage error =
         |> Script.andThen (\() -> Script.fail 1)
 
 
-ensureDirectory : Directory ReadWrite -> Script Int ()
+ensureDirectory : Directory Writable -> Script Int ()
 ensureDirectory directory =
     let
         name =

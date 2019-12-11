@@ -21,7 +21,7 @@ import Json.Encode as Encode
 import Script exposing (Script)
 import Script.Internal as Internal
 import Script.Path as Path
-import Script.Permissions exposing (Read, ReadOnly, ReadWrite, Write, WriteOnly)
+import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
 
 
 type alias Directory p =
@@ -113,7 +113,7 @@ create (Internal.Directory path) =
         decodeNullResult
 
 
-createTemporary : Internal.Script Error (Directory ReadWrite)
+createTemporary : Internal.Script Error (Directory Writable)
 createTemporary =
     Internal.Invoke "createTemporaryDirectory"
         Encode.null

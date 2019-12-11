@@ -3,8 +3,7 @@ module LineCounts exposing (main)
 import Example
 import Script exposing (Script)
 import Script.File as File exposing (File)
-import Script.FileSystem as FileSystem
-import Script.Permissions as Permissions exposing (Read, ReadOnly)
+import Script.Permissions exposing (Read)
 
 
 getLineCount : File (Read p) -> Script File.Error Int
@@ -15,12 +14,7 @@ getLineCount file =
 
 script : Script.Context -> Script Int ()
 script { arguments, fileSystem } =
-    let
-        toFile : String -> File ReadOnly
-        toFile path =
-            fileSystem |> FileSystem.file path
-    in
-    List.map toFile arguments
+    List.map fileSystem.readOnlyFile arguments
         |> Script.collect getLineCount
         |> Script.onError (Example.handleError .message)
         |> Script.map (List.map2 Tuple.pair arguments)
