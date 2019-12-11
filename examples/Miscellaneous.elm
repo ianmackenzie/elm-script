@@ -1,5 +1,6 @@
 module Miscellaneous exposing (main)
 
+import Duration
 import Example
 import Http
 import Json.Decode as Decode
@@ -16,7 +17,7 @@ script { networkConnection } =
                 Script.do
                     [ Script.printLine model.text
                     , printCurrentTime networkConnection
-                    , Script.sleep 500
+                    , Script.sleep (Duration.seconds 0.5)
                     ]
             )
         |> Script.map .number
@@ -25,7 +26,7 @@ script { networkConnection } =
                 Script.do
                     [ Script.printLine (String.fromInt number)
                     , printCurrentTime networkConnection
-                    , Script.sleep 500
+                    , Script.sleep (Duration.seconds 0.5)
                     , getCurrentTime networkConnection |> Script.ignore
                     ]
             )
