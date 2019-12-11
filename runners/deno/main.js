@@ -5,6 +5,39 @@ const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
 
+const tempDirectoriesToRemove = []
+
+function createTemporaryDirectory() {
+    // Create a new temp directory
+    const directoryPath = Deno.makeTempDirSync();
+    // Add it to the list of temp directories to remove when the script has
+    // finished executing
+    tempDirectoriesToRemove.push(directoryPath);
+    return directoryPath;
+}
+
+function exit(code) {
+    // First, clean up any temp directories created while running the script
+    for (const directoryPath in tempDirectoriesToRemove) {
+        try {
+            Deno.removeSync(directoryPath, { recursive: true });
+        } catch (error) {
+            // Ignore any errors that may occur when attempting to delete a
+            // temporary directory - likely the directory was just deleted
+            // explicitly, and even if it's some other issue (directory
+            // somehow became read-only, in use because an antivirus program is
+            // currently checking it etc.) it's not generally the end of the
+            // world if the odd temp directory doesn't get deleted. (Script
+            // authors who need to make sure sensitive data gets deleted can
+            // always call Directory.obliterate in their script and check for
+            // any errors resulting from it.)
+            continue;
+        }
+    }
+    // Finally, actually exit
+    Deno.exit(code);
+}
+
 function resolvePath(components) {
     if (components.length == 0) {
         throw Error("Empty path given");
@@ -53,13 +86,13 @@ function runCompiledJs(compiledJs, commandLineArgs) {
             break;
         default:
             console.log("Unrecognized OS '" + Deno.build.os + "'");
-            Deno.exit(1);
+            exit(1);
     }
     flags["environmentVariables"] = Object.entries(Deno.env());
     const compiledPrograms = Object.values(globalThis["Elm"]);
     if (compiledPrograms.length != 1) {
         console.log(`Expected exactly 1 compiled program, found ${compiledPrograms.length}`);
-        Deno.exit(1);
+        exit(1);
     }
     const program = compiledPrograms[0];
     const script = program.init({ flags: flags });
@@ -85,7 +118,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                     } else {
                         console.log("Please update script to use a newer version of the ianmackenzie/script-experiment package");
                     }
-                    Deno.exit(1);
+                    exit(1);
                 } else if (requiredMinorVersion > minorVersion) {
                     const requiredVersionString =
                         requiredMajorVersion + "." + requiredMinorVersion;
@@ -95,7 +128,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                         describeCurrentVersion
                     );
                     console.log("Please update to a newer version of elm-run");
-                    Deno.exit(1);
+                    exit(1);
                 } else {
                     responsePort.send(null);
                 }
@@ -106,7 +139,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 responsePort.send(null);
                 break;
             case "exit":
-                Deno.exit(request.value);
+                exit(request.value);
             case "readFile":
                 try {
                     const filePath = resolvePath(request.value);
@@ -236,7 +269,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 break;
             case "createTemporaryDirectory":
                 try {
-                    const directoryPath = Deno.makeTempDirSync();
+                    const directoryPath = createTemporaryDirectory();
                     responsePort.send(directoryPath);
                 } catch (error) {
                     responsePort.send({ message: error.message });
@@ -245,7 +278,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
             default:
                 console.log(`Internal error - unexpected request ${request}`);
                 console.log("Try updating to newer versions of elm-run and the ianmackenzie/script-experiment package");
-                Deno.exit(1);
+                exit(1);
         }
     });
 }
@@ -259,9 +292,11 @@ if (Deno.args.length >= 2) {
         // Read compiled JS from file
         const data = Deno.readFileSync(absolutePath);
         const compiledJs = new TextDecoder("utf-8").decode(data);
+        // Actually run the script: this will eventually cause exit() to be
+        // called
         runCompiledJs(compiledJs, commandLineArgs);
     } else if (extension === ".elm") {
-        const tempDirectory = Deno.makeTempDirSync();
+        const tempDirectory = createTemporaryDirectory();
         const tempFileName = path.resolve(tempDirectory, "main.js");
         const elmProcess = Deno.run({
             args: ["elm", "make", "--optimize", "--output=" + tempFileName, absolutePath],
@@ -271,15 +306,19 @@ if (Deno.args.length >= 2) {
         if (elmResult.success) {
             const data = Deno.readFileSync(tempFileName);
             const compiledJs = new TextDecoder("utf-8").decode(data);
-            Deno.removeSync(tempDirectory, { recursive: true });
+            // Actually run the script: this will eventually cause exit() to be
+            // called
             runCompiledJs(compiledJs, commandLineArgs);
         } else {
-            Deno.exit(1);
+            // The Elm compiler will have printed out a compilation error
+            // message, no need to add our own
+            exit(1);
         }
     } else {
         console.log(`Unrecognized source file extension ${extension} (expecting.elm or.js)`);
-        Deno.exit(1);
+        exit(1);
     }
 } else {
     console.log(`Run as 'deno elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`);
+    exit(1);
 }
