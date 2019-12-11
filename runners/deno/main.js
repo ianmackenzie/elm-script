@@ -270,8 +270,7 @@ if (Deno.args.length >= 2) {
         if (elmResult.success) {
             const data = Deno.readFileSync(tempFileName);
             const compiledJs = new TextDecoder("utf-8").decode(data);
-            console.log(`Would remove: ${tempDirectory}`);
-            //Deno.removeSync(tempDirectory, { recursive: True });
+            Deno.removeSync(tempDirectory, { recursive: true });
             runCompiledJs(compiledJs, commandLineArgs);
         } else {
             Deno.exit(1);
