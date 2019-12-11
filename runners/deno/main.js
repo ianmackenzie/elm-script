@@ -134,11 +134,14 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 listEntities(request, responsePort, fileInfo => fileInfo.isDirectory());
                 break;
             case "execute":
-                let options = { args: [request.value.command] + request.value.arguments }
-                if (request.value.workingDirectory) {
-                    options.cwd = resolvePath(request.value.workingDirectory);
+                const runOptions = {
+                    args: [request.value.command, ...request.value.arguments]
+                };
+                const givenOptions = request.value.options;
+                if (givenOptions.workingDirectory) {
+                    runOptions.cwd = resolvePath(givenOptions.workingDirectory);
                 }
-                const process = Deno.run(options);
+                const process = Deno.run(runOptions);
                 const result = await process.status();
                 if (result.success) {
                     const data = await process.output;
