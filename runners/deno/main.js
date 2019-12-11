@@ -4,7 +4,6 @@ const majorVersion = 5;
 const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
-import * as fs from "https://deno.land/std/fs/mod.ts";
 
 function resolvePath(components) {
     if (components.length == 0) {
