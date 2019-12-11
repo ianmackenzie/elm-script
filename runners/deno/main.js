@@ -190,21 +190,21 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 break;
             case "stat":
                 try {
-                    try {
-                        const entityPath = resolvePath(request.value);
-                        const fileInfo = Deno.statSync(entityPath);
-                        if (fileInfo.isFile()) {
-                            responsePort.send("file");
-                        } else if (fileInfo.isDirectory()) {
-                            responsePort.send("directory");
-                        } else {
-                            responsePort.send("other");
-                        }
-                    } catch (error) {
-                        responsePort.send("nonexistent");
+                    const entityPath = resolvePath(request.value);
+                    const fileInfo = Deno.statSync(entityPath);
+                    if (fileInfo.isFile()) {
+                        responsePort.send("file");
+                    } else if (fileInfo.isDirectory()) {
+                        responsePort.send("directory");
+                    } else {
+                        responsePort.send("other");
                     }
                 } catch (error) {
-                    responsePort.send({ message: error.message });
+                    if (error.kind == Deno.ErrorKind.NotFound) {
+                        responsePort.send("nonexistent");
+                    } else {
+                        responsePort.send({ message: error.message });
+                    }
                 }
                 break;
             case "createDirectory":
