@@ -1,6 +1,6 @@
 "use strict";
 
-const majorVersion = 7;
+const majorVersion = 8;
 const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
@@ -88,7 +88,7 @@ function runCompiledJs(compiledJs, commandLineArgs) {
             console.log("Unrecognized OS '" + Deno.build.os + "'");
             exit(1);
     }
-    flags["environmentVariables"] = Object.entries(Deno.env());
+    flags["environment"] = Object.entries(Deno.env());
     flags["workingDirectory"] = Deno.cwd();
     const compiledPrograms = Object.values(globalThis["Elm"]);
     if (compiledPrograms.length != 1) {

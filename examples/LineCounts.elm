@@ -11,9 +11,9 @@ getLineCount file =
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
 
-script : Script.Context -> Script Int ()
-script { arguments, fileSystem } =
-    List.map fileSystem.readOnlyFile arguments
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
+    List.map host.readOnlyFile arguments
         |> Script.collect getLineCount
         |> Script.onError (Example.handleError .message)
         |> Script.map (List.map2 Tuple.pair arguments)

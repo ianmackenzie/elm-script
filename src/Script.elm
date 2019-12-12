@@ -1,5 +1,5 @@
 module Script exposing
-    ( Script, Context, Shell, SubprocessError(..)
+    ( Script, WorkingDirectory, Host, SubprocessError(..)
     , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
@@ -12,7 +12,7 @@ module Script exposing
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script, Context, FileSystem, Shell, SubprocessError
+@docs Script, WorkingDirectory, Host, SubprocessError
 
 
 # Running
@@ -57,8 +57,8 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
-import Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Script.Internal as Internal exposing (Directory(..), EnvironmentVariables(..), File(..), Flags)
+import Script.Environment exposing (Environment)
+import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags)
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable)
@@ -69,7 +69,7 @@ import Time
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 7, 0 )
+    ( 8, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
@@ -79,30 +79,23 @@ type alias Script x a =
     Internal.Script x a
 
 
-{-| The context in which a `Script` is running. The function you pass to
-`Script.program` will get a `Context` value passed to it at startup.
+type alias WorkingDirectory =
+    Directory Writable
+
+
+{-| The host running the current `Script`. The function you pass to
+`Script.program` will get a `Host` value passed to it at startup.
 -}
-type alias Context =
-    { arguments : List String
-    , environmentVariables : EnvironmentVariables
-    , fileSystem : FileSystem
-    , workingDirectory : Directory Writable
-    , networkConnection : NetworkConnection
-    , shell : Shell
-    , platform : Platform
-    }
-
-
-type alias FileSystem =
-    { readOnlyFile : String -> File ReadOnly
+type alias Host =
+    { pathSeparator : String
+    , lineSeparator : String
+    , environment : Environment
+    , readOnlyFile : String -> File ReadOnly
     , writableFile : String -> File Writable
     , readOnlyDirectory : String -> Directory ReadOnly
     , writableDirectory : String -> Directory Writable
-    }
-
-
-type alias Shell =
-    { execute : String -> List String -> Script SubprocessError String
+    , networkConnection : NetworkConnection
+    , execute : String -> List String -> Script SubprocessError String
     , executeIn : Directory Writable -> String -> List String -> Script SubprocessError String
     }
 
@@ -112,12 +105,6 @@ type SubprocessError
     | SubprocessFailed String
     | SubprocessWasTerminated
     | SubprocessExitedWithError Int
-
-
-type alias Platform =
-    { pathSeparator : String
-    , lineSeparator : String
-    }
 
 
 {-| The type of port that scripts use to send requests to the external runner.
@@ -170,7 +157,7 @@ decodeFlags =
                 Decode.map4 Flags
                     (Decode.field "arguments" (Decode.list Decode.string))
                     (Decode.succeed platformType)
-                    (Decode.field "environmentVariables" (decodeEnvironmentVariables platformType))
+                    (Decode.field "environment" (decodeEnvironment platformType))
                     (Decode.field "workingDirectory" (decodeWorkingDirectoryPath platformType))
             )
 
@@ -182,12 +169,12 @@ decodeKeyValuePair =
         (Decode.index 1 Decode.string)
 
 
-decodeEnvironmentVariables : PlatformType -> Decoder EnvironmentVariables
-decodeEnvironmentVariables platformType =
+decodeEnvironment : PlatformType -> Decoder Environment
+decodeEnvironment platformType =
     Decode.list decodeKeyValuePair
         |> Decode.map
             (\keyValuePairs ->
-                EnvironmentVariables platformType
+                Environment platformType
                     (Dict.fromList <|
                         -- On Windows, capitalize environment variable names
                         -- so they can be looked up case-insensitively (same
@@ -221,7 +208,7 @@ value of the script. If the script fails with an `Int` value, then that value
 will be returned to the operating system instead.
 
 -}
-program : (Context -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+program : (List String -> Directory Writable -> Host -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkHostVersion =
@@ -239,6 +226,9 @@ program main requestPort responsePort =
             case Decode.decodeValue decodeFlags flagsValue of
                 Ok flags ->
                     let
+                        arguments =
+                            flags.arguments
+
                         file pathString =
                             File (Path.resolve flags.workingDirectoryPath pathString)
 
@@ -248,36 +238,30 @@ program main requestPort responsePort =
                         workingDirectory =
                             directory "."
 
-                        context =
-                            { arguments = flags.arguments
-                            , environmentVariables = flags.environmentVariables
-                            , platform =
-                                case flags.platformType of
-                                    Windows ->
-                                        { pathSeparator = "\\"
-                                        , lineSeparator = "\u{000D}\n"
-                                        }
+                        ( pathSeparator, lineSeparator ) =
+                            case flags.platformType of
+                                Windows ->
+                                    ( "\\", "\u{000D}\n" )
 
-                                    Posix ->
-                                        { pathSeparator = "/"
-                                        , lineSeparator = "\n"
-                                        }
-                            , fileSystem =
-                                { readOnlyFile = file
-                                , writableFile = file
-                                , readOnlyDirectory = directory
-                                , writableDirectory = directory
-                                }
-                            , workingDirectory = workingDirectory
+                                Posix ->
+                                    ( "/", "\n" )
+
+                        host =
+                            { pathSeparator = pathSeparator
+                            , lineSeparator = lineSeparator
+                            , environment = flags.environment
+                            , readOnlyFile = file
+                            , writableFile = file
+                            , readOnlyDirectory = directory
+                            , writableDirectory = directory
                             , networkConnection = Internal.NetworkConnection
-                            , shell =
-                                { executeIn = executeIn
-                                , execute = executeIn workingDirectory
-                                }
+                            , executeIn = executeIn
+                            , execute = executeIn workingDirectory
                             }
 
                         script =
-                            checkHostVersion |> andThen (\() -> main context)
+                            checkHostVersion
+                                |> andThen (\() -> main arguments workingDirectory host)
                     in
                     ( Running flags script, commands script )
 
@@ -544,8 +528,8 @@ do scripts =
 {-| For every value in a given list, call the given function and run the
 script that it creates. From `examples/ForEach.elm`:
 
-    script : Script.Context -> Script Int ()
-    script { arguments } =
+    script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+    script arguments host =
         arguments
             |> Script.forEach
                 (\argument ->

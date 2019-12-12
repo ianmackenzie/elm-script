@@ -32,11 +32,11 @@ listRecursively level directory =
         ]
 
 
-script : Script.Context -> Script Int ()
-script { arguments, fileSystem } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     case arguments of
         [ path ] ->
-            listRecursively 0 (fileSystem.readOnlyDirectory path)
+            listRecursively 0 (host.readOnlyDirectory path)
                 |> Script.onError (Example.handleError .message)
 
         _ ->

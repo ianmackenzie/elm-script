@@ -6,8 +6,8 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Context -> Script Int ()
-script { workingDirectory } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     let
         file =
             workingDirectory |> Directory.file "reversed.txt"

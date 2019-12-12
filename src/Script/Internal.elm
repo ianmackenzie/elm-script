@@ -1,6 +1,6 @@
 module Script.Internal exposing
     ( Directory(..)
-    , EnvironmentVariables(..)
+    , Environment(..)
     , File(..)
     , FileSystem(..)
     , Flags
@@ -20,7 +20,7 @@ import Task exposing (Task)
 type alias Flags =
     { arguments : List String
     , platformType : PlatformType
-    , environmentVariables : EnvironmentVariables
+    , environment : Environment
     , workingDirectoryPath : Path
     }
 
@@ -45,8 +45,8 @@ type File permissions
     = File Path
 
 
-type EnvironmentVariables
-    = EnvironmentVariables PlatformType (Dict String String)
+type Environment
+    = Environment PlatformType (Dict String String)
 
 
 type NetworkConnection

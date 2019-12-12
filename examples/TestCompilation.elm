@@ -6,8 +6,8 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Context -> Script Int ()
-script { shell, workingDirectory } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     Directory.listFiles workingDirectory
         |> Script.onError (handleError .message)
         |> Script.andThen
@@ -16,7 +16,7 @@ script { shell, workingDirectory } =
                     if File.name file |> String.endsWith ".elm" then
                         Script.do
                             [ Script.printLine ("Compiling " ++ File.name file)
-                            , shell.execute "elm"
+                            , host.execute "elm"
                                 [ "make", "--output", "/dev/null", File.path file ]
                                 |> Script.ignoreResult
                                 |> Script.onError (\error -> Script.fail 1)

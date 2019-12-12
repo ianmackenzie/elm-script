@@ -7,7 +7,7 @@
     "exposed-modules": [
         "Script",
         "Script.Directory",
-        "Script.EnvironmentVariables",
+        "Script.Environment",
         "Script.File",
         "Script.NetworkConnection"
     ],

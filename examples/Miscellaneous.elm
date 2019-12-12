@@ -9,8 +9,8 @@ import Script.NetworkConnection as NetworkConnection exposing (NetworkConnection
 import Time
 
 
-script : Script.Context -> Script Int ()
-script { networkConnection } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory { networkConnection } =
     Script.succeed { text = "A", number = 2 }
         |> Script.aside
             (\model ->

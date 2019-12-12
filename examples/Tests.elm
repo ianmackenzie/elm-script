@@ -1,15 +1,15 @@
 module Tests exposing (main)
 
 import Example
-import Script exposing (Script, Shell)
+import Script exposing (Script)
 
 
-runTestCases : Shell -> List ( String, List String, String ) -> Script Int ()
-runTestCases shell testCases =
+runTestCases : Script.Host -> List ( String, List String, String ) -> Script Int ()
+runTestCases host testCases =
     testCases
         |> Script.forEach
             (\( scriptFileName, arguments, expectedOutput ) ->
-                shell.execute "elm-run" (scriptFileName :: arguments)
+                host.execute "elm-run" (scriptFileName :: arguments)
                     |> Script.onError
                         (\processError ->
                             Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
@@ -42,9 +42,9 @@ runTestCases shell testCases =
             )
 
 
-script : Script.Context -> Script Int ()
-script { shell } =
-    runTestCases shell
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
+    runTestCases host
         [ ( "HelloWorld.elm", [], "Hello World!" )
         , ( "GetElmVersion.elm", [], "Current Elm version: 0.19.0" )
         , ( "LineCounts.elm", [ "test.txt" ], "test.txt: 3 lines" )

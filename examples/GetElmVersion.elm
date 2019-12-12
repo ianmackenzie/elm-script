@@ -4,9 +4,9 @@ import Example
 import Script exposing (Script)
 
 
-script : Script.Context -> Script Int ()
-script { shell } =
-    shell.execute "elm" [ "--version" ]
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
+    host.execute "elm" [ "--version" ]
         |> Script.map String.trim
         |> Script.andThen
             (\versionString ->

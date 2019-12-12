@@ -7,8 +7,8 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Context -> Script Int ()
-script context =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     Directory.createTemporary
         |> Script.andThen
             (\tempDirectory ->

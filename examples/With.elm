@@ -16,8 +16,8 @@ computeProduct =
             )
 
 
-script : Script.Context -> Script Int ()
-script context =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     Script.with computeProduct
         |> Script.andWith Script.getCurrentTime
         |> Script.yield

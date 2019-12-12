@@ -23,8 +23,8 @@ reverseLines lineSeparator input =
         |> (\string -> string ++ lineSeparator)
 
 
-script : Script.Context -> Script Int ()
-script { workingDirectory, platform } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     let
         inputFile =
             workingDirectory |> Directory.file "test.txt"
@@ -33,7 +33,7 @@ script { workingDirectory, platform } =
             workingDirectory |> Directory.file "reversed.txt"
     in
     File.read inputFile
-        |> Script.map (reverseLines platform.lineSeparator)
+        |> Script.map (reverseLines host.lineSeparator)
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (Example.handleError .message)
 

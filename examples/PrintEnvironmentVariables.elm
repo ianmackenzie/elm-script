@@ -2,22 +2,22 @@ module PrintEnvironmentVariables exposing (main)
 
 import Example
 import Script exposing (Script)
-import Script.EnvironmentVariables as EnvironmentVariables exposing (EnvironmentVariables)
+import Script.Environment as Environment exposing (Environment)
 
 
-printEnvironmentVariable : EnvironmentVariables -> String -> Script x ()
-printEnvironmentVariable environmentVariables name =
+printEnvironmentVariable : Environment -> String -> Script x ()
+printEnvironmentVariable environment name =
     let
         value =
-            EnvironmentVariables.get name environmentVariables
+            Environment.get name environment
                 |> Maybe.withDefault "not defined"
     in
     Script.printLine (name ++ ": " ++ value)
 
 
-script : Script.Context -> Script Int ()
-script { arguments, environmentVariables } =
-    arguments |> Script.forEach (printEnvironmentVariable environmentVariables)
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory { environment } =
+    arguments |> Script.forEach (printEnvironmentVariable environment)
 
 
 main : Script.Program

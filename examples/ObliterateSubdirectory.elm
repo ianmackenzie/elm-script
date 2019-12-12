@@ -5,8 +5,8 @@ import Script exposing (Script)
 import Script.Directory as Directory
 
 
-script : Script.Context -> Script Int ()
-script { workingDirectory } =
+script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+script arguments workingDirectory host =
     let
         subdirectory =
             workingDirectory |> Directory.subdirectory "subdirectory"
