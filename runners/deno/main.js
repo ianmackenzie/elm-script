@@ -70,6 +70,16 @@ function listEntities(request, responsePort, statsPredicate) {
   }
 }
 
+// From https://github.com/github/fetch/issues/175#issuecomment-284787564
+function timeout(ms, promise) {
+  return new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      reject(new Error("timeout"));
+    }, ms);
+    promise.then(resolve, reject);
+  });
+}
+
 function runCompiledJs(jsFileName, commandLineArgs) {
   // Read compiled JS from file
   const jsData = Deno.readFileSync(jsFileName);
