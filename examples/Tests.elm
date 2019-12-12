@@ -4,12 +4,20 @@ import Example
 import Script exposing (Script)
 
 
-runTestCases : Script.Host -> List ( String, List String, String ) -> Script Int ()
-runTestCases host testCases =
+runTestCases : Script.WorkingDirectory -> Script.UserPrivileges -> List ( String, List String, String ) -> Script Int ()
+runTestCases workingDirectory userPrivileges testCases =
+    let
+        runnerFileName =
+            "../runners/deno/main.js"
+    in
     testCases
         |> Script.forEach
-            (\( scriptFileName, arguments, expectedOutput ) ->
-                host.execute "elm-run" (scriptFileName :: arguments)
+            (\( scriptFileName, scriptArguments, expectedOutput ) ->
+                Script.executeWith userPrivileges
+                    { command = "deno"
+                    , arguments = [ "-A", runnerFileName, scriptFileName ] ++ scriptArguments
+                    , workingDirectory = workingDirectory
+                    }
                     |> Script.onError
                         (\processError ->
                             Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
@@ -42,11 +50,16 @@ runTestCases host testCases =
             )
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
-    runTestCases host
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
+    runTestCases workingDirectory userPrivileges <|
         [ ( "HelloWorld.elm", [], "Hello World!" )
-        , ( "GetElmVersion.elm", [], "Current Elm version: 0.19.0" )
+        , ( "GetElmVersion.elm", [], "Current Elm version: 0.19.1" )
         , ( "LineCounts.elm", [ "test.txt" ], "test.txt: 3 lines" )
         , ( "ForEach.elm"
           , [ "1", "2", "undefined", "3.5" ]

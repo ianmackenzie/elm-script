@@ -14,6 +14,8 @@ module Script.File exposing
     , name
     , path
     , read
+    , readOnly
+    , writable
     , write
     , writeTo
     )
@@ -23,7 +25,7 @@ import Json.Encode as Encode
 import Script
 import Script.Directory as Directory exposing (Directory)
 import Script.FileInfo as FileInfo
-import Script.Internal as Internal exposing (Flags, Script(..))
+import Script.Internal as Internal exposing (Flags, Script(..), UserPrivileges(..))
 import Script.Path as Path
 import Script.Permissions as Permissions
 
@@ -49,6 +51,16 @@ type Existence
     = Exists
     | DoesNotExist
     | IsNotAFile
+
+
+readOnly : UserPrivileges -> String -> File ReadOnly
+readOnly (UserPrivileges workingDirectoryPath) pathString =
+    Internal.File (Path.resolve workingDirectoryPath pathString)
+
+
+writable : UserPrivileges -> String -> File Writable
+writable (UserPrivileges workingDirectoryPath) pathString =
+    Internal.File (Path.resolve workingDirectoryPath pathString)
 
 
 errorDecoder : Decoder Error

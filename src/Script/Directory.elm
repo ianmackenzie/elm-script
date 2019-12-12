@@ -15,15 +15,17 @@ module Script.Directory exposing
     , name
     , obliterate
     , path
+    , readOnly
     , remove
     , subdirectory
+    , writable
     )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Script exposing (Script)
 import Script.FileInfo as FileInfo
-import Script.Internal as Internal exposing (File(..), Flags, Script(..))
+import Script.Internal as Internal exposing (File(..), Flags, Script(..), UserPrivileges(..))
 import Script.Path as Path exposing (Path)
 import Script.Permissions as Permissions
 import Script.Platform as Platform
@@ -50,6 +52,16 @@ type Existence
     = Exists
     | DoesNotExist
     | IsNotADirectory
+
+
+readOnly : UserPrivileges -> String -> Directory ReadOnly
+readOnly (UserPrivileges workingDirectoryPath) pathString =
+    Internal.Directory (Path.resolve workingDirectoryPath pathString)
+
+
+writable : UserPrivileges -> String -> Directory Writable
+writable (UserPrivileges workingDirectoryPath) pathString =
+    Internal.Directory (Path.resolve workingDirectoryPath pathString)
 
 
 errorDecoder : Decoder Error

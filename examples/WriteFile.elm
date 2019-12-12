@@ -24,8 +24,13 @@ reverseLines lineSeparator input =
         |> (\string -> string ++ lineSeparator)
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     let
         inputFile =
             workingDirectory |> Directory.file "test.txt"

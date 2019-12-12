@@ -1,8 +1,9 @@
 module Script exposing
-    ( Script, WorkingDirectory, Host, SubprocessError(..)
+    ( Script, WorkingDirectory, Host, UserPrivileges, SubprocessError(..)
     , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
+    , executeWith
     , map, map2, map3, map4, ignoreResult
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
@@ -12,7 +13,7 @@ module Script exposing
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script, WorkingDirectory, Host, SubprocessError
+@docs Script, WorkingDirectory, Host, UserPrivileges, SubprocessError
 
 
 # Running
@@ -28,6 +29,11 @@ various ways, and turn them into runnable programs.
 # Utilities
 
 @docs printLine, sleep, getCurrentTime
+
+
+# Running external executables
+
+@docs executeWith
 
 
 # Mapping
@@ -58,7 +64,7 @@ import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
 import Script.Environment exposing (Environment)
-import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags)
+import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags, UserPrivileges(..))
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable)
@@ -83,19 +89,17 @@ type alias WorkingDirectory =
     Directory Writable
 
 
+type alias UserPrivileges =
+    Internal.UserPrivileges
+
+
 {-| The host running the current `Script`. The function you pass to
 `Script.program` will get a `Host` value passed to it at startup.
 -}
 type alias Host =
     { platform : Platform
     , environment : Environment
-    , readOnlyFile : String -> File ReadOnly
-    , writableFile : String -> File Writable
-    , readOnlyDirectory : String -> Directory ReadOnly
-    , writableDirectory : String -> Directory Writable
     , networkConnection : NetworkConnection
-    , execute : String -> List String -> Script SubprocessError String
-    , executeIn : Directory Writable -> String -> List String -> Script SubprocessError String
     }
 
 
@@ -224,7 +228,7 @@ value of the script. If the script fails with an `Int` value, then that value
 will be returned to the operating system instead.
 
 -}
-program : (List String -> Directory Writable -> Host -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+program : (List String -> Directory Writable -> Host -> UserPrivileges -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkHostVersion =
@@ -245,30 +249,23 @@ program main requestPort responsePort =
                         arguments =
                             flags.arguments
 
-                        file pathString =
-                            File (Path.resolve flags.workingDirectoryPath pathString)
-
-                        directory pathString =
-                            Directory (Path.resolve flags.workingDirectoryPath pathString)
-
                         workingDirectory =
-                            directory "."
+                            Directory flags.workingDirectoryPath
 
                         host =
                             { platform = flags.platform
                             , environment = flags.environment
-                            , readOnlyFile = file
-                            , writableFile = file
-                            , readOnlyDirectory = directory
-                            , writableDirectory = directory
                             , networkConnection = Internal.NetworkConnection
-                            , executeIn = executeIn
-                            , execute = executeIn workingDirectory
                             }
 
+                        userPrivileges =
+                            UserPrivileges flags.workingDirectoryPath
+
+                        runMain () =
+                            main arguments workingDirectory host userPrivileges
+
                         script =
-                            checkHostVersion
-                                |> andThen (\() -> main arguments workingDirectory host)
+                            checkHostVersion |> andThen runMain
                     in
                     ( Running flags script, commands script )
 
@@ -535,7 +532,12 @@ do scripts =
 {-| For every value in a given list, call the given function and run the
 script that it creates. From `examples/ForEach.elm`:
 
-    script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
+    script :
+        List String
+        -> Script.WorkingDirectory
+        -> Script.Host
+        -> Script.UserPrivileges
+        -> Script Int ()
     script arguments host =
         arguments
             |> Script.forEach
@@ -747,21 +749,20 @@ finally cleanup script =
         |> onError (\error -> cleanup |> onError never |> andThen (\() -> fail error))
 
 
-
------ SUBPROCESS EXECUTION
-
-
-executeIn : Directory Writable -> String -> List String -> Internal.Script SubprocessError String
-executeIn workingDirectory command arguments =
+executeWith :
+    UserPrivileges
+    -> { workingDirectory : Directory Writable, command : String, arguments : List String }
+    -> Internal.Script SubprocessError String
+executeWith userPrivileges { workingDirectory, command, arguments } =
     let
-        (Directory workingPath) =
+        (Directory workingDirectoryPath) =
             workingDirectory
     in
     Internal.Invoke "execute"
         (Encode.object
             [ ( "command", Encode.string command )
             , ( "arguments", Encode.list Encode.string arguments )
-            , ( "workingDirectory", Path.encode workingPath )
+            , ( "workingDirectory", Path.encode workingDirectoryPath )
             ]
         )
         (\flags ->

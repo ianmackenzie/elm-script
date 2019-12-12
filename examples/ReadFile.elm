@@ -5,11 +5,16 @@ import Script exposing (Script)
 import Script.File as File exposing (File)
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     case arguments of
         [ path ] ->
-            File.read (host.readOnlyFile path)
+            File.read (File.readOnly userPrivileges path)
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
                 |> Script.andThen

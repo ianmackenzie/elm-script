@@ -15,9 +15,14 @@ printEnvironmentVariable environment name =
     Script.printLine (name ++ ": " ++ value)
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory { environment } =
-    arguments |> Script.forEach (printEnvironmentVariable environment)
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
+    arguments |> Script.forEach (printEnvironmentVariable host.environment)
 
 
 main : Script.Program

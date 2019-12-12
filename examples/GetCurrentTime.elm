@@ -5,8 +5,13 @@ import Script exposing (Script)
 import Time
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     Script.getCurrentTime
         |> Script.andThen
             (\currentTime ->

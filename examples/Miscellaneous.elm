@@ -9,14 +9,19 @@ import Script.NetworkConnection as NetworkConnection exposing (NetworkConnection
 import Time
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory { networkConnection } =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     Script.succeed { text = "A", number = 2 }
         |> Script.aside
             (\model ->
                 Script.do
                     [ Script.printLine model.text
-                    , printCurrentTime networkConnection
+                    , printCurrentTime host.networkConnection
                     , Script.sleep (Duration.seconds 0.5)
                     ]
             )
@@ -25,9 +30,9 @@ script arguments workingDirectory { networkConnection } =
             (\number ->
                 Script.do
                     [ Script.printLine (String.fromInt number)
-                    , printCurrentTime networkConnection
+                    , printCurrentTime host.networkConnection
                     , Script.sleep (Duration.seconds 0.5)
-                    , getCurrentTime networkConnection |> Script.ignoreResult
+                    , getCurrentTime host.networkConnection |> Script.ignoreResult
                     ]
             )
         |> Script.andThen

@@ -6,6 +6,7 @@ module Script.Internal exposing
     , Flags
     , NetworkConnection(..)
     , Script(..)
+    , UserPrivileges(..)
     )
 
 import Dict exposing (Dict)
@@ -50,3 +51,7 @@ type Environment
 
 type NetworkConnection
     = NetworkConnection
+
+
+type UserPrivileges
+    = UserPrivileges Path

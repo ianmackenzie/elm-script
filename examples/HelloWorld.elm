@@ -4,8 +4,13 @@ import Json.Encode exposing (Value)
 import Script exposing (Script)
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     Script.printLine "Hello World!"
 
 

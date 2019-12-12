@@ -4,9 +4,18 @@ import Example
 import Script exposing (Script)
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
-    host.execute "PowerShell" [ "-Command", "Get-ChildItem", "-Name", "-Path", "*.elm" ]
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
+    Script.executeWith userPrivileges
+        { command = "PowerShell"
+        , arguments = [ "-Command", "Get-ChildItem", "-Name", "-Path", "*.elm" ]
+        , workingDirectory = workingDirectory
+        }
         |> Script.map String.lines
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))

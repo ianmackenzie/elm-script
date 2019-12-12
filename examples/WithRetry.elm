@@ -10,9 +10,13 @@ abort message =
         |> Script.andThen (\() -> Script.fail 1)
 
 
-retry : Script.Host -> String -> List String -> Int -> Script Int ()
-retry host command arguments count =
-    host.execute command arguments
+retry : Script.WorkingDirectory -> Script.UserPrivileges -> String -> List String -> Int -> Script Int ()
+retry workingDirectory userPrivileges command arguments count =
+    Script.executeWith userPrivileges
+        { command = command
+        , arguments = arguments
+        , workingDirectory = workingDirectory
+        }
         |> Script.andThen Script.printLine
         |> Script.onError
             (\error ->
@@ -24,7 +28,7 @@ retry host command arguments count =
                         Script.SubprocessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
                                 |> Script.andThen
-                                    (\() -> retry host command arguments (count - 1))
+                                    (\() -> retry workingDirectory userPrivileges command arguments (count - 1))
 
                         Script.SubprocessWasTerminated ->
                             abort "Process was terminated"
@@ -37,15 +41,20 @@ retry host command arguments count =
             )
 
 
-script : List String -> Script.WorkingDirectory -> Script.Host -> Script Int ()
-script arguments workingDirectory host =
+script :
+    List String
+    -> Script.WorkingDirectory
+    -> Script.Host
+    -> Script.UserPrivileges
+    -> Script Int ()
+script arguments workingDirectory host userPrivileges =
     case arguments of
         [] ->
             Script.printLine "Please enter an executable to run"
                 |> Script.andThen (\() -> Script.fail 1)
 
         command :: rest ->
-            retry host command rest 5
+            retry workingDirectory userPrivileges command rest 5
 
 
 main : Script.Program
