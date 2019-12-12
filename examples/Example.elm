@@ -2,7 +2,6 @@ port module Example exposing (handleError, program)
 
 import Json.Encode exposing (Value)
 import Script exposing (Script)
-import Script.Directory as Directory exposing (Directory, Writable)
 
 
 handleError : (x -> String) -> x -> Script Int a
@@ -19,7 +18,7 @@ port responsePort : (Value -> msg) -> Sub msg
 
 program :
     (List String
-     -> Directory Writable
+     -> Script.WorkingDirectory
      -> Script.Host
      -> Script.UserPrivileges
      -> Script Int ()
