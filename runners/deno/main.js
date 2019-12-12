@@ -68,10 +68,14 @@ function listEntities(request, responsePort, statsPredicate) {
     }
 }
 
-function runCompiledJs(compiledJs, commandLineArgs) {
+function runCompiledJs(jsFileName, commandLineArgs) {
+    // Read compiled JS from file
+    const jsData = Deno.readFileSync(jsFileName);
+    const jsText = new TextDecoder("utf-8").decode(jsData);
+
     // Run Elm code to create the 'Elm' object
     const globalEval = eval;
-    globalEval(compiledJs);
+    globalEval(jsText);
 
     // Create Elm worker and get its request/response ports
     const flags = {};
@@ -296,12 +300,7 @@ if (Deno.args.length >= 2) {
     const absolutePath = path.resolve(sourceFileName);
     const extension = path.extname(absolutePath);
     if (extension === ".js") {
-        // Read compiled JS from file
-        const data = Deno.readFileSync(absolutePath);
-        const compiledJs = new TextDecoder("utf-8").decode(data);
-        // Actually run the script: this will eventually cause exit() to be
-        // called
-        runCompiledJs(compiledJs, commandLineArgs);
+        runCompiledJs(absolutePath, commandLineArgs);
     } else if (extension === ".elm") {
         const tempDirectory = createTemporaryDirectory();
         const tempFileName = path.resolve(tempDirectory, "main.js");
@@ -311,11 +310,7 @@ if (Deno.args.length >= 2) {
         });
         const elmResult = await elmProcess.status();
         if (elmResult.success) {
-            const data = Deno.readFileSync(tempFileName);
-            const compiledJs = new TextDecoder("utf-8").decode(data);
-            // Actually run the script: this will eventually cause exit() to be
-            // called
-            runCompiledJs(compiledJs, commandLineArgs);
+            runCompiledJs(tempFileName, commandLineArgs);
         } else {
             // The Elm compiler will have printed out a compilation error
             // message, no need to add our own
