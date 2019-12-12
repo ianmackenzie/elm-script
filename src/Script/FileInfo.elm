@@ -1,7 +1,7 @@
 module Script.FileInfo exposing (FileInfo(..), get)
 
 import Json.Decode as Decode exposing (Decoder)
-import Script.Internal as Internal
+import Script.Internal as Internal exposing (Script(..))
 import Script.Path as Path exposing (Path)
 
 
@@ -40,13 +40,13 @@ decodeErrorMessage =
     Decode.field "message" Decode.string
 
 
-get : Path -> Internal.Script String FileInfo
+get : Path -> Script String FileInfo
 get path =
-    Internal.Invoke "stat"
+    Invoke "stat"
         (Path.encode path)
         (\flags ->
             Decode.oneOf
-                [ decodeFileInfo |> Decode.map Internal.Succeed
-                , decodeErrorMessage |> Decode.map Internal.Fail
+                [ decodeFileInfo |> Decode.map Succeed
+                , decodeErrorMessage |> Decode.map Fail
                 ]
         )

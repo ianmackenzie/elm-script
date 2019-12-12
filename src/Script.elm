@@ -58,7 +58,7 @@ import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
 import Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Script.Internal as Internal exposing (Directory(..), File(..), Flags)
+import Script.Internal as Internal exposing (Directory(..), EnvironmentVariables(..), File(..), Flags)
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable, WriteOnly)
@@ -86,7 +86,7 @@ type alias Context =
     { arguments : List String
     , environmentVariables : EnvironmentVariables
     , fileSystem : FileSystem
-    , workingDirectory : Internal.Directory Writable
+    , workingDirectory : Directory Writable
     , networkConnection : NetworkConnection
     , shell : Shell
     , platform : Platform
@@ -94,18 +94,18 @@ type alias Context =
 
 
 type alias FileSystem =
-    { readOnlyFile : String -> Internal.File ReadOnly
-    , writableFile : String -> Internal.File Writable
-    , writeOnlyFile : String -> Internal.File WriteOnly
-    , readOnlyDirectory : String -> Internal.Directory ReadOnly
-    , writableDirectory : String -> Internal.Directory Writable
-    , writeOnlyDirectory : String -> Internal.Directory WriteOnly
+    { readOnlyFile : String -> File ReadOnly
+    , writableFile : String -> File Writable
+    , writeOnlyFile : String -> File WriteOnly
+    , readOnlyDirectory : String -> Directory ReadOnly
+    , writableDirectory : String -> Directory Writable
+    , writeOnlyDirectory : String -> Directory WriteOnly
     }
 
 
 type alias Shell =
     { execute : String -> List String -> Script SubprocessError String
-    , executeIn : Internal.Directory Writable -> String -> List String -> Script SubprocessError String
+    , executeIn : Directory Writable -> String -> List String -> Script SubprocessError String
     }
 
 
@@ -189,7 +189,7 @@ decodeEnvironmentVariables platformType =
     Decode.list decodeKeyValuePair
         |> Decode.map
             (\keyValuePairs ->
-                Internal.EnvironmentVariables platformType
+                EnvironmentVariables platformType
                     (Dict.fromList <|
                         -- On Windows, capitalize environment variable names
                         -- so they can be looked up case-insensitively (same
@@ -764,10 +764,10 @@ finally cleanup script =
 ----- SUBPROCESS EXECUTION
 
 
-executeIn : Internal.Directory Writable -> String -> List String -> Internal.Script SubprocessError String
+executeIn : Directory Writable -> String -> List String -> Internal.Script SubprocessError String
 executeIn workingDirectory command arguments =
     let
-        (Internal.Directory workingPath) =
+        (Directory workingPath) =
             workingDirectory
     in
     Internal.Invoke "execute"
