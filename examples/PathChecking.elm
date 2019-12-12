@@ -20,7 +20,8 @@ niceScript directory =
 
 evilScript : Directory permissions -> Script Int ()
 evilScript directory =
-    File.read (directory |> Directory.file "C:/passwords.txt")
+    -- Attempt to sneakily break into a parent directory
+    File.read (directory |> Directory.file "subdirectory/../../test.txt")
         |> Script.ignoreResult
         |> Script.onError (Example.handleError .message)
 
