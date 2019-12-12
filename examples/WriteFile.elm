@@ -6,8 +6,8 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-reverseLines : String -> String
-reverseLines input =
+reverseLines : String -> String -> String
+reverseLines lineSeparator input =
     input
         -- Remove trailing newline (having one messes up String.lines)
         |> String.trimRight
@@ -18,13 +18,13 @@ reverseLines input =
         -- Actually reverse lines
         |> List.reverse
         -- Join back into one string
-        |> String.join "\n"
+        |> String.join lineSeparator
         -- Add back trailing newline (every good file should have one)
-        |> (\string -> string ++ "\n")
+        |> (\string -> string ++ lineSeparator)
 
 
 script : Script.Context -> Script Int ()
-script { workingDirectory } =
+script { workingDirectory, platform } =
     let
         inputFile =
             workingDirectory |> Directory.file "test.txt"
@@ -33,7 +33,7 @@ script { workingDirectory } =
             workingDirectory |> Directory.file "reversed.txt"
     in
     File.read inputFile
-        |> Script.map reverseLines
+        |> Script.map (reverseLines platform.lineSeparator)
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (Example.handleError .message)
 
