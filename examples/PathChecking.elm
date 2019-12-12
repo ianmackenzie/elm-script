@@ -4,10 +4,9 @@ import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File
-import Script.Permissions as Permissions exposing (Read, ReadOnly)
 
 
-niceScript : Directory (Read p) -> Script Int ()
+niceScript : Directory permissions -> Script Int ()
 niceScript directory =
     File.read (directory |> Directory.file "test.txt")
         |> Script.andThen
@@ -19,7 +18,7 @@ niceScript directory =
         |> Script.onError (Example.handleError .message)
 
 
-evilScript : Directory (Read p) -> Script Int ()
+evilScript : Directory permissions -> Script Int ()
 evilScript directory =
     File.read (directory |> Directory.file "C:/passwords.txt")
         |> Script.ignoreResult

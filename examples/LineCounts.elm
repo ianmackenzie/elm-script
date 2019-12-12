@@ -3,10 +3,9 @@ module LineCounts exposing (main)
 import Example
 import Script exposing (Script)
 import Script.File as File exposing (File)
-import Script.Permissions exposing (Read)
 
 
-getLineCount : File (Read p) -> Script File.Error Int
+getLineCount : File permissions -> Script File.Error Int
 getLineCount file =
     File.read file
         |> Script.map (String.trimRight >> String.lines >> List.length)

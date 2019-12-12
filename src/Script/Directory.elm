@@ -2,8 +2,9 @@ module Script.Directory exposing
     ( Directory
     , Error
     , Existence(..)
+    , ReadOnly
+    , Writable
     , asReadOnly
-    , asWriteOnly
     , checkExistence
     , create
     , createTemporary
@@ -23,12 +24,20 @@ import Script exposing (Script)
 import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (File(..), Flags, Script(..))
 import Script.Path as Path exposing (Path)
-import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
+import Script.Permissions as Permissions
 import Script.PlatformType as PlatformType
 
 
-type alias Directory p =
-    Internal.Directory p
+type alias Directory permissions =
+    Internal.Directory permissions
+
+
+type alias ReadOnly =
+    Permissions.ReadOnly
+
+
+type alias Writable =
+    Permissions.Writable
 
 
 type alias Error =
@@ -47,32 +56,27 @@ errorDecoder =
     Decode.map Error (Decode.field "message" Decode.string)
 
 
-name : Directory p -> String
+name : Directory permissions -> String
 name (Internal.Directory directoryPath) =
     Path.name directoryPath
 
 
-asReadOnly : Directory (Read p) -> Directory ReadOnly
+asReadOnly : Directory Writable -> Directory ReadOnly
 asReadOnly (Internal.Directory directoryPath) =
     Internal.Directory directoryPath
 
 
-asWriteOnly : Directory (Write p) -> Directory WriteOnly
-asWriteOnly (Internal.Directory directoryPath) =
-    Internal.Directory directoryPath
-
-
-subdirectory : String -> Directory p -> Directory p
+subdirectory : String -> Directory permissions -> Directory permissions
 subdirectory relativePath (Internal.Directory directoryPath) =
     Internal.Directory (Path.append relativePath directoryPath)
 
 
-file : String -> Directory p -> File p
+file : String -> Directory permissions -> File permissions
 file relativePath (Internal.Directory directoryPath) =
     File (Path.append relativePath directoryPath)
 
 
-listFiles : Directory (Read p) -> Script Error (List (File (Read p)))
+listFiles : Directory permissions -> Script Error (List (File permissions))
 listFiles ((Internal.Directory directoryPath) as directory) =
     Invoke "listFiles" (Path.encode directoryPath) <|
         \flags ->
@@ -84,7 +88,7 @@ listFiles ((Internal.Directory directoryPath) as directory) =
                 ]
 
 
-listSubdirectories : Directory (Read p) -> Script Error (List (Directory (Read p)))
+listSubdirectories : Directory permissions -> Script Error (List (Directory permissions))
 listSubdirectories ((Internal.Directory directoryPath) as directory) =
     Invoke "listSubdirectories" (Path.encode directoryPath) <|
         \flags ->
@@ -107,7 +111,7 @@ decodeNullResult flags =
         ]
 
 
-create : Directory (Write p) -> Script Error ()
+create : Directory Writable -> Script Error ()
 create (Internal.Directory directoryPath) =
     Invoke "createDirectory" (Path.encode directoryPath) decodeNullResult
 
@@ -127,7 +131,7 @@ createTemporary =
                 ]
 
 
-checkExistence : Directory (Read p) -> Script Error Existence
+checkExistence : Directory permissions -> Script Error Existence
 checkExistence (Internal.Directory directoryPath) =
     FileInfo.get directoryPath
         |> Script.map
@@ -148,16 +152,16 @@ checkExistence (Internal.Directory directoryPath) =
         |> Script.mapError Error
 
 
-remove : Directory (Write p) -> Script Error ()
+remove : Directory Writable -> Script Error ()
 remove (Internal.Directory directoryPath) =
     Invoke "removeDirectory" (Path.encode directoryPath) decodeNullResult
 
 
-obliterate : Directory (Write p) -> Script Error ()
+obliterate : Directory Writable -> Script Error ()
 obliterate (Internal.Directory directoryPath) =
     Invoke "obliterateDirectory" (Path.encode directoryPath) decodeNullResult
 
 
-path : Directory p -> String
+path : Directory permissions -> String
 path (Internal.Directory directoryPath) =
     Path.toString directoryPath

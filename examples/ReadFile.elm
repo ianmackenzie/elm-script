@@ -3,7 +3,6 @@ module ReadFile exposing (main)
 import Example
 import Script exposing (Script)
 import Script.File as File exposing (File)
-import Script.Permissions as Permissions exposing (ReadOnly)
 
 
 script : Script.Context -> Script Int ()

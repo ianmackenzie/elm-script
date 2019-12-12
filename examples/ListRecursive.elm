@@ -4,10 +4,9 @@ import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File exposing (File)
-import Script.Permissions as Permissions exposing (Read)
 
 
-listRecursively : Int -> Directory (Read p) -> Script Directory.Error ()
+listRecursively : Int -> Directory permissions -> Script Directory.Error ()
 listRecursively level directory =
     let
         indentation =

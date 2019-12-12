@@ -37,11 +37,11 @@ type FileSystem
     = FileSystem
 
 
-type Directory p
+type Directory permissions
     = Directory Path
 
 
-type File p
+type File permissions
     = File Path
 
 

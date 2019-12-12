@@ -2,8 +2,9 @@ module Script.File exposing
     ( Error
     , Existence(..)
     , File
+    , ReadOnly
+    , Writable
     , asReadOnly
-    , asWriteOnly
     , checkExistence
     , copy
     , copyInto
@@ -24,11 +25,19 @@ import Script.Directory as Directory exposing (Directory)
 import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (Flags, Script(..))
 import Script.Path as Path
-import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
+import Script.Permissions as Permissions
 
 
-type alias File p =
-    Internal.File p
+type alias File permissions =
+    Internal.File permissions
+
+
+type alias ReadOnly =
+    Permissions.ReadOnly
+
+
+type alias Writable =
+    Permissions.Writable
 
 
 type alias Error =
@@ -47,22 +56,17 @@ errorDecoder =
     Decode.map Error (Decode.field "message" Decode.string)
 
 
-name : File p -> String
+name : File permissions -> String
 name (Internal.File filePath) =
     Path.name filePath
 
 
-asReadOnly : File (Read p) -> File ReadOnly
+asReadOnly : File Writable -> File ReadOnly
 asReadOnly (Internal.File filePath) =
     Internal.File filePath
 
 
-asWriteOnly : File (Write p) -> File WriteOnly
-asWriteOnly (Internal.File filePath) =
-    Internal.File filePath
-
-
-read : File (Read p) -> Script Error String
+read : File permissions -> Script Error String
 read (Internal.File filePath) =
     Invoke "readFile" (Path.encode filePath) <|
         \flags ->
@@ -80,7 +84,7 @@ decodeNullResult flags =
         ]
 
 
-write : String -> File (Write p) -> Script Error ()
+write : String -> File Writable -> Script Error ()
 write contents (Internal.File filePath) =
     Invoke "writeFile"
         (Encode.object
@@ -91,12 +95,12 @@ write contents (Internal.File filePath) =
         decodeNullResult
 
 
-writeTo : File (Write p) -> String -> Script Error ()
+writeTo : File Writable -> String -> Script Error ()
 writeTo file contents =
     write contents file
 
 
-copy : File (Read sourcePermissions) -> File (Write destinationPermissions) -> Script Error ()
+copy : File permissions -> File Writable -> Script Error ()
 copy (Internal.File sourcePath) (Internal.File destinationPath) =
     Invoke "copyFile"
         (Encode.object
@@ -107,7 +111,7 @@ copy (Internal.File sourcePath) (Internal.File destinationPath) =
         decodeNullResult
 
 
-move : File Writable -> File (Write destinationPermissions) -> Script Error ()
+move : File Writable -> File Writable -> Script Error ()
 move (Internal.File sourcePath) (Internal.File destinationPath) =
     Invoke "moveFile"
         (Encode.object
@@ -118,12 +122,12 @@ move (Internal.File sourcePath) (Internal.File destinationPath) =
         decodeNullResult
 
 
-delete : File (Write p) -> Script Error ()
+delete : File Writable -> Script Error ()
 delete (Internal.File filePath) =
     Invoke "deleteFile" (Path.encode filePath) decodeNullResult
 
 
-copyInto : Directory (Write directoryPermissions) -> File (Read filePermissions) -> Script Error (File (Write directoryPermissions))
+copyInto : Directory Writable -> File permissions -> Script Error (File Writable)
 copyInto directory file =
     let
         destination =
@@ -132,7 +136,7 @@ copyInto directory file =
     copy file destination |> Script.andThen (\() -> Script.succeed destination)
 
 
-moveInto : Directory (Write directoryPermissions) -> File Writable -> Script Error (File (Write directoryPermissions))
+moveInto : Directory Writable -> File Writable -> Script Error (File Writable)
 moveInto directory file =
     let
         destination =
@@ -141,7 +145,7 @@ moveInto directory file =
     move file destination |> Script.andThen (\() -> Script.succeed destination)
 
 
-checkExistence : File (Read p) -> Script Error Existence
+checkExistence : File permissions -> Script Error Existence
 checkExistence (Internal.File filePath) =
     FileInfo.get filePath
         |> Script.map
@@ -162,6 +166,6 @@ checkExistence (Internal.File filePath) =
         |> Script.mapError Error
 
 
-path : File p -> String
+path : File permissions -> String
 path (Internal.File filePath) =
     Path.toString filePath

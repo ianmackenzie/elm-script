@@ -2,8 +2,7 @@ port module Example exposing (ensureDirectory, handleError, program)
 
 import Json.Encode exposing (Value)
 import Script exposing (Script)
-import Script.Directory as Directory exposing (Directory)
-import Script.Permissions as Permissions exposing (Writable)
+import Script.Directory as Directory exposing (Directory, Writable)
 
 
 handleError : (x -> String) -> x -> Script Int a

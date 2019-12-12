@@ -61,7 +61,7 @@ import Script.EnvironmentVariables exposing (EnvironmentVariables)
 import Script.Internal as Internal exposing (Directory(..), EnvironmentVariables(..), File(..), Flags)
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path exposing (Path(..))
-import Script.Permissions exposing (ReadOnly, Writable, WriteOnly)
+import Script.Permissions exposing (ReadOnly, Writable)
 import Script.PlatformType as PlatformType exposing (PlatformType(..))
 import Task exposing (Task)
 import Time
@@ -96,10 +96,8 @@ type alias Context =
 type alias FileSystem =
     { readOnlyFile : String -> File ReadOnly
     , writableFile : String -> File Writable
-    , writeOnlyFile : String -> File WriteOnly
     , readOnlyDirectory : String -> Directory ReadOnly
     , writableDirectory : String -> Directory Writable
-    , writeOnlyDirectory : String -> Directory WriteOnly
     }
 
 
@@ -267,10 +265,8 @@ program main requestPort responsePort =
                             , fileSystem =
                                 { readOnlyFile = file
                                 , writableFile = file
-                                , writeOnlyFile = file
                                 , readOnlyDirectory = directory
                                 , writableDirectory = directory
-                                , writeOnlyDirectory = directory
                                 }
                             , workingDirectory = workingDirectory
                             , networkConnection = Internal.NetworkConnection
