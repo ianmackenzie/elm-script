@@ -6,7 +6,6 @@ module Script.Internal exposing
     , Flags
     , NetworkConnection(..)
     , Script(..)
-    , Shell(..)
     )
 
 import Dict exposing (Dict)
@@ -51,7 +50,3 @@ type Environment
 
 type NetworkConnection
     = NetworkConnection
-
-
-type Shell
-    = Shell
