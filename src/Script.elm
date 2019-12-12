@@ -62,14 +62,14 @@ import Script.Internal as Internal exposing (Directory(..), Environment(..), Fil
 import Script.NetworkConnection exposing (NetworkConnection)
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable)
-import Script.PlatformType as PlatformType exposing (PlatformType(..))
+import Script.Platform as Platform exposing (Platform(..))
 import Task exposing (Task)
 import Time
 
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 8, 0 )
+    ( 9, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
@@ -87,8 +87,7 @@ type alias WorkingDirectory =
 `Script.program` will get a `Host` value passed to it at startup.
 -}
 type alias Host =
-    { pathSeparator : String
-    , lineSeparator : String
+    { platform : Platform
     , environment : Environment
     , readOnlyFile : String -> File ReadOnly
     , writableFile : String -> File Writable
@@ -151,14 +150,31 @@ type alias Program =
 
 decodeFlags : Decoder Flags
 decodeFlags =
-    Decode.field "platformType" PlatformType.decoder
+    Decode.field "platform" decodePlatform
         |> Decode.andThen
-            (\platformType ->
+            (\platform ->
                 Decode.map4 Flags
                     (Decode.field "arguments" (Decode.list Decode.string))
-                    (Decode.succeed platformType)
-                    (Decode.field "environment" (decodeEnvironment platformType))
-                    (Decode.field "workingDirectory" (decodeWorkingDirectoryPath platformType))
+                    (Decode.succeed platform)
+                    (Decode.field "environment" (decodeEnvironment platform))
+                    (Decode.field "workingDirectory" (decodeWorkingDirectoryPath platform))
+            )
+
+
+decodePlatform : Decoder Platform
+decodePlatform =
+    Decode.field "type" Decode.string
+        |> Decode.andThen
+            (\platformType ->
+                case platformType of
+                    "posix" ->
+                        Decode.map Posix (Decode.field "name" Decode.string)
+
+                    "windows" ->
+                        Decode.succeed Windows
+
+                    _ ->
+                        Decode.fail ("Unrecognized platform type '" ++ platformType ++ "'")
             )
 
 
@@ -169,18 +185,18 @@ decodeKeyValuePair =
         (Decode.index 1 Decode.string)
 
 
-decodeEnvironment : PlatformType -> Decoder Environment
-decodeEnvironment platformType =
+decodeEnvironment : Platform -> Decoder Environment
+decodeEnvironment platform =
     Decode.list decodeKeyValuePair
         |> Decode.map
             (\keyValuePairs ->
-                Environment platformType
+                Environment platform
                     (Dict.fromList <|
                         -- On Windows, capitalize environment variable names
                         -- so they can be looked up case-insensitively (same
                         -- behavior as process.env in Node)
-                        case platformType of
-                            Posix ->
+                        case platform of
+                            Posix _ ->
                                 keyValuePairs
 
                             Windows ->
@@ -189,9 +205,9 @@ decodeEnvironment platformType =
             )
 
 
-decodeWorkingDirectoryPath : PlatformType -> Decoder Path
-decodeWorkingDirectoryPath platformType =
-    Decode.string |> Decode.map (Path.absolute platformType)
+decodeWorkingDirectoryPath : Platform -> Decoder Path
+decodeWorkingDirectoryPath platform =
+    Decode.string |> Decode.map (Path.absolute platform)
 
 
 {-| Actually create a runnable script program! Your top-level script file should
@@ -238,17 +254,8 @@ program main requestPort responsePort =
                         workingDirectory =
                             directory "."
 
-                        ( pathSeparator, lineSeparator ) =
-                            case flags.platformType of
-                                Windows ->
-                                    ( "\\", "\u{000D}\n" )
-
-                                Posix ->
-                                    ( "/", "\n" )
-
                         host =
-                            { pathSeparator = pathSeparator
-                            , lineSeparator = lineSeparator
+                            { platform = flags.platform
                             , environment = flags.environment
                             , readOnlyFile = file
                             , writableFile = file

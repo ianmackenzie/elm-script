@@ -26,7 +26,7 @@ import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (File(..), Flags, Script(..))
 import Script.Path as Path exposing (Path)
 import Script.Permissions as Permissions
-import Script.PlatformType as PlatformType
+import Script.Platform as Platform
 
 
 type alias Directory permissions =
@@ -142,7 +142,7 @@ createTemporary =
                     |> Decode.map
                         (\pathString ->
                             Succeed <|
-                                Internal.Directory (Path.absolute flags.platformType pathString)
+                                Internal.Directory (Path.absolute flags.platform pathString)
                         )
                 , errorDecoder |> Decode.map Fail
                 ]

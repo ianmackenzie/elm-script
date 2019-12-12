@@ -4,6 +4,7 @@ import Example
 import Script exposing (Script)
 import Script.Directory as Directory
 import Script.File as File
+import Script.Platform as Platform
 
 
 reverseLines : String -> String -> String
@@ -31,9 +32,12 @@ script arguments workingDirectory host =
 
         outputFile =
             workingDirectory |> Directory.file "reversed.txt"
+
+        lineSeparator =
+            Platform.lineSeparator host.platform
     in
     File.read inputFile
-        |> Script.map (reverseLines host.lineSeparator)
+        |> Script.map (reverseLines lineSeparator)
         |> Script.andThen (File.writeTo outputFile)
         |> Script.onError (Example.handleError .message)
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const majorVersion = 8;
+const majorVersion = 9;
 const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
@@ -79,10 +79,10 @@ function runCompiledJs(compiledJs, commandLineArgs) {
     switch (Deno.build.os) {
         case "mac":
         case "linux":
-            flags["platformType"] = "posix";
+            flags["platform"] = { type: "posix", name: Deno.build.os };
             break;
         case "win":
-            flags["platformType"] = "windows";
+            flags["platform"] = { type: "windows" };
             break;
         default:
             console.log("Unrecognized OS '" + Deno.build.os + "'");

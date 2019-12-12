@@ -9,6 +9,7 @@
         "Script.Directory",
         "Script.Environment",
         "Script.File",
+        "Script.Platform",
         "Script.NetworkConnection"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",

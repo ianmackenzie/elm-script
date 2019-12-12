@@ -12,11 +12,11 @@ module Script.Path exposing
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Regex exposing (Regex)
-import Script.PlatformType as PlatformType exposing (PlatformType(..))
+import Script.Platform as Platform exposing (Platform(..))
 
 
 type Path
-    = Path PlatformType (List String)
+    = Path Platform (List String)
 
 
 nameRegex : Regex
@@ -46,28 +46,28 @@ encode (Path platform components) =
 
 
 append : String -> Path -> Path
-append component (Path platformType components) =
-    Path platformType (components ++ [ component ])
+append component (Path platform components) =
+    Path platform (components ++ [ component ])
 
 
-absolute : PlatformType -> String -> Path
-absolute platformType string =
-    Path platformType [ string ]
+absolute : Platform -> String -> Path
+absolute platform string =
+    Path platform [ string ]
 
 
 resolve : Path -> String -> Path
-resolve (Path platformType parentComponents) pathString =
-    if isAbsolute platformType pathString then
-        Path platformType [ pathString ]
+resolve (Path platform parentComponents) pathString =
+    if isAbsolute platform pathString then
+        Path platform [ pathString ]
 
     else
-        Path platformType [ join platformType (parentComponents ++ [ pathString ]) ]
+        Path platform [ join platform (parentComponents ++ [ pathString ]) ]
 
 
-isAbsolute : PlatformType -> String -> Bool
-isAbsolute platformType pathString =
-    case platformType of
-        Posix ->
+isAbsolute : Platform -> String -> Bool
+isAbsolute platform pathString =
+    case platform of
+        Posix _ ->
             String.startsWith "/" pathString
 
         Windows ->
@@ -85,25 +85,18 @@ startsAtWindowsDriveRoot pathString =
             False
 
 
-join : PlatformType -> List String -> String
-join platformType components =
+join : Platform -> List String -> String
+join platform components =
     case components of
         first :: rest ->
             let
-                separator =
-                    case platformType of
-                        Posix ->
-                            "/"
-
-                        Windows ->
-                            "\\"
-
                 joinedComponents =
-                    String.join separator (List.concatMap pathChunks components)
+                    String.join (Platform.pathSeparator platform)
+                        (List.concatMap pathChunks components)
             in
-            if isAbsolute platformType first then
-                case platformType of
-                    Posix ->
+            if isAbsolute platform first then
+                case platform of
+                    Posix _ ->
                         "/" ++ joinedComponents
 
                     Windows ->
@@ -131,5 +124,5 @@ pathChunk =
 
 
 toString : Path -> String
-toString (Path platformType components) =
-    join platformType components
+toString (Path platform components) =
+    join platform components

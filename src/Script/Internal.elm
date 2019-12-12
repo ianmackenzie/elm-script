@@ -13,13 +13,13 @@ import Dict exposing (Dict)
 import Json.Decode exposing (Decoder, Value)
 import Platform.Cmd exposing (Cmd)
 import Script.Path exposing (Path)
-import Script.PlatformType exposing (PlatformType)
+import Script.Platform exposing (Platform)
 import Task exposing (Task)
 
 
 type alias Flags =
     { arguments : List String
-    , platformType : PlatformType
+    , platform : Platform
     , environment : Environment
     , workingDirectoryPath : Path
     }
@@ -46,7 +46,7 @@ type File permissions
 
 
 type Environment
-    = Environment PlatformType (Dict String String)
+    = Environment Platform (Dict String String)
 
 
 type NetworkConnection
