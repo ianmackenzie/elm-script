@@ -326,6 +326,6 @@ if (Deno.args.length >= 2) {
         exit(1);
     }
 } else {
-    console.log(`Run as 'deno elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`);
+    console.log(`Run as 'deno https://elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`);
     exit(1);
 }
