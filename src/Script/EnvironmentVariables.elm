@@ -1,7 +1,8 @@
 module Script.EnvironmentVariables exposing (EnvironmentVariables, get)
 
-import Dict
+import Dict exposing (Dict)
 import Script.Internal as Internal
+import Script.PlatformType as PlatformType exposing (PlatformType(..))
 
 
 type alias EnvironmentVariables =
@@ -11,8 +12,8 @@ type alias EnvironmentVariables =
 get : String -> EnvironmentVariables -> Maybe String
 get name (Internal.EnvironmentVariables platform dict) =
     case platform of
-        Internal.Windows ->
+        Windows ->
             Dict.get (String.toUpper name) dict
 
-        Internal.Posix ->
+        Posix ->
             Dict.get name dict

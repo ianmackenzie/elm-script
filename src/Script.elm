@@ -58,17 +58,18 @@ import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
 import Script.EnvironmentVariables exposing (EnvironmentVariables)
-import Script.Internal as Internal
+import Script.Internal as Internal exposing (Directory(..), File(..), Flags)
 import Script.NetworkConnection exposing (NetworkConnection)
-import Script.Path as Path
+import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable, WriteOnly)
+import Script.PlatformType as PlatformType exposing (PlatformType(..))
 import Task exposing (Task)
 import Time
 
 
 requiredHostVersion : ( Int, Int )
 requiredHostVersion =
-    ( 5, 0 )
+    ( 6, 0 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
@@ -89,13 +90,6 @@ type alias Context =
     , networkConnection : NetworkConnection
     , shell : Shell
     , platform : Platform
-    }
-
-
-type alias Flags =
-    { arguments : List String
-    , platform : String
-    , environmentVariables : List ( String, String )
     }
 
 
@@ -155,7 +149,8 @@ type alias ResponsePort =
 
 
 type Model
-    = Model (Script Int ())
+    = Running Flags (Script Int ())
+    | Aborting
 
 
 type Msg
@@ -166,7 +161,52 @@ type Msg
 {-| The type of program returned by `Script.program`.
 -}
 type alias Program =
-    Platform.Program Flags Model Msg
+    Platform.Program Value Model Msg
+
+
+decodeFlags : Decoder Flags
+decodeFlags =
+    Decode.field "platformType" PlatformType.decoder
+        |> Decode.andThen
+            (\platformType ->
+                Decode.map4 Flags
+                    (Decode.field "arguments" (Decode.list Decode.string))
+                    (Decode.succeed platformType)
+                    (Decode.field "environmentVariables" (decodeEnvironmentVariables platformType))
+                    (Decode.field "workingDirectory" (decodeWorkingDirectoryPath platformType))
+            )
+
+
+decodeKeyValuePair : Decoder ( String, String )
+decodeKeyValuePair =
+    Decode.map2 Tuple.pair
+        (Decode.index 0 Decode.string)
+        (Decode.index 1 Decode.string)
+
+
+decodeEnvironmentVariables : PlatformType -> Decoder EnvironmentVariables
+decodeEnvironmentVariables platformType =
+    Decode.list decodeKeyValuePair
+        |> Decode.map
+            (\keyValuePairs ->
+                Internal.EnvironmentVariables platformType
+                    (Dict.fromList <|
+                        -- On Windows, capitalize environment variable names
+                        -- so they can be looked up case-insensitively (same
+                        -- behavior as process.env in Node)
+                        case platformType of
+                            Posix ->
+                                keyValuePairs
+
+                            Windows ->
+                                List.map (Tuple.mapFirst String.toUpper) keyValuePairs
+                    )
+            )
+
+
+decodeWorkingDirectoryPath : PlatformType -> Decoder Path
+decodeWorkingDirectoryPath platformType =
+    Decode.string |> Decode.map (Path.absolute platformType)
 
 
 {-| Actually create a runnable script program! Your top-level script file should
@@ -193,73 +233,60 @@ program main requestPort responsePort =
 
                 encodedVersion =
                     Encode.list Encode.int [ major, minor ]
-
-                decoder =
-                    Decode.null (succeed ())
             in
-            Internal.Invoke "checkVersion" encodedVersion decoder
+            Internal.Invoke "checkVersion" encodedVersion <|
+                \flags -> Decode.null (succeed ())
 
-        init flags =
-            let
-                platform =
-                    if flags.platform == "windows" then
-                        Internal.Windows
+        init flagsValue =
+            case Decode.decodeValue decodeFlags flagsValue of
+                Ok flags ->
+                    let
+                        file pathString =
+                            File (Path.resolve flags.workingDirectoryPath pathString)
 
-                    else
-                        Internal.Posix
+                        directory pathString =
+                            Directory (Path.resolve flags.workingDirectoryPath pathString)
 
-                environmentVariables =
-                    Internal.EnvironmentVariables platform
-                        (Dict.fromList <|
-                            -- On Windows, capitalize environment variable names
-                            -- so they can be looked up case-insensitively (same
-                            -- behavior as process.env in Node)
-                            case platform of
-                                Internal.Posix ->
-                                    flags.environmentVariables
+                        workingDirectory =
+                            directory "."
 
-                                Internal.Windows ->
-                                    List.map (Tuple.mapFirst String.toUpper)
-                                        flags.environmentVariables
-                        )
+                        context =
+                            { arguments = flags.arguments
+                            , environmentVariables = flags.environmentVariables
+                            , platform =
+                                case flags.platformType of
+                                    Windows ->
+                                        { pathSeparator = "\\"
+                                        , lineSeparator = "\u{000D}\n"
+                                        }
 
-                workingDirectory =
-                    Internal.Directory [ "." ]
-
-                context =
-                    { arguments = flags.arguments
-                    , environmentVariables = environmentVariables
-                    , platform =
-                        case platform of
-                            Internal.Windows ->
-                                { pathSeparator = "\\"
-                                , lineSeparator = "\u{000D}\n"
+                                    Posix ->
+                                        { pathSeparator = "/"
+                                        , lineSeparator = "\n"
+                                        }
+                            , fileSystem =
+                                { readOnlyFile = file
+                                , writableFile = file
+                                , writeOnlyFile = file
+                                , readOnlyDirectory = directory
+                                , writableDirectory = directory
+                                , writeOnlyDirectory = directory
                                 }
-
-                            Internal.Posix ->
-                                { pathSeparator = "/"
-                                , lineSeparator = "\n"
+                            , workingDirectory = workingDirectory
+                            , networkConnection = Internal.NetworkConnection
+                            , shell =
+                                { executeIn = executeIn
+                                , execute = executeIn workingDirectory
                                 }
-                    , fileSystem =
-                        { readOnlyFile = \path -> Internal.File [ path ]
-                        , writableFile = \path -> Internal.File [ path ]
-                        , writeOnlyFile = \path -> Internal.File [ path ]
-                        , readOnlyDirectory = \path -> Internal.Directory [ path ]
-                        , writableDirectory = \path -> Internal.Directory [ path ]
-                        , writeOnlyDirectory = \path -> Internal.Directory [ path ]
-                        }
-                    , workingDirectory = workingDirectory
-                    , networkConnection = Internal.NetworkConnection
-                    , shell =
-                        { executeIn = executeIn
-                        , execute = executeIn workingDirectory
-                        }
-                    }
+                            }
 
-                script =
-                    checkHostVersion |> andThen (\() -> main context)
-            in
-            ( Model script, commands script )
+                        script =
+                            checkHostVersion |> andThen (\() -> main context)
+                    in
+                    ( Running flags script, commands script )
+
+                Err _ ->
+                    abort "Failed to decode flags from JavaScript"
 
         submitRequest name value =
             requestPort <|
@@ -285,30 +312,31 @@ program main requestPort responsePort =
                 Internal.Do command ->
                     Cmd.map Updated command
 
-        crash message =
-            let
-                printError =
-                    printLine ("ERROR: " ++ message) |> andThen (\() -> fail 1)
-            in
-            ( Model printError, commands printError )
+        abort message =
+            ( Aborting, submitRequest "abort" (Encode.string message) )
 
-        update message (Model current) =
-            case message of
-                Updated updated ->
-                    ( Model updated, commands updated )
+        update message model =
+            case model of
+                Aborting ->
+                    ( model, Cmd.none )
 
-                Response value ->
-                    case current of
-                        Internal.Invoke _ _ decoder ->
-                            case Decode.decodeValue decoder value of
-                                Ok updated ->
-                                    ( Model updated, commands updated )
+                Running flags current ->
+                    case message of
+                        Updated updated ->
+                            ( Running flags updated, commands updated )
 
-                                Err decodeError ->
-                                    crash ("Failed to decode response from JavaScript: " ++ Decode.errorToString decodeError)
+                        Response value ->
+                            case current of
+                                Internal.Invoke _ _ decoder ->
+                                    case Decode.decodeValue (decoder flags) value of
+                                        Ok updated ->
+                                            ( Running flags updated, commands updated )
 
-                        _ ->
-                            crash ("Received unexpected response from JavaScript: " ++ Encode.encode 0 value)
+                                        Err decodeError ->
+                                            abort ("Failed to decode response from JavaScript: " ++ Decode.errorToString decodeError)
+
+                                _ ->
+                                    abort ("Received unexpected response from JavaScript: " ++ Encode.encode 0 value)
     in
     Platform.worker
         { init = init
@@ -377,9 +405,8 @@ printLine string =
             else
                 string ++ "\n"
     in
-    Internal.Invoke "writeStdout"
-        (Encode.string stringWithNewline)
-        (Decode.null (succeed ()))
+    Internal.Invoke "writeStdout" (Encode.string stringWithNewline) <|
+        \flags -> Decode.null (succeed ())
 
 
 {-| Sleep (pause) for the given number of milliseconds.
@@ -603,7 +630,8 @@ andThen function script =
             Internal.Perform (Task.map (andThen function) task)
 
         Internal.Invoke name value decoder ->
-            Internal.Invoke name value (Decode.map (andThen function) decoder)
+            Internal.Invoke name value <|
+                \flags -> Decode.map (andThen function) (decoder flags)
 
         Internal.Do command ->
             Internal.Do (Cmd.map (andThen function) command)
@@ -706,7 +734,8 @@ onError recover script =
             Internal.Perform (Task.map (onError recover) task)
 
         Internal.Invoke name value decoder ->
-            Internal.Invoke name value (Decode.map (onError recover) decoder)
+            Internal.Invoke name value <|
+                \flags -> Decode.map (onError recover) (decoder flags)
 
         Internal.Do command ->
             Internal.Do (Cmd.map (onError recover) command)
@@ -741,29 +770,30 @@ executeIn workingDirectory command arguments =
             , ( "workingDirectory", Path.encode workingPath )
             ]
         )
-        (Decode.oneOf
-            [ Decode.string |> Decode.map Internal.Succeed
-            , Decode.field "error" Decode.string
-                |> Decode.andThen
-                    (\error ->
-                        case error of
-                            "notfound" ->
-                                Decode.succeed ExecutableNotFound
+        (\flags ->
+            Decode.oneOf
+                [ Decode.string |> Decode.map Internal.Succeed
+                , Decode.field "error" Decode.string
+                    |> Decode.andThen
+                        (\error ->
+                            case error of
+                                "notfound" ->
+                                    Decode.succeed ExecutableNotFound
 
-                            "failed" ->
-                                Decode.field "message" Decode.string
-                                    |> Decode.map SubprocessFailed
+                                "failed" ->
+                                    Decode.field "message" Decode.string
+                                        |> Decode.map SubprocessFailed
 
-                            "terminated" ->
-                                Decode.succeed SubprocessWasTerminated
+                                "terminated" ->
+                                    Decode.succeed SubprocessWasTerminated
 
-                            "exited" ->
-                                Decode.field "code" Decode.int
-                                    |> Decode.map SubprocessExitedWithError
+                                "exited" ->
+                                    Decode.field "code" Decode.int
+                                        |> Decode.map SubprocessExitedWithError
 
-                            _ ->
-                                Decode.fail "Unexpected execution error type"
-                    )
-                |> Decode.map Internal.Fail
-            ]
+                                _ ->
+                                    Decode.fail "Unexpected execution error type"
+                        )
+                    |> Decode.map Internal.Fail
+                ]
         )

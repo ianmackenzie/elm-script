@@ -11,6 +11,7 @@ module Script.File exposing
     , move
     , moveInto
     , name
+    , path
     , read
     , write
     , writeTo
@@ -20,7 +21,8 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Script
 import Script.Directory as Directory exposing (Directory)
-import Script.Internal as Internal
+import Script.FileInfo as FileInfo
+import Script.Internal as Internal exposing (Flags)
 import Script.Path as Path
 import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
 
@@ -46,33 +48,32 @@ errorDecoder =
 
 
 name : File p -> String
-name (Internal.File path) =
-    Path.name path
+name (Internal.File filePath) =
+    Path.name filePath
 
 
 asReadOnly : File (Read p) -> File ReadOnly
-asReadOnly (Internal.File path) =
-    Internal.File path
+asReadOnly (Internal.File filePath) =
+    Internal.File filePath
 
 
 asWriteOnly : File (Write p) -> File WriteOnly
-asWriteOnly (Internal.File path) =
-    Internal.File path
+asWriteOnly (Internal.File filePath) =
+    Internal.File filePath
 
 
 read : File (Read p) -> Internal.Script Error String
-read (Internal.File path) =
-    Internal.Invoke "readFile"
-        (Path.encode path)
-        (Decode.oneOf
-            [ Decode.string |> Decode.map Internal.Succeed
-            , errorDecoder |> Decode.map Internal.Fail
-            ]
-        )
+read (Internal.File filePath) =
+    Internal.Invoke "readFile" (Path.encode filePath) <|
+        \flags ->
+            Decode.oneOf
+                [ Decode.string |> Decode.map Internal.Succeed
+                , errorDecoder |> Decode.map Internal.Fail
+                ]
 
 
-decodeNullResult : Decoder (Internal.Script Error ())
-decodeNullResult =
+decodeNullResult : Flags -> Decoder (Internal.Script Error ())
+decodeNullResult flags =
     Decode.oneOf
         [ Decode.null (Internal.Succeed ())
         , errorDecoder |> Decode.map Internal.Fail
@@ -80,11 +81,11 @@ decodeNullResult =
 
 
 write : String -> File (Write p) -> Internal.Script Error ()
-write contents (Internal.File path) =
+write contents (Internal.File filePath) =
     Internal.Invoke "writeFile"
         (Encode.object
             [ ( "contents", Encode.string contents )
-            , ( "path", Path.encode path )
+            , ( "path", Path.encode filePath )
             ]
         )
         decodeNullResult
@@ -118,8 +119,8 @@ move (Internal.File sourcePath) (Internal.File destinationPath) =
 
 
 delete : File (Write p) -> Internal.Script Error ()
-delete (Internal.File path) =
-    Internal.Invoke "deleteFile" (Path.encode path) decodeNullResult
+delete (Internal.File filePath) =
+    Internal.Invoke "deleteFile" (Path.encode filePath) decodeNullResult
 
 
 copyInto : Directory (Write directoryPermissions) -> File (Read filePermissions) -> Internal.Script Error (File (Write directoryPermissions))
@@ -141,20 +142,26 @@ moveInto directory file =
 
 
 checkExistence : File (Read p) -> Internal.Script Error Existence
-checkExistence (Internal.File path) =
-    Path.stat path
+checkExistence (Internal.File filePath) =
+    FileInfo.get filePath
         |> Script.map
-            (\stat ->
-                case stat of
-                    Path.File ->
+            (\fileInfo ->
+                case fileInfo of
+                    FileInfo.File ->
                         Exists
 
-                    Path.Nonexistent ->
+                    FileInfo.Nonexistent ->
                         DoesNotExist
 
-                    Path.Directory ->
+                    FileInfo.Directory ->
                         IsNotAFile
 
-                    Path.Other ->
+                    FileInfo.Other ->
                         IsNotAFile
             )
+        |> Script.mapError Error
+
+
+path : File p -> String
+path (Internal.File filePath) =
+    Path.toString filePath

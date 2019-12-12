@@ -12,6 +12,7 @@ module Script.Directory exposing
     , listSubdirectories
     , name
     , obliterate
+    , path
     , remove
     , subdirectory
     )
@@ -19,9 +20,11 @@ module Script.Directory exposing
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Script exposing (Script)
-import Script.Internal as Internal
-import Script.Path as Path
+import Script.FileInfo as FileInfo
+import Script.Internal as Internal exposing (Flags)
+import Script.Path as Path exposing (Path)
 import Script.Permissions exposing (Read, ReadOnly, Writable, Write, WriteOnly)
+import Script.PlatformType as PlatformType
 
 
 type alias Directory p =
@@ -45,61 +48,59 @@ errorDecoder =
 
 
 name : Directory p -> String
-name (Internal.Directory path) =
-    Path.name path
+name (Internal.Directory directoryPath) =
+    Path.name directoryPath
 
 
 asReadOnly : Directory (Read p) -> Directory ReadOnly
-asReadOnly (Internal.Directory path) =
-    Internal.Directory path
+asReadOnly (Internal.Directory directoryPath) =
+    Internal.Directory directoryPath
 
 
 asWriteOnly : Directory (Write p) -> Directory WriteOnly
-asWriteOnly (Internal.Directory path) =
-    Internal.Directory path
+asWriteOnly (Internal.Directory directoryPath) =
+    Internal.Directory directoryPath
 
 
 subdirectory : String -> Directory p -> Directory p
-subdirectory relativePath (Internal.Directory path) =
-    Internal.Directory (path ++ [ relativePath ])
+subdirectory relativePath (Internal.Directory directoryPath) =
+    Internal.Directory (Path.append relativePath directoryPath)
 
 
 file : String -> Directory p -> Internal.File p
-file relativePath (Internal.Directory path) =
-    Internal.File (path ++ [ relativePath ])
+file relativePath (Internal.Directory directoryPath) =
+    Internal.File (Path.append relativePath directoryPath)
 
 
 listFiles : Directory (Read p) -> Internal.Script Error (List (Internal.File (Read p)))
-listFiles ((Internal.Directory path) as directory) =
-    Internal.Invoke "listFiles"
-        (Path.encode path)
-        (Decode.oneOf
-            [ Decode.list Decode.string
-                |> Decode.map (List.map (\fileName -> file fileName directory))
-                |> Decode.map Internal.Succeed
-            , errorDecoder |> Decode.map Internal.Fail
-            ]
-        )
+listFiles ((Internal.Directory directoryPath) as directory) =
+    Internal.Invoke "listFiles" (Path.encode directoryPath) <|
+        \flags ->
+            Decode.oneOf
+                [ Decode.list Decode.string
+                    |> Decode.map (List.map (\fileName -> file fileName directory))
+                    |> Decode.map Internal.Succeed
+                , errorDecoder |> Decode.map Internal.Fail
+                ]
 
 
 listSubdirectories : Directory (Read p) -> Internal.Script Error (List (Directory (Read p)))
-listSubdirectories ((Internal.Directory path) as directory) =
-    Internal.Invoke "listSubdirectories"
-        (Path.encode path)
-        (Decode.oneOf
-            [ Decode.list Decode.string
-                |> Decode.map
-                    (List.map
-                        (\directoryName -> subdirectory directoryName directory)
-                    )
-                |> Decode.map Internal.Succeed
-            , errorDecoder |> Decode.map Internal.Fail
-            ]
-        )
+listSubdirectories ((Internal.Directory directoryPath) as directory) =
+    Internal.Invoke "listSubdirectories" (Path.encode directoryPath) <|
+        \flags ->
+            Decode.oneOf
+                [ Decode.list Decode.string
+                    |> Decode.map
+                        (List.map
+                            (\directoryName -> subdirectory directoryName directory)
+                        )
+                    |> Decode.map Internal.Succeed
+                , errorDecoder |> Decode.map Internal.Fail
+                ]
 
 
-decodeNullResult : Decoder (Internal.Script Error ())
-decodeNullResult =
+decodeNullResult : Internal.Flags -> Decoder (Internal.Script Error ())
+decodeNullResult flags =
     Decode.oneOf
         [ Decode.null (Internal.Succeed ())
         , errorDecoder |> Decode.map Internal.Fail
@@ -107,54 +108,56 @@ decodeNullResult =
 
 
 create : Directory (Write p) -> Internal.Script Error ()
-create (Internal.Directory path) =
-    Internal.Invoke "createDirectory"
-        (Path.encode path)
-        decodeNullResult
+create (Internal.Directory directoryPath) =
+    Internal.Invoke "createDirectory" (Path.encode directoryPath) decodeNullResult
 
 
 createTemporary : Internal.Script Error (Directory Writable)
 createTemporary =
-    Internal.Invoke "createTemporaryDirectory"
-        Encode.null
-        (Decode.oneOf
-            [ Decode.string
-                |> Decode.map
-                    (List.singleton >> Internal.Directory >> Internal.Succeed)
-            , errorDecoder |> Decode.map Internal.Fail
-            ]
-        )
+    Internal.Invoke "createTemporaryDirectory" Encode.null <|
+        \flags ->
+            Decode.oneOf
+                [ Decode.string
+                    |> Decode.map
+                        (\pathString ->
+                            Internal.Succeed <|
+                                Internal.Directory (Path.absolute flags.platformType pathString)
+                        )
+                , errorDecoder |> Decode.map Internal.Fail
+                ]
 
 
 checkExistence : Directory (Read p) -> Script Error Existence
-checkExistence (Internal.Directory path) =
-    Path.stat path
+checkExistence (Internal.Directory directoryPath) =
+    FileInfo.get directoryPath
         |> Script.map
-            (\stat ->
-                case stat of
-                    Path.Directory ->
+            (\fileInfo ->
+                case fileInfo of
+                    FileInfo.Directory ->
                         Exists
 
-                    Path.Nonexistent ->
+                    FileInfo.Nonexistent ->
                         DoesNotExist
 
-                    Path.File ->
+                    FileInfo.File ->
                         IsNotADirectory
 
-                    Path.Other ->
+                    FileInfo.Other ->
                         IsNotADirectory
             )
+        |> Script.mapError Error
 
 
 remove : Directory (Write p) -> Script Error ()
-remove (Internal.Directory path) =
-    Internal.Invoke "removeDirectory"
-        (Path.encode path)
-        decodeNullResult
+remove (Internal.Directory directoryPath) =
+    Internal.Invoke "removeDirectory" (Path.encode directoryPath) decodeNullResult
 
 
 obliterate : Directory (Write p) -> Script Error ()
-obliterate (Internal.Directory path) =
-    Internal.Invoke "obliterateDirectory"
-        (Path.encode path)
-        decodeNullResult
+obliterate (Internal.Directory directoryPath) =
+    Internal.Invoke "obliterateDirectory" (Path.encode directoryPath) decodeNullResult
+
+
+path : Directory p -> String
+path (Internal.Directory directoryPath) =
+    Path.toString directoryPath

@@ -1,6 +1,6 @@
 "use strict";
 
-const majorVersion = 5;
+const majorVersion = 6;
 const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
@@ -79,16 +79,17 @@ function runCompiledJs(compiledJs, commandLineArgs) {
     switch (Deno.build.os) {
         case "mac":
         case "linux":
-            flags["platform"] = "posix";
+            flags["platformType"] = "posix";
             break;
         case "win":
-            flags["platform"] = "windows";
+            flags["platformType"] = "windows";
             break;
         default:
             console.log("Unrecognized OS '" + Deno.build.os + "'");
             exit(1);
     }
     flags["environmentVariables"] = Object.entries(Deno.env());
+    flags["workingDirectory"] = Deno.cwd();
     const compiledPrograms = Object.values(globalThis["Elm"]);
     if (compiledPrograms.length != 1) {
         console.log(`Expected exactly 1 compiled program, found ${compiledPrograms.length}`);
@@ -145,6 +146,10 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 break;
             case "exit":
                 exit(request.value);
+            case "abort":
+                const data = new TextEncoder("utf-8").encode(request.value);
+                Deno.stdout.writeSync(data);
+                exit(1);
             case "readFile":
                 try {
                     const filePath = resolvePath(request.value);
