@@ -145,7 +145,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         break;
       case "writeStdout":
         try {
-          const data = new TextEncoder("utf-8").encode(request.value);
+          const data = new TextEncoder().encode(request.value);
           Deno.stdout.writeSync(data);
           responsePort.send(null);
         } catch (error) {
@@ -156,7 +156,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
       case "exit":
         exit(request.value);
       case "abort":
-        const data = new TextEncoder("utf-8").encode(request.value);
+        const data = new TextEncoder().encode(request.value);
         Deno.stdout.writeSync(data);
         exit(1);
       case "readFile":
@@ -172,9 +172,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
       case "writeFile":
         try {
           const filePath = resolvePath(request.value.path);
-          const contents = new TextEncoder("utf-8").encode(
-            request.value.contents
-          );
+          const contents = new TextEncoder().encode(request.value.contents);
           Deno.writeFileSync(filePath, contents);
           responsePort.send(null);
         } catch (error) {
