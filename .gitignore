@@ -1,5 +1,7 @@
 elm-stuff
 examples/*.js
+examples/elm-run
+examples/elm-run.cmd
 node_modules
 examples/reversed.txt
 elm.exe
