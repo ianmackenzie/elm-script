@@ -434,7 +434,14 @@ sleep duration =
 -}
 getCurrentTime : Script x Time.Posix
 getCurrentTime =
-    Internal.perform Time.now
+    perform Time.now
+
+
+perform : Task x a -> Script x a
+perform task =
+    Task.map Internal.Succeed task
+        |> Task.onError (\error -> Task.succeed (Internal.Fail error))
+        |> Internal.Perform
 
 
 {-| Map the value produced by a script; to get a list of lines from a file

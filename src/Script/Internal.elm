@@ -7,7 +7,6 @@ module Script.Internal exposing
     , NetworkConnection(..)
     , Script(..)
     , Shell(..)
-    , perform
     )
 
 import Dict exposing (Dict)
@@ -32,11 +31,6 @@ type Script x a
     | Perform (Task Never (Script x a))
     | Invoke String Value (Flags -> Decoder (Script x a))
     | Do (Cmd (Script x a))
-
-
-perform : Task x a -> Script x a
-perform =
-    Task.map Succeed >> Task.onError (Fail >> Task.succeed) >> Perform
 
 
 type FileSystem
