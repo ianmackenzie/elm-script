@@ -7,7 +7,7 @@ import Script.Directory as Directory exposing (Directory, Writable)
 
 handleError : (x -> String) -> x -> Script Int a
 handleError toMessage error =
-    Script.printLine ("- SCRIPT ERROR - " ++ toMessage error)
+    Script.printLine ("[SCRIPT ERROR] " ++ toMessage error)
         |> Script.andThen (\() -> Script.fail 1)
 
 
