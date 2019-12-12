@@ -18,7 +18,7 @@ script { shell, workingDirectory } =
                             [ Script.printLine ("Compiling " ++ File.name file)
                             , shell.execute "elm"
                                 [ "make", "--output", "/dev/null", File.path file ]
-                                |> Script.ignore
+                                |> Script.ignoreResult
                                 |> Script.onError (\error -> Script.fail 1)
                             ]
 

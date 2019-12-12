@@ -27,7 +27,7 @@ script { networkConnection } =
                     [ Script.printLine (String.fromInt number)
                     , printCurrentTime networkConnection
                     , Script.sleep (Duration.seconds 0.5)
-                    , getCurrentTime networkConnection |> Script.ignore
+                    , getCurrentTime networkConnection |> Script.ignoreResult
                     ]
             )
         |> Script.andThen

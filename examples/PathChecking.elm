@@ -22,7 +22,7 @@ niceScript directory =
 evilScript : Directory (Read p) -> Script Int ()
 evilScript directory =
     File.read (directory |> Directory.file "C:/passwords.txt")
-        |> Script.ignore
+        |> Script.ignoreResult
         |> Script.onError (Example.handleError .message)
 
 

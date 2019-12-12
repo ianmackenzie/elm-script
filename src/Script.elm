@@ -3,7 +3,7 @@ module Script exposing
     , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
-    , map, map2, map3, map4, ignore
+    , map, map2, map3, map4, ignoreResult
     , do, forEach, sequence, collect, andThen, aside
     , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
@@ -32,7 +32,7 @@ various ways, and turn them into runnable programs.
 
 # Mapping
 
-@docs map, map2, map3, map4, ignore
+@docs map, map2, map3, map4, ignoreResult
 
 
 # Sequencing
@@ -495,7 +495,7 @@ the type `Script x ()` (a script that produces no meaningful output):
 
     Script.do
         [ Script.printLine "Reading file..."
-        , Script.readFile inputFile |> Script.ignore
+        , Script.readFile inputFile |> Script.ignoreResult
         , Script.printLine "Read file!"
         ]
 
@@ -503,8 +503,8 @@ the type `Script x ()` (a script that produces no meaningful output):
 though?)
 
 -}
-ignore : Script x a -> Script x ()
-ignore =
+ignoreResult : Script x a -> Script x ()
+ignoreResult =
     map (always ())
 
 
