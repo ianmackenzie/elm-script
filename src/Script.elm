@@ -495,8 +495,8 @@ ignoreResult =
     map (always ())
 
 
-{-| Execute a list of scripts in sequence. `Script.do` expects each given script
-to have a return type of `()` (no meaningful output), and so itself has a return
+{-| Run a list of scripts in sequence. `Script.do` expects each given script to
+have a return type of `()` (no meaningful output), and so itself has a return
 type of `()`.
 
     Script.do
@@ -511,7 +511,7 @@ type of `()`.
                 )
         ]
 
-If you need to execute a list of scripts but collect their return values, use
+If you need to run a list of scripts but collect their return values, use
 `Script.sequence` instead.
 
 -}
