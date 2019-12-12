@@ -203,7 +203,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             } else if (result.signal !== null) {
               responsePort.send({ error: "terminated" });
             } else {
-              const data = await process.stderrOutput;
+              const data = await process.stderrOutput();
               const output = new TextDecoder("utf-8").decode(data);
               responsePort.send({ error: "failed", message: output });
             }
