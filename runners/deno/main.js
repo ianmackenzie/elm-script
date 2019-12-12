@@ -1,6 +1,6 @@
 "use strict";
 
-const majorVersion = 6;
+const majorVersion = 7;
 const minorVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
@@ -258,8 +258,8 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 break;
             case "createDirectory":
                 try {
-                    const directoryPath = resolvePath(request.value);
-                    Deno.mkdirSync(directoryPath, true);
+                    const directoryPath = resolvePath(request.value.path);
+                    Deno.mkdirSync(directoryPath, request.value.recursive);
                     responsePort.send(null);
                 } catch (error) {
                     responsePort.send({ message: error.message });
@@ -267,17 +267,8 @@ function runCompiledJs(compiledJs, commandLineArgs) {
                 break;
             case "removeDirectory":
                 try {
-                    const directoryPath = resolvePath(request.value);
-                    Deno.removeSync(directoryPath, { recursive: false });
-                    responsePort.send(null);
-                } catch (error) {
-                    responsePort.send({ message: error.message });
-                }
-                break;
-            case "obliterateDirectory":
-                try {
-                    const directoryPath = resolvePath(request.value);
-                    Deno.removeSync(directoryPath, { recursive: true });
+                    const directoryPath = resolvePath(request.value.path);
+                    Deno.removeSync(directoryPath, { recursive: request.value.recursive });
                     responsePort.send(null);
                 } catch (error) {
                     responsePort.send({ message: error.message });

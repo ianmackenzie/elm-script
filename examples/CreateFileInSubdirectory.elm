@@ -12,7 +12,7 @@ script { workingDirectory } =
         subdirectory =
             workingDirectory |> Directory.subdirectory "subdirectory"
     in
-    Example.ensureDirectory subdirectory
+    Directory.ensureExists subdirectory
         |> Script.andThen
             (\() ->
                 let
@@ -20,8 +20,8 @@ script { workingDirectory } =
                         subdirectory |> Directory.file "child.txt"
                 in
                 File.writeTo file "dummy contents"
-                    |> Script.onError (Example.handleError .message)
             )
+        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

@@ -11,7 +11,8 @@ script { workingDirectory } =
         subdirectory =
             workingDirectory |> Directory.subdirectory "subdirectory"
     in
-    Example.ensureDirectory subdirectory
+    Directory.ensureExists subdirectory
+        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

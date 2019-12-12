@@ -8,6 +8,7 @@ module Script.Directory exposing
     , checkExistence
     , create
     , createTemporary
+    , ensureExists
     , file
     , listFiles
     , listSubdirectories
@@ -112,8 +113,24 @@ decodeNullResult flags =
 
 
 create : Directory Writable -> Script Error ()
-create (Internal.Directory directoryPath) =
-    Invoke "createDirectory" (Path.encode directoryPath) decodeNullResult
+create =
+    createDirectory { recursive = False }
+
+
+ensureExists : Directory Writable -> Script Error ()
+ensureExists =
+    createDirectory { recursive = True }
+
+
+createDirectory : { recursive : Bool } -> Directory Writable -> Script Error ()
+createDirectory { recursive } (Internal.Directory directoryPath) =
+    Invoke "createDirectory"
+        (Encode.object
+            [ ( "path", Path.encode directoryPath )
+            , ( "recursive", Encode.bool recursive )
+            ]
+        )
+        decodeNullResult
 
 
 createTemporary : Script Error (Directory Writable)
@@ -153,13 +170,24 @@ checkExistence (Internal.Directory directoryPath) =
 
 
 remove : Directory Writable -> Script Error ()
-remove (Internal.Directory directoryPath) =
-    Invoke "removeDirectory" (Path.encode directoryPath) decodeNullResult
+remove =
+    removeDirectory { recursive = False }
 
 
 obliterate : Directory Writable -> Script Error ()
-obliterate (Internal.Directory directoryPath) =
-    Invoke "obliterateDirectory" (Path.encode directoryPath) decodeNullResult
+obliterate =
+    removeDirectory { recursive = True }
+
+
+removeDirectory : { recursive : Bool } -> Directory Writable -> Script Error ()
+removeDirectory { recursive } (Internal.Directory directoryPath) =
+    Invoke "removeDirectory"
+        (Encode.object
+            [ ( "path", Path.encode directoryPath )
+            , ( "recursive", Encode.bool recursive )
+            ]
+        )
+        decodeNullResult
 
 
 path : Directory permissions -> String
