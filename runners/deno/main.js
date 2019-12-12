@@ -313,43 +313,47 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   });
 }
 
-if (Deno.args.length >= 2) {
-  const sourceFileName = Deno.args[1];
-  const commandLineArgs = Deno.args.slice(2);
-  const absolutePath = path.resolve(sourceFileName);
-  const extension = path.extname(absolutePath);
-  if (extension === ".js") {
-    runCompiledJs(absolutePath, commandLineArgs);
-  } else if (extension === ".elm") {
-    const tempDirectory = createTemporaryDirectory();
-    const tempFileName = path.resolve(tempDirectory, "main.js");
-    const elmProcess = Deno.run({
-      args: [
-        "elm",
-        "make",
-        "--optimize",
-        "--output=" + tempFileName,
-        absolutePath
-      ],
-      stdout: "null"
-    });
-    const elmResult = await elmProcess.status();
-    if (elmResult.success) {
-      runCompiledJs(tempFileName, commandLineArgs);
+async function main() {
+  if (Deno.args.length >= 2) {
+    const sourceFileName = Deno.args[1];
+    const commandLineArgs = Deno.args.slice(2);
+    const absolutePath = path.resolve(sourceFileName);
+    const extension = path.extname(absolutePath);
+    if (extension === ".js") {
+      runCompiledJs(absolutePath, commandLineArgs);
+    } else if (extension === ".elm") {
+      const tempDirectory = createTemporaryDirectory();
+      const tempFileName = path.resolve(tempDirectory, "main.js");
+      const elmProcess = Deno.run({
+        args: [
+          "elm",
+          "make",
+          "--optimize",
+          "--output=" + tempFileName,
+          absolutePath
+        ],
+        stdout: "null"
+      });
+      const elmResult = await elmProcess.status();
+      if (elmResult.success) {
+        runCompiledJs(tempFileName, commandLineArgs);
+      } else {
+        // The Elm compiler will have printed out a compilation error
+        // message, no need to add our own
+        exit(1);
+      }
     } else {
-      // The Elm compiler will have printed out a compilation error
-      // message, no need to add our own
+      console.log(
+        `Unrecognized source file extension ${extension} (expecting.elm or.js)`
+      );
       exit(1);
     }
   } else {
     console.log(
-      `Unrecognized source file extension ${extension} (expecting.elm or.js)`
+      `Run as 'deno https://elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`
     );
     exit(1);
   }
-} else {
-  console.log(
-    `Run as 'deno https://elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`
-  );
-  exit(1);
 }
+
+main();
