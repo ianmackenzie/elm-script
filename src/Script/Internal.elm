@@ -10,6 +10,7 @@ module Script.Internal exposing
     , map
     , mapError
     , onError
+    , perform
     )
 
 import Dict exposing (Dict)
@@ -104,3 +105,8 @@ onError recover script =
 mapError : (x -> y) -> Script x a -> Script y a
 mapError function =
     onError (function >> Fail)
+
+
+perform : Task x a -> Script x a
+perform task =
+    Perform (Task.map Succeed task |> Task.onError (Fail >> Task.succeed))

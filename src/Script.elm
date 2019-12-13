@@ -53,7 +53,7 @@ various ways, and turn them into runnable programs.
 
 # Error handling
 
-@docs mapError, attempt, onError, ignoreError, finally
+@docs mapError, attempt, onError, perform, ignoreError, finally
 
 -}
 
@@ -398,8 +398,7 @@ printLine string =
 -}
 sleep : Duration -> Script x ()
 sleep duration =
-    Internal.Perform <|
-        Task.map succeed (Process.sleep (Duration.inMilliseconds duration))
+    Internal.perform (Process.sleep (Duration.inMilliseconds duration))
 
 
 {-| Get the current time.
@@ -415,14 +414,12 @@ sleep duration =
 -}
 getCurrentTime : Script x Time.Posix
 getCurrentTime =
-    perform Time.now
+    Internal.perform Time.now
 
 
-perform : Task x a -> Script x a
-perform task =
-    Task.map Internal.Succeed task
-        |> Task.onError (\error -> Task.succeed (Internal.Fail error))
-        |> Internal.Perform
+perform : Script Never a -> Script x a
+perform script =
+    script |> onError never
 
 
 {-| Map the value produced by a script; to get a list of lines from a file
@@ -716,8 +713,8 @@ ignoreError =
 finally : Script Never () -> Script x a -> Script x a
 finally cleanup script =
     script
-        |> andThen (\result -> cleanup |> onError never |> followedBy (succeed result))
-        |> onError (\error -> cleanup |> onError never |> followedBy (fail error))
+        |> andThen (\result -> perform cleanup |> followedBy (succeed result))
+        |> onError (\error -> perform cleanup |> followedBy (fail error))
 
 
 executeWith :
