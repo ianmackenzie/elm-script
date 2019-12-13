@@ -72,7 +72,7 @@ script { userPrivileges } =
                                         checkDirectory directory userPrivileges
 
                                     _ ->
-                                        Script.do []
+                                        Script.succeed ()
                             )
                 )
             )
