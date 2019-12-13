@@ -15,7 +15,7 @@ checkForUnpushedChanges directory userPrivileges =
         |> Script.andThen
             (\output ->
                 if String.isEmpty (String.trim output) then
-                    Script.do []
+                    Script.succeed ()
 
                 else
                     Script.printLine output
@@ -32,7 +32,7 @@ checkForUncommittedChanges directory userPrivileges =
         |> Script.andThen
             (\output ->
                 if String.contains "nothing to commit, working tree clean" output then
-                    Script.do []
+                    Script.succeed ()
 
                 else
                     Script.printLine output
@@ -41,17 +41,14 @@ checkForUncommittedChanges directory userPrivileges =
 
 checkDirectory : Directory Writable -> UserPrivileges -> Script Int ()
 checkDirectory directory userPrivileges =
-    Script.printLine ("Checking " ++ Directory.name directory)
-        |> Script.followedBy
-            (Script.do
-                [ checkForUnpushedChanges directory userPrivileges
-                , checkForUncommittedChanges directory userPrivileges
-                ]
-                |> Script.onError
-                    (\error ->
-                        Script.printLine "Running Git failed"
-                            |> Script.followedBy (Script.fail 1)
-                    )
+    Script.do
+        [ Script.printLine ("Checking " ++ Directory.name directory)
+        , checkForUnpushedChanges directory userPrivileges
+        , checkForUncommittedChanges directory userPrivileges
+        ]
+        |> Script.onError
+            (\error ->
+                Script.printLine "Running Git failed" |> Script.followedBy (Script.fail 1)
             )
 
 
