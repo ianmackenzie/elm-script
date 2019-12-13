@@ -23,7 +23,6 @@ module Script.Directory exposing
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Script exposing (Script)
 import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (File(..), Flags, Script(..), UserPrivileges(..))
 import Script.Path as Path exposing (Path)
@@ -163,7 +162,7 @@ createTemporary =
 checkExistence : Directory permissions -> Script Error Existence
 checkExistence (Internal.Directory directoryPath) =
     FileInfo.get directoryPath
-        |> Script.map
+        |> Internal.map
             (\fileInfo ->
                 case fileInfo of
                     FileInfo.Directory ->
@@ -178,7 +177,7 @@ checkExistence (Internal.Directory directoryPath) =
                     FileInfo.Other ->
                         IsNotADirectory
             )
-        |> Script.mapError Error
+        |> Internal.mapError Error
 
 
 remove : Directory Writable -> Script Error ()

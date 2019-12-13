@@ -22,7 +22,6 @@ module Script.File exposing
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Script
 import Script.Directory as Directory exposing (Directory)
 import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (Flags, Script(..), UserPrivileges(..))
@@ -145,7 +144,7 @@ copyInto directory file =
         destination =
             Directory.file (name file) directory
     in
-    copy file destination |> Script.andThen (\() -> Script.succeed destination)
+    copy file destination |> Internal.andThen (\() -> Internal.Succeed destination)
 
 
 moveInto : Directory Writable -> File Writable -> Script Error (File Writable)
@@ -154,13 +153,13 @@ moveInto directory file =
         destination =
             Directory.file (name file) directory
     in
-    move file destination |> Script.andThen (\() -> Script.succeed destination)
+    move file destination |> Internal.andThen (\() -> Internal.Succeed destination)
 
 
 checkExistence : File permissions -> Script Error Existence
 checkExistence (Internal.File filePath) =
     FileInfo.get filePath
-        |> Script.map
+        |> Internal.map
             (\fileInfo ->
                 case fileInfo of
                     FileInfo.File ->
@@ -175,7 +174,7 @@ checkExistence (Internal.File filePath) =
                     FileInfo.Other ->
                         IsNotAFile
             )
-        |> Script.mapError Error
+        |> Internal.mapError Error
 
 
 path : File permissions -> String

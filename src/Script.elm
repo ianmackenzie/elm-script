@@ -437,8 +437,8 @@ instead of the entire contents as a single string, you might do
 
 -}
 map : (a -> b) -> Script x a -> Script x b
-map function script =
-    script |> andThen (\value -> succeed (function value))
+map =
+    Internal.map
 
 
 {-| Map over the values produced by two scripts. The two scripts will be run in
@@ -614,23 +614,8 @@ using `andThen`.
 
 -}
 andThen : (a -> Script x b) -> Script x a -> Script x b
-andThen function script =
-    case script of
-        Internal.Succeed value ->
-            function value
-
-        Internal.Fail error ->
-            fail error
-
-        Internal.Perform task ->
-            Internal.Perform (Task.map (andThen function) task)
-
-        Internal.Invoke name value decoder ->
-            Internal.Invoke name value <|
-                \flags -> Decode.map (andThen function) (decoder flags)
-
-        Internal.Do command ->
-            Internal.Do (Cmd.map (andThen function) command)
+andThen =
+    Internal.andThen
 
 
 {-| Sometimes you can run into problems chaining scripts together using
@@ -708,8 +693,8 @@ return function =
 
 
 mapError : (x -> y) -> Script x a -> Script y a
-mapError function =
-    onError (function >> fail)
+mapError =
+    Internal.mapError
 
 
 attempt : Script x a -> Script y (Result x a)
@@ -718,23 +703,8 @@ attempt =
 
 
 onError : (x -> Script y a) -> Script x a -> Script y a
-onError recover script =
-    case script of
-        Internal.Succeed value ->
-            succeed value
-
-        Internal.Fail error ->
-            recover error
-
-        Internal.Perform task ->
-            Internal.Perform (Task.map (onError recover) task)
-
-        Internal.Invoke name value decoder ->
-            Internal.Invoke name value <|
-                \flags -> Decode.map (onError recover) (decoder flags)
-
-        Internal.Do command ->
-            Internal.Do (Cmd.map (onError recover) command)
+onError =
+    Internal.onError
 
 
 ignoreError : Script x () -> Script y ()
