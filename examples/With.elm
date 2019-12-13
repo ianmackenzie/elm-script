@@ -25,9 +25,7 @@ script _ =
                 Script.do
                     [ Script.printLine ("Product: " ++ String.fromInt product)
                     , Script.printLine
-                        ("Current time: "
-                            ++ String.fromInt (Time.posixToMillis time)
-                        )
+                        ("Current time: " ++ String.fromInt (Time.posixToMillis time))
                     ]
             )
 
