@@ -13,13 +13,12 @@ script { workingDirectory } =
             workingDirectory |> Directory.subdirectory "subdirectory"
     in
     Directory.ensureExists subdirectory
-        |> Script.andThen
-            (\() ->
-                let
-                    file =
-                        subdirectory |> Directory.file "child.txt"
-                in
-                File.writeTo file "dummy contents"
+        |> Script.followedBy
+            (let
+                file =
+                    subdirectory |> Directory.file "child.txt"
+             in
+             File.writeTo file "dummy contents"
             )
         |> Script.onError (Example.handleError .message)
 

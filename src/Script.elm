@@ -5,7 +5,7 @@ module Script exposing
     , printLine, sleep, getCurrentTime
     , executeWith
     , map, map2, map3, map4, ignoreResult
-    , do, forEach, sequence, collect, andThen, aside
+    , do, forEach, sequence, collect, andThen, followedBy, aside
     , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
     )
@@ -43,7 +43,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, forEach, sequence, collect, andThen, aside
+@docs do, forEach, sequence, collect, andThen, followedBy, aside
 
 
 # Combining
@@ -346,11 +346,11 @@ are given:
 
             [] ->
                 Script.printLine "Please enter a name"
-                    |> Script.andThen (\() -> Script.fail 1)
+                    |> Script.followedBy (Script.fail 1)
 
             _ ->
                 Script.printLine "Please enter only one name!"
-                    |> Script.andThen (\() -> Script.fail 2)
+                    |> Script.followedBy (Script.fail 2)
 
 -}
 fail : x -> Script x a
@@ -523,7 +523,7 @@ do scripts =
             succeed ()
 
         first :: rest ->
-            first |> andThen (\() -> do rest)
+            first |> followedBy (do rest)
 
 
 {-| For every value in a given list, call the given function and run the
@@ -615,6 +615,11 @@ andThen =
     Internal.andThen
 
 
+followedBy : Script x a -> Script x () -> Script x a
+followedBy secondScript firstScript =
+    firstScript |> andThen (\() -> secondScript)
+
+
 {-| Sometimes you can run into problems chaining scripts together using
 `andThen` if you want to do 'auxiliary' things like print to the console, log to
 a file etc. For example, the following will **not** work:
@@ -653,10 +658,9 @@ aside doSomething script =
                 -- ...as an 'aside' do something with the generated value
                 -- (logging, printing to console etc)...
                 doSomething value
-                    |> andThen
-                        -- ...finally, succeed with the original generated value
-                        -- (not the unit return value of the 'aside' script)
-                        (\() -> succeed value)
+                    -- ...and finally, succeed with the original generated value
+                    -- (not the unit return value of the 'aside' script)
+                    |> followedBy (succeed value)
             )
 
 
@@ -712,8 +716,8 @@ ignoreError =
 finally : Script Never () -> Script x a -> Script x a
 finally cleanup script =
     script
-        |> andThen (\result -> cleanup |> onError never |> andThen (\() -> succeed result))
-        |> onError (\error -> cleanup |> onError never |> andThen (\() -> fail error))
+        |> andThen (\result -> cleanup |> onError never |> followedBy (succeed result))
+        |> onError (\error -> cleanup |> onError never |> followedBy (fail error))
 
 
 executeWith :

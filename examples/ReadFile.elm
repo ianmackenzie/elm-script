@@ -18,7 +18,7 @@ script { arguments, userPrivileges } =
 
         _ ->
             Script.printLine "Please supply the path of one file to read"
-                |> Script.andThen (\() -> Script.fail 1)
+                |> Script.followedBy (Script.fail 1)
 
 
 main : Script.Program

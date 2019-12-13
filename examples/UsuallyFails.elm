@@ -15,7 +15,7 @@ script _ =
 
                 else
                     Script.printLine "Failed"
-                        |> Script.andThen (\() -> Script.fail 1)
+                        |> Script.followedBy (Script.fail 1)
             )
 
 

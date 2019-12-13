@@ -7,8 +7,7 @@ import Script.Directory exposing (Directory, Writable)
 
 abort : String -> Script Int a
 abort message =
-    Script.printLine message
-        |> Script.andThen (\() -> Script.fail 1)
+    Script.printLine message |> Script.followedBy (Script.fail 1)
 
 
 retry : Directory Writable -> Script.UserPrivileges -> String -> List String -> Int -> Script Int ()
@@ -28,8 +27,14 @@ retry workingDirectory userPrivileges command arguments count =
 
                         Script.SubprocessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
-                                |> Script.andThen
-                                    (\() -> retry workingDirectory userPrivileges command arguments (count - 1))
+                                |> Script.followedBy
+                                    (retry
+                                        workingDirectory
+                                        userPrivileges
+                                        command
+                                        arguments
+                                        (count - 1)
+                                    )
 
                         Script.SubprocessWasTerminated ->
                             abort "Process was terminated"
@@ -47,7 +52,7 @@ script { arguments, workingDirectory, userPrivileges } =
     case arguments of
         [] ->
             Script.printLine "Please enter an executable to run"
-                |> Script.andThen (\() -> Script.fail 1)
+                |> Script.followedBy (Script.fail 1)
 
         command :: rest ->
             retry workingDirectory userPrivileges command rest 5

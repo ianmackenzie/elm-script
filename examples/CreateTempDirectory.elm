@@ -18,7 +18,7 @@ script _ =
                 in
                 File.writeTo tempFile "dummy contents"
             )
-        |> Script.andThen (\() -> Script.sleep (Duration.seconds 10))
+        |> Script.followedBy (Script.sleep (Duration.seconds 10))
         |> Script.onError (Example.handleError .message)
 
 

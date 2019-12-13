@@ -22,7 +22,7 @@ runTestCases workingDirectory userPrivileges testCases =
                     |> Script.onError
                         (\processError ->
                             Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
-                                |> Script.andThen (\() -> Script.fail 1)
+                                |> Script.followedBy (Script.fail 1)
                         )
                     |> Script.andThen
                         (\output ->
@@ -39,15 +39,14 @@ runTestCases workingDirectory userPrivileges testCases =
                                         ++ "\n\nActual output:\n\n"
                                         ++ String.trim output
                                     )
-                                    |> Script.andThen (\() -> Script.fail 1)
+                                    |> Script.followedBy (Script.fail 1)
                         )
             )
-        |> Script.andThen
-            (\() ->
-                Script.printLine <|
-                    "Success! "
-                        ++ String.fromInt (List.length testCases)
-                        ++ " tests passed"
+        |> Script.followedBy
+            (Script.printLine <|
+                "Success! "
+                    ++ String.fromInt (List.length testCases)
+                    ++ " tests passed"
             )
 
 
