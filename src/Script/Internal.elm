@@ -2,7 +2,6 @@ module Script.Internal exposing
     ( Directory(..)
     , Environment(..)
     , File(..)
-    , FileSystem(..)
     , Flags
     , NetworkConnection(..)
     , Script(..)
@@ -35,10 +34,6 @@ type Script x a
     | Perform (Task Never (Script x a))
     | Invoke String Value (Flags -> Decoder (Script x a))
     | Do (Cmd (Script x a))
-
-
-type FileSystem
-    = FileSystem
 
 
 type Directory permissions
