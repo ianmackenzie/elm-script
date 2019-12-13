@@ -93,8 +93,8 @@ type alias UserPrivileges =
     Internal.UserPrivileges
 
 
-{-| The host running the current `Script`. The function you pass to
-`Script.program` will get a `Host` value passed to it at startup.
+{-| The computer that the current `Script` is being run on. The function you
+pass to `Script.program` will get a `Host` value passed to it at startup.
 -}
 type alias Host =
     { platform : Platform
