@@ -1,7 +1,10 @@
 "use strict";
 
-const majorVersion = 9;
-const minorVersion = 0;
+const majorVersion = 0;
+const minorVersion = 1;
+
+const majorProtocolVersion = 9;
+const minorProtocolVersion = 0;
 
 import * as path from "https://deno.land/std/path/mod.ts";
 
@@ -122,16 +125,16 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   requestPort.subscribe(async function(request) {
     switch (request.name) {
       case "checkVersion":
-        const requiredMajorVersion = request.value[0];
-        const requiredMinorVersion = request.value[1];
-        const describeCurrentVersion = ` (current elm-run version: ${majorVersion}.${minorVersion})`;
-        if (requiredMajorVersion !== majorVersion) {
+        const requiredMajorProtocolVersion = request.value[0];
+        const requiredMinorProtocolVersion = request.value[1];
+        const describeCurrentProtocolVersion = ` (current elm-run protocol version: ${majorProtocolVersion}.${minorProtocolVersion})`;
+        if (requiredMajorProtocolVersion !== majorProtocolVersion) {
           console.log(
-            "Version mismatch: script requires elm-run major version " +
-              requiredMajorVersion +
-              describeCurrentVersion
+            "Version mismatch: script requires elm-run major protocol version " +
+              requiredMajorProtocolVersion +
+              describeCurrentProtocolVersion
           );
-          if (requiredMajorVersion > majorVersion) {
+          if (requiredMajorProtocolVersion > majorProtocolVersion) {
             console.log("Please update to a newer version of elm-run");
           } else {
             console.log(
@@ -139,13 +142,13 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             );
           }
           exit(1);
-        } else if (requiredMinorVersion > minorVersion) {
-          const requiredVersionString =
-            requiredMajorVersion + "." + requiredMinorVersion;
+        } else if (requiredMinorProtocolVersion > minorProtocolVersion) {
+          const requiredProtocolVersionString =
+            requiredMajorProtocolVersion + "." + requiredMinorProtocolVersion;
           console.log(
-            "Version mismatch: script requires elm-run version at least " +
-              requiredVersionString +
-              describeCurrentVersion
+            "Version mismatch: script requires elm-run protocol version at least " +
+              requiredProtocolVersionString +
+              describeCurrentProtocolVersion
           );
           console.log("Please update to a newer version of elm-run");
           exit(1);

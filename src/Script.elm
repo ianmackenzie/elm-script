@@ -73,8 +73,8 @@ import Task exposing (Task)
 import Time
 
 
-requiredHostVersion : ( Int, Int )
-requiredHostVersion =
+requiredProtocolVersion : ( Int, Int )
+requiredProtocolVersion =
     ( 9, 0 )
 
 
@@ -231,15 +231,16 @@ will be returned to the operating system instead.
 program : (List String -> Directory Writable -> Host -> UserPrivileges -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
-        checkHostVersion =
+        checkProtocolVersion =
             let
-                ( major, minor ) =
-                    requiredHostVersion
+                ( requiredMajorProtocolVersion, requiredMinorProtocolVersion ) =
+                    requiredProtocolVersion
 
-                encodedVersion =
-                    Encode.list Encode.int [ major, minor ]
+                encodedProtocolVersion =
+                    Encode.list Encode.int
+                        [ requiredMajorProtocolVersion, requiredMinorProtocolVersion ]
             in
-            Internal.Invoke "checkVersion" encodedVersion <|
+            Internal.Invoke "checkVersion" encodedProtocolVersion <|
                 \flags -> Decode.null (succeed ())
 
         init flagsValue =
@@ -265,7 +266,7 @@ program main requestPort responsePort =
                             main arguments workingDirectory host userPrivileges
 
                         script =
-                            checkHostVersion |> andThen runMain
+                            checkProtocolVersion |> andThen runMain
                     in
                     ( Running flags script, commands script )
 
