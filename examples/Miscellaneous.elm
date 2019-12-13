@@ -2,10 +2,9 @@ module Miscellaneous exposing (main)
 
 import Duration
 import Example
-import Http
 import Json.Decode as Decode
 import Script exposing (Script)
-import Script.NetworkConnection as NetworkConnection exposing (NetworkConnection)
+import Script.Http as Http exposing (NetworkConnection)
 import Time
 
 
@@ -50,14 +49,15 @@ getCurrentTime : NetworkConnection -> Script String String
 getCurrentTime networkConnection =
     let
         url =
-            "http://time.jsontest.com/"
+            "http://worldtimeapi.org/api/ip"
 
         decoder =
-            Decode.field "time" Decode.string
+            Decode.field "datetime" Decode.string
     in
-    networkConnection
-        |> NetworkConnection.get
-            { url = url, expect = NetworkConnection.expectJson decoder }
+    Http.get networkConnection
+        { url = url
+        , expect = Http.expectJson decoder
+        }
         |> Script.mapError (always "HTTP request failed")
 
 

@@ -4,7 +4,7 @@ const majorVersion = 0;
 const minorVersion = 1;
 
 const majorProtocolVersion = 9;
-const minorProtocolVersion = 0;
+const minorProtocolVersion = 1;
 
 import * as path from "https://deno.land/std/path/mod.ts";
 
@@ -304,6 +304,28 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           responsePort.send(directoryPath);
         } catch (error) {
           responsePort.send({ message: error.message });
+        }
+        break;
+      case "http":
+        try {
+          let promise = fetch(request.value.url, request.value.options);
+          if (request.value.timeout != null) {
+            promise = timeout(request.value.timeout, promise);
+          }
+          const httpResponse = await promise;
+          const responseBody = await httpResponse.text();
+          responsePort.send({
+            status: httpResponse.status,
+            body: responseBody
+          });
+        } catch (error) {
+          let errorType = null;
+          if (error.message == "timeout") {
+            errorType = "Timeout";
+          } else {
+            errorType = "NetworkError";
+          }
+          responsePort.send({ error: errorType });
         }
         break;
       default:

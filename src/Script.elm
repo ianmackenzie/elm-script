@@ -64,8 +64,7 @@ import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
 import Script.Environment exposing (Environment)
-import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags, UserPrivileges(..))
-import Script.NetworkConnection exposing (NetworkConnection)
+import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags, NetworkConnection, UserPrivileges(..))
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable)
 import Script.Platform as Platform exposing (Platform(..))
@@ -75,7 +74,7 @@ import Time
 
 requiredProtocolVersion : ( Int, Int )
 requiredProtocolVersion =
-    ( 9, 0 )
+    ( 9, 1 )
 
 
 {-| A `Script x a` value defines a script that, when run, will either produce a
