@@ -1,5 +1,5 @@
 module Script exposing
-    ( Script, WorkingDirectory, Host, UserPrivileges, SubprocessError(..)
+    ( Script, Init, UserPrivileges, SubprocessError(..)
     , RequestPort, ResponsePort, Program, program
     , succeed, fail
     , printLine, sleep, getCurrentTime
@@ -13,7 +13,7 @@ module Script exposing
 {-| The functions in this module let you define scripts, chain them together in
 various ways, and turn them into runnable programs.
 
-@docs Script, WorkingDirectory, Host, UserPrivileges, SubprocessError
+@docs Script, Init, UserPrivileges, SubprocessError
 
 
 # Running
@@ -63,8 +63,11 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
 import Process
+import Script.Directory exposing (Directory)
 import Script.Environment exposing (Environment)
-import Script.Internal as Internal exposing (Directory(..), Environment(..), File(..), Flags, NetworkConnection, UserPrivileges(..))
+import Script.File exposing (File)
+import Script.Http exposing (NetworkConnection)
+import Script.Internal as Internal exposing (Flags)
 import Script.Path as Path exposing (Path(..))
 import Script.Permissions exposing (ReadOnly, Writable)
 import Script.Platform as Platform exposing (Platform(..))
@@ -84,22 +87,18 @@ type alias Script x a =
     Internal.Script x a
 
 
-type alias WorkingDirectory =
-    Directory Writable
+type alias Init =
+    { arguments : List String
+    , workingDirectory : Directory Writable
+    , platform : Platform
+    , environment : Environment
+    , networkConnection : NetworkConnection
+    , userPrivileges : UserPrivileges
+    }
 
 
 type alias UserPrivileges =
     Internal.UserPrivileges
-
-
-{-| The computer that the current `Script` is being run on. The function you
-pass to `Script.program` will get a `Host` value passed to it at startup.
--}
-type alias Host =
-    { platform : Platform
-    , environment : Environment
-    , networkConnection : NetworkConnection
-    }
 
 
 type SubprocessError
@@ -193,7 +192,7 @@ decodeEnvironment platform =
     Decode.list decodeKeyValuePair
         |> Decode.map
             (\keyValuePairs ->
-                Environment platform
+                Internal.Environment platform
                     (Dict.fromList <|
                         -- On Windows, capitalize environment variable names
                         -- so they can be looked up case-insensitively (same
@@ -227,7 +226,7 @@ value of the script. If the script fails with an `Int` value, then that value
 will be returned to the operating system instead.
 
 -}
-program : (List String -> Directory Writable -> Host -> UserPrivileges -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+program : (Init -> Script Int ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
     let
         checkProtocolVersion =
@@ -244,30 +243,28 @@ program main requestPort responsePort =
 
         init flagsValue =
             case Decode.decodeValue decodeFlags flagsValue of
-                Ok flags ->
+                Ok decodedFlags ->
                     let
-                        arguments =
-                            flags.arguments
-
                         workingDirectory =
-                            Directory flags.workingDirectoryPath
-
-                        host =
-                            { platform = flags.platform
-                            , environment = flags.environment
-                            , networkConnection = Internal.NetworkConnection
-                            }
+                            Internal.Directory decodedFlags.workingDirectoryPath
 
                         userPrivileges =
-                            UserPrivileges flags.workingDirectoryPath
+                            Internal.UserPrivileges decodedFlags.workingDirectoryPath
 
                         runMain () =
-                            main arguments workingDirectory host userPrivileges
+                            main
+                                { arguments = decodedFlags.arguments
+                                , workingDirectory = workingDirectory
+                                , platform = decodedFlags.platform
+                                , environment = decodedFlags.environment
+                                , networkConnection = Internal.NetworkConnection
+                                , userPrivileges = userPrivileges
+                                }
 
                         script =
                             checkProtocolVersion |> andThen runMain
                     in
-                    ( Running flags script, commands script )
+                    ( Running decodedFlags script, commands script )
 
                 Err _ ->
                     abort "Failed to decode flags from JavaScript"
@@ -725,7 +722,7 @@ executeWith :
     -> Internal.Script SubprocessError String
 executeWith userPrivileges { workingDirectory, command, arguments } =
     let
-        (Directory workingDirectoryPath) =
+        (Internal.Directory workingDirectoryPath) =
             workingDirectory
     in
     Internal.Invoke "execute"

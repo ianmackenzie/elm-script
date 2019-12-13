@@ -16,13 +16,8 @@ computeProduct =
             )
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script _ =
     Script.with computeProduct
         |> Script.andWith Script.getCurrentTime
         |> Script.yield

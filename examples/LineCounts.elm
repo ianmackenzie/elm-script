@@ -11,13 +11,8 @@ getLineCount file =
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments, userPrivileges } =
     List.map (File.readOnly userPrivileges) arguments
         |> Script.collect getLineCount
         |> Script.onError (Example.handleError .message)

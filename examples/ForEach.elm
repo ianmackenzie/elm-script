@@ -4,13 +4,8 @@ import Example
 import Script exposing (Script)
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments } =
     arguments
         |> Script.forEach
             (\argument ->

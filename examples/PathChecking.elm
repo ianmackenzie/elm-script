@@ -26,13 +26,8 @@ evilScript directory =
         |> Script.onError (Example.handleError .message)
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments, userPrivileges } =
     case arguments of
         [ path ] ->
             let

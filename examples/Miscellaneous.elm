@@ -8,19 +8,14 @@ import Script.Http as Http exposing (NetworkConnection)
 import Time
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { networkConnection } =
     Script.succeed { text = "A", number = 2 }
         |> Script.aside
             (\model ->
                 Script.do
                     [ Script.printLine model.text
-                    , printCurrentTime host.networkConnection
+                    , printCurrentTime networkConnection
                     , Script.sleep (Duration.seconds 0.5)
                     ]
             )
@@ -29,9 +24,9 @@ script arguments workingDirectory host userPrivileges =
             (\number ->
                 Script.do
                     [ Script.printLine (String.fromInt number)
-                    , printCurrentTime host.networkConnection
+                    , printCurrentTime networkConnection
                     , Script.sleep (Duration.seconds 0.5)
-                    , getCurrentTime host.networkConnection |> Script.ignoreResult
+                    , getCurrentTime networkConnection |> Script.ignoreResult
                     ]
             )
         |> Script.andThen

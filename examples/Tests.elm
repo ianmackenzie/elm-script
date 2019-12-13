@@ -2,9 +2,10 @@ module Tests exposing (main)
 
 import Example
 import Script exposing (Script)
+import Script.Directory exposing (Directory, Writable)
 
 
-runTestCases : Script.WorkingDirectory -> Script.UserPrivileges -> List ( String, List String, String ) -> Script Int ()
+runTestCases : Directory Writable -> Script.UserPrivileges -> List ( String, List String, String ) -> Script Int ()
 runTestCases workingDirectory userPrivileges testCases =
     let
         runnerFileName =
@@ -50,13 +51,8 @@ runTestCases workingDirectory userPrivileges testCases =
             )
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { workingDirectory, userPrivileges } =
     runTestCases workingDirectory userPrivileges <|
         [ ( "HelloWorld.elm", [], "Hello World!" )
         , ( "GetElmVersion.elm", [], "Current Elm version: 0.19.1" )

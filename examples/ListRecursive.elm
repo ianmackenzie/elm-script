@@ -32,13 +32,8 @@ listRecursively level directory =
         ]
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments, userPrivileges } =
     case arguments of
         [ path ] ->
             listRecursively 0 (Directory.readOnly userPrivileges path)

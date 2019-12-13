@@ -5,13 +5,8 @@ import Script exposing (Script)
 import Script.File as File exposing (File)
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments, userPrivileges } =
     case arguments of
         [ path ] ->
             File.read (File.readOnly userPrivileges path)

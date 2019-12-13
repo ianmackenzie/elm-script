@@ -2,6 +2,7 @@ module WithRetry exposing (main)
 
 import Example
 import Script exposing (Script)
+import Script.Directory exposing (Directory, Writable)
 
 
 abort : String -> Script Int a
@@ -10,7 +11,7 @@ abort message =
         |> Script.andThen (\() -> Script.fail 1)
 
 
-retry : Script.WorkingDirectory -> Script.UserPrivileges -> String -> List String -> Int -> Script Int ()
+retry : Directory Writable -> Script.UserPrivileges -> String -> List String -> Int -> Script Int ()
 retry workingDirectory userPrivileges command arguments count =
     Script.executeWith userPrivileges
         { command = command
@@ -41,13 +42,8 @@ retry workingDirectory userPrivileges command arguments count =
             )
 
 
-script :
-    List String
-    -> Script.WorkingDirectory
-    -> Script.Host
-    -> Script.UserPrivileges
-    -> Script Int ()
-script arguments workingDirectory host userPrivileges =
+script : Script.Init -> Script Int ()
+script { arguments, workingDirectory, userPrivileges } =
     case arguments of
         [] ->
             Script.printLine "Please enter an executable to run"
