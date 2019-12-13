@@ -53,29 +53,35 @@ checkDirectory directory userPrivileges =
 
 
 script : Script.Init -> Script Int ()
-script { userPrivileges } =
-    let
-        rootDirectory =
-            Directory.writable userPrivileges "C:/Git/ianmackenzie"
-    in
-    Directory.listSubdirectories rootDirectory
-        |> Script.onError (Example.handleError .message)
-        |> Script.andThen
-            (Script.forEach
-                (\directory ->
-                    Directory.checkExistence (Directory.subdirectory ".git" directory)
-                        |> Script.onError (Example.handleError .message)
-                        |> Script.andThen
-                            (\existence ->
-                                case existence of
-                                    Directory.Exists ->
-                                        checkDirectory directory userPrivileges
+script { arguments, userPrivileges } =
+    case arguments of
+        [ parentPath ] ->
+            let
+                parentDirectory =
+                    Directory.writable userPrivileges parentPath
+            in
+            Directory.listSubdirectories parentDirectory
+                |> Script.onError (Example.handleError .message)
+                |> Script.andThen
+                    (Script.forEach
+                        (\directory ->
+                            Directory.checkExistence (Directory.subdirectory ".git" directory)
+                                |> Script.onError (Example.handleError .message)
+                                |> Script.andThen
+                                    (\existence ->
+                                        case existence of
+                                            Directory.Exists ->
+                                                checkDirectory directory userPrivileges
 
-                                    _ ->
-                                        Script.succeed ()
-                            )
-                )
-            )
+                                            _ ->
+                                                Script.succeed ()
+                                    )
+                        )
+                    )
+
+        _ ->
+            Script.printLine "Please pass a single parent directory to check within"
+                |> Script.followedBy (Script.fail 1)
 
 
 main : Script.Program
