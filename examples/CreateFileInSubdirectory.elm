@@ -11,15 +11,12 @@ script { workingDirectory } =
     let
         subdirectory =
             workingDirectory |> Directory.subdirectory "subdirectory"
+
+        file =
+            subdirectory |> Directory.file "child.txt"
     in
     Directory.ensureExists subdirectory
-        |> Script.followedBy
-            (let
-                file =
-                    subdirectory |> Directory.file "child.txt"
-             in
-             File.writeTo file "dummy contents"
-            )
+        |> Script.followedBy (File.writeTo file "dummy contents")
         |> Script.onError (Example.handleError .message)
 
 
