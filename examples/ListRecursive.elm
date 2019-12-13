@@ -17,11 +17,8 @@ listRecursively level directory =
             |> Script.andThen
                 (Script.forEach
                     (\subdirectory ->
-                        Script.do
-                            [ Script.printLine
-                                (indentation ++ Directory.name subdirectory ++ "/")
-                            , listRecursively (level + 1) subdirectory
-                            ]
+                        Script.printLine (indentation ++ Directory.name subdirectory ++ "/")
+                            |> Script.followedBy (listRecursively (level + 1) subdirectory)
                     )
                 )
         , Directory.listFiles directory
