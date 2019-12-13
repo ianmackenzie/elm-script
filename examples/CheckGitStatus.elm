@@ -5,23 +5,48 @@ import Script exposing (Script, UserPrivileges)
 import Script.Directory as Directory exposing (Directory, Writable)
 
 
+checkForUnpushedChanges : Directory Writable -> UserPrivileges -> Script Script.SubprocessError ()
+checkForUnpushedChanges directory userPrivileges =
+    Script.executeWith userPrivileges
+        { command = "git"
+        , arguments = [ "log", "@{push}.." ]
+        , workingDirectory = directory
+        }
+        |> Script.andThen
+            (\output ->
+                if String.isEmpty (String.trim output) then
+                    Script.do []
+
+                else
+                    Script.printLine output
+            )
+
+
+checkForUncommittedChanges : Directory Writable -> UserPrivileges -> Script Script.SubprocessError ()
+checkForUncommittedChanges directory userPrivileges =
+    Script.executeWith userPrivileges
+        { command = "git"
+        , arguments = [ "status" ]
+        , workingDirectory = directory
+        }
+        |> Script.andThen
+            (\output ->
+                if String.contains "nothing to commit, working tree clean" output then
+                    Script.do []
+
+                else
+                    Script.printLine output
+            )
+
+
 checkDirectory : Directory Writable -> UserPrivileges -> Script Int ()
 checkDirectory directory userPrivileges =
     Script.printLine ("Checking " ++ Directory.name directory)
         |> Script.followedBy
-            (Script.executeWith userPrivileges
-                { command = "git"
-                , arguments = [ "status" ]
-                , workingDirectory = directory
-                }
-                |> Script.andThen
-                    (\output ->
-                        if String.contains "nothing to commit, working tree clean" output then
-                            Script.do []
-
-                        else
-                            Script.printLine output
-                    )
+            (Script.do
+                [ checkForUnpushedChanges directory userPrivileges
+                , checkForUncommittedChanges directory userPrivileges
+                ]
                 |> Script.onError
                     (\error ->
                         Script.printLine "Running Git failed"
