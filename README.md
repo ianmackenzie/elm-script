@@ -23,28 +23,26 @@ And here's a slightly more realistic/useful script that counts the number of
 lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/LineCounts.elm)):
 
 ```elm
-getLineCount : File (Read p) -> Script File.Error Int
+getLineCount : File ReadOnly -> Script File.Error Int
 getLineCount file =
     File.read file
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
-
-script : Script.Context -> Script Int ()
-script { arguments, fileSystem } =
-    let
-        toFile : String -> File ReadOnly
-        toFile path =
-            FileSystem.file Permissions.readOnly path fileSystem
-    in
-    List.map toFile arguments
+script : Script.Init -> Script Int ()
+script { arguments, userPrivileges } =
+    List.map (File.readOnly userPrivileges) arguments
         |> Script.collect getLineCount
         |> Script.onError (handleError .message)
-        |> Script.map (List.map2 (,) arguments)
+        |> Script.map (List.map2 Tuple.pair arguments)
         |> Script.thenWith
             (Script.each
-                (\( filename, lineCount ) ->
+                (\( fileName, lineCount ) ->
                     Script.printLine
-                        (filename ++ ": " ++ toString lineCount ++ " lines")
+                        (fileName
+                            ++ ": "
+                            ++ String.fromInt lineCount
+                            ++ " lines"
+                        )
                 )
             )
 
