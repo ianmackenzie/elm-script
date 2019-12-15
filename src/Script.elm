@@ -69,7 +69,7 @@ import Script.File exposing (File)
 import Script.Http exposing (NetworkConnection)
 import Script.Internal as Internal exposing (Flags)
 import Script.Path as Path exposing (Path(..))
-import Script.Permissions exposing (ReadOnly, Writable)
+import Script.Permissions exposing (Writable)
 import Script.Platform as Platform exposing (Platform(..))
 import Task exposing (Task)
 import Time
