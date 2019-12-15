@@ -138,7 +138,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             console.log("Please update to a newer version of elm-run");
           } else {
             console.log(
-              "Please update script to use a newer version of the ianmackenzie/script-experiment package"
+              "Please update script to use a newer version of the ianmackenzie/elm-script package"
             );
           }
           exit(1);
@@ -331,7 +331,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
       default:
         console.log(`Internal error - unexpected request ${request}`);
         console.log(
-          "Try updating to newer versions of elm-run and the ianmackenzie/script-experiment package"
+          "Try updating to newer versions of elm-run and the ianmackenzie/elm-script package"
         );
         exit(1);
     }
@@ -339,9 +339,14 @@ function runCompiledJs(jsFileName, commandLineArgs) {
 }
 
 async function main() {
-  if (Deno.args.length >= 2) {
-    const sourceFileName = Deno.args[1];
-    const commandLineArgs = Deno.args.slice(2);
+  if (Deno.args.length >= 3) {
+    const subcommand = Deno.args[1];
+    if (subcommand !== "run") {
+      console.log(`Run as 'elm-script run Script.elm [arguments]'`);
+      exit(1);
+    }
+    const sourceFileName = Deno.args[2];
+    const commandLineArgs = Deno.args.slice(3);
     const absolutePath = path.resolve(sourceFileName);
     const extension = path.extname(absolutePath);
     if (extension === ".js") {
@@ -374,9 +379,7 @@ async function main() {
       exit(1);
     }
   } else {
-    console.log(
-      `Run as 'deno https://elm-run.io/${majorVersion}.${minorVersion} Script.elm [arguments]'`
-    );
+    console.log(`Run as 'elm-script run Script.elm [arguments]'`);
     exit(1);
   }
 }

@@ -1,6 +1,6 @@
 {
     "type": "package",
-    "name": "ianmackenzie/script-experiment",
+    "name": "ianmackenzie/elm-script",
     "summary": "Experimental command-line scripting in Elm",
     "license": "MPL-2.0",
     "version": "1.0.0",

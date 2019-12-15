@@ -1,4 +1,4 @@
-## ianmackenzie/script-experiment
+## ianmackenzie/elm-script
 
 **EXPERIMENTAL** - expect breaking changes, missing functionality, incomplete
 documentation etc.
@@ -11,7 +11,7 @@ This package allows you define command-line scripts in Elm that can
   - Make HTTP requests
   - Run subprocesses
 
-Here's "Hello World" (from [examples/HelloWorld.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/HelloWorld.elm)):
+Here's "Hello World" (from [examples/HelloWorld.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/HelloWorld.elm)):
 
 ```elm
 script : Script.Init -> Script Int ()
@@ -20,7 +20,7 @@ script init =
 ```
 
 And here's a slightly more realistic/useful script that counts the number of
-lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/LineCounts.elm)):
+lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/LineCounts.elm)):
 
 ```elm
 getLineCount : File ReadOnly -> Script File.Error Int
@@ -45,7 +45,6 @@ script { arguments, userPrivileges } =
                         )
                 )
             )
-
 
 handleError : (x -> String) -> x -> Script Int a
 handleError toMessage error =
@@ -75,7 +74,7 @@ which parts are running potentially dangerous subprocesses, etc.
 
 # Getting started
 
-`ianmackenzie/script-experiment` has not yet been published, so right now if you
+`ianmackenzie/elm-script` has not yet been published, so right now if you
 want to play around with it you'll have to check out this repository. You can
 then either just experiment with the files in the `examples` directory, or add
 the `src` directory of this package to the `source-directories` field in your
