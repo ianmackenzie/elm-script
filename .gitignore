@@ -2,6 +2,8 @@ elm-stuff
 examples/*.js
 examples/elm-script
 examples/elm-script.cmd
+scripts/elm-script
+scripts/elm-script.cmd
 node_modules
 examples/reversed.txt
 elm.exe
