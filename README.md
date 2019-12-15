@@ -14,8 +14,8 @@ This package allows you define command-line scripts in Elm that can
 Here's "Hello World" (from [examples/HelloWorld.elm](https://github.com/ianmackenzie/script-experiment/blob/master/examples/HelloWorld.elm)):
 
 ```elm
-script : Script.Context -> Script Int ()
-script context =
+script : Script.Init -> Script Int ()
+script init =
     Script.printLine "Hello World!"
 ```
 
