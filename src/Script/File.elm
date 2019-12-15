@@ -144,7 +144,7 @@ copyInto directory file =
         destination =
             Directory.file (name file) directory
     in
-    copy file destination |> Internal.andThen (\() -> Internal.Succeed destination)
+    copy file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
 
 moveInto : Directory Writable -> File Writable -> Script Error (File Writable)
@@ -153,7 +153,7 @@ moveInto directory file =
         destination =
             Directory.file (name file) directory
     in
-    move file destination |> Internal.andThen (\() -> Internal.Succeed destination)
+    move file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
 
 checkExistence : File permissions -> Script Error Existence

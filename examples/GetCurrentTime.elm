@@ -8,7 +8,7 @@ import Time
 script : Script.Init -> Script Int ()
 script _ =
     Script.getCurrentTime
-        |> Script.andThen
+        |> Script.thenWith
             (\currentTime ->
                 let
                     millisecondsSinceEpoch =

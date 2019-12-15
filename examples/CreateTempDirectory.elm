@@ -10,7 +10,7 @@ import Script.File as File
 script : Script.Init -> Script Int ()
 script _ =
     Directory.createTemporary
-        |> Script.andThen
+        |> Script.thenWith
             (\tempDirectory ->
                 let
                     tempFile =
@@ -18,7 +18,7 @@ script _ =
                 in
                 File.writeTo tempFile "dummy contents"
             )
-        |> Script.followedBy (Script.sleep (Duration.seconds 10))
+        |> Script.andThen (Script.sleep (Duration.seconds 10))
         |> Script.onError (Example.handleError .message)
 
 

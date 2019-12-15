@@ -29,7 +29,7 @@ script { networkConnection } =
                     , getCurrentTime networkConnection |> Script.ignoreResult
                     ]
             )
-        |> Script.andThen
+        |> Script.thenWith
             (\number ->
                 if number > 2 then
                     Script.succeed ()
@@ -58,7 +58,8 @@ getCurrentTime networkConnection =
 
 printCurrentTime : NetworkConnection -> Script String ()
 printCurrentTime networkConnection =
-    getCurrentTime networkConnection |> Script.andThen Script.printLine
+    getCurrentTime networkConnection
+        |> Script.thenWith (\time -> Script.printLine time)
 
 
 main : Script.Program

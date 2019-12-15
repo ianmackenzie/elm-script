@@ -7,7 +7,7 @@ import Script exposing (Script)
 script : Script.Init -> Script Int ()
 script { arguments } =
     arguments
-        |> Script.forEach
+        |> Script.each
             (\argument ->
                 Script.printLine <|
                     case String.toFloat argument of

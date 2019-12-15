@@ -12,7 +12,7 @@ script { workingDirectory, userPrivileges } =
         , workingDirectory = workingDirectory
         }
         |> Script.map String.trim
-        |> Script.andThen
+        |> Script.thenWith
             (\versionString ->
                 Script.printLine ("Current Elm version: " ++ versionString)
             )

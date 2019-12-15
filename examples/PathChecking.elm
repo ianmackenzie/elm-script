@@ -9,7 +9,7 @@ import Script.File as File
 niceScript : Directory permissions -> Script Int ()
 niceScript directory =
     File.read (directory |> Directory.file "test.txt")
-        |> Script.andThen
+        |> Script.thenWith
             (\contents ->
                 Script.printLine <|
                     String.fromInt (String.length contents)
@@ -41,7 +41,7 @@ script { arguments, userPrivileges } =
 
         _ ->
             Script.printLine "Please supply the path of one directory to read"
-                |> Script.followedBy (Script.fail 1)
+                |> Script.andThen (Script.fail 1)
 
 
 main : Script.Program

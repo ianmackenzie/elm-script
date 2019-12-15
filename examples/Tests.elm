@@ -12,7 +12,7 @@ runTestCases workingDirectory userPrivileges testCases =
             "../runners/deno/main.js"
     in
     testCases
-        |> Script.forEach
+        |> Script.each
             (\( scriptFileName, scriptArguments, expectedOutput ) ->
                 Script.executeWith userPrivileges
                     { command = "deno"
@@ -22,9 +22,9 @@ runTestCases workingDirectory userPrivileges testCases =
                     |> Script.onError
                         (\processError ->
                             Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
-                                |> Script.followedBy (Script.fail 1)
+                                |> Script.andThen (Script.fail 1)
                         )
-                    |> Script.andThen
+                    |> Script.thenWith
                         (\output ->
                             if String.trim output == expectedOutput then
                                 Script.printLine ("PASSED: " ++ scriptFileName)
@@ -39,10 +39,10 @@ runTestCases workingDirectory userPrivileges testCases =
                                         ++ "\n\nActual output:\n\n"
                                         ++ String.trim output
                                     )
-                                    |> Script.followedBy (Script.fail 1)
+                                    |> Script.andThen (Script.fail 1)
                         )
             )
-        |> Script.followedBy
+        |> Script.andThen
             (Script.printLine <|
                 "Success! "
                     ++ String.fromInt (List.length testCases)

@@ -12,13 +12,12 @@ script { arguments, userPrivileges } =
             File.read (File.readOnly userPrivileges path)
                 |> Script.map String.lines
                 |> Script.map (List.filter (not << String.isEmpty))
-                |> Script.andThen
-                    (Script.forEach (String.toUpper >> Script.printLine))
+                |> Script.thenWith (Script.each (\line -> Script.printLine (String.toUpper line)))
                 |> Script.onError (Example.handleError .message)
 
         _ ->
             Script.printLine "Please supply the path of one file to read"
-                |> Script.followedBy (Script.fail 1)
+                |> Script.andThen (Script.fail 1)
 
 
 main : Script.Program

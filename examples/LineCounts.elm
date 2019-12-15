@@ -17,8 +17,8 @@ script { arguments, userPrivileges } =
         |> Script.collect getLineCount
         |> Script.onError (Example.handleError .message)
         |> Script.map (List.map2 Tuple.pair arguments)
-        |> Script.andThen
-            (Script.forEach
+        |> Script.thenWith
+            (Script.each
                 (\( filename, lineCount ) ->
                     Script.printLine
                         (filename

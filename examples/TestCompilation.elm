@@ -10,8 +10,8 @@ script : Script.Init -> Script Int ()
 script { workingDirectory, userPrivileges } =
     Directory.listFiles workingDirectory
         |> Script.onError (handleError .message)
-        |> Script.andThen
-            (Script.forEach
+        |> Script.thenWith
+            (Script.each
                 (\file ->
                     if File.name file |> String.endsWith ".elm" then
                         Script.do

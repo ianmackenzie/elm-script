@@ -5,7 +5,7 @@ module Script exposing
     , printLine, sleep, getCurrentTime
     , executeWith
     , map, map2, map3, map4, ignoreResult
-    , do, forEach, sequence, collect, andThen, followedBy, aside
+    , do, each, sequence, collect, andThen, thenWith, aside
     , mapError, attempt, onError, ignoreError, finally
     )
 
@@ -42,7 +42,7 @@ various ways, and turn them into runnable programs.
 
 # Sequencing
 
-@docs do, forEach, sequence, collect, andThen, followedBy, aside
+@docs do, each, sequence, collect, andThen, thenWith, aside
 
 
 # Error handling
@@ -245,7 +245,7 @@ program main requestPort responsePort =
                         userPrivileges =
                             Internal.UserPrivileges decodedFlags.workingDirectoryPath
 
-                        runMain () =
+                        runMain =
                             main
                                 { arguments = decodedFlags.arguments
                                 , workingDirectory = workingDirectory
@@ -340,11 +340,11 @@ are given:
 
             [] ->
                 Script.printLine "Please enter a name"
-                    |> Script.followedBy (Script.fail 1)
+                    |> Script.andThen (Script.fail 1)
 
             _ ->
                 Script.printLine "Please enter only one name!"
-                    |> Script.followedBy (Script.fail 2)
+                    |> Script.andThen (Script.fail 2)
 
 -}
 fail : x -> Script x a
@@ -398,7 +398,7 @@ sleep duration =
 {-| Get the current time.
 
     Script.getCurrentTime
-        |> Script.andThen
+        |> Script.thenWith
             (\currentTime ->
                 Script.printLine <|
                     "Number of hours since January 1, 1970: "
@@ -438,7 +438,7 @@ map2 :
     -> Script x b
     -> Script x c
 map2 function scriptA scriptB =
-    scriptA |> andThen (\valueA -> map (function valueA) scriptB)
+    scriptA |> thenWith (\valueA -> map (function valueA) scriptB)
 
 
 {-| Map over the values produced by three scripts. The three scripts will be run
@@ -451,7 +451,7 @@ map3 :
     -> Script x c
     -> Script x d
 map3 function scriptA scriptB scriptC =
-    scriptA |> andThen (\valueA -> map2 (function valueA) scriptB scriptC)
+    scriptA |> thenWith (\valueA -> map2 (function valueA) scriptB scriptC)
 
 
 {-| Map over the values produced by four scripts. The four scripts will be run
@@ -465,7 +465,7 @@ map4 :
     -> Script x d
     -> Script x e
 map4 function scriptA scriptB scriptC scriptD =
-    scriptA |> andThen (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
+    scriptA |> thenWith (\valueA -> map3 (function valueA) scriptB scriptC scriptD)
 
 
 {-| Explicitly ignore the value produced by a script. This is sometimes useful
@@ -495,7 +495,7 @@ type of `()`.
         [ Script.printLine "Reading a file..."
         , File.read inputFile
             |> Script.map String.lines
-            |> Script.andThen
+            |> Script.thenWith
                 (\lines ->
                     Script.printLine <|
                         toString (List.length lines)
@@ -514,11 +514,11 @@ do scripts =
             succeed ()
 
         first :: rest ->
-            first |> followedBy (do rest)
+            first |> andThen (do rest)
 
 
 {-| For every value in a given list, call the given function and run the
-script that it creates. From `examples/ForEach.elm`:
+script that it creates. From `examples/Each.elm`:
 
     script :
         List String
@@ -528,7 +528,7 @@ script that it creates. From `examples/ForEach.elm`:
         -> Script Int ()
     script arguments host =
         arguments
-            |> Script.forEach
+            |> Script.each
                 (\argument ->
                     Script.printLine <|
                         case String.toFloat argument of
@@ -543,20 +543,20 @@ script that it creates. From `examples/ForEach.elm`:
                                 argument ++ " is not a number!"
                 )
 
-Often works well with `Script.andThen` if the previous script produces a list of
-values:
+Often works well with `Script.thenWith` if the previous script produces a list
+of values:
 
     Directory.listFiles directory
-        |> Script.andThen
-            (Script.forEach
+        |> Script.thenWith
+            (Script.each
                 (\file ->
                     Script.printLine (File.name file)
                 )
             )
 
 -}
-forEach : (a -> Script x ()) -> List a -> Script x ()
-forEach function values =
+each : (a -> Script x ()) -> List a -> Script x ()
+each function values =
     do (List.map function values)
 
 
@@ -569,7 +569,7 @@ sequence scripts =
             succeed []
 
         first :: rest ->
-            first |> andThen (\value -> sequence rest |> map ((::) value))
+            first |> thenWith (\value -> map ((::) value) (sequence rest))
 
 
 {-| For every value in a given list, call the given function and run the script
@@ -589,41 +589,41 @@ collect function values =
 {-| Take the output from one script and feed it into a second script:
 
     File.read inputFile
-        |> Script.andThen
+        |> Script.thenWith
             (\fileContents ->
                 Script.printLine contents
             )
 
 This is the most fundamental way to chain scripts together! Pretty much all
-other combinators in this module (`forEach`, `do`, `map` etc.) can be
-implemented in terms of `andThen`, so if there's some custom behavior you need
-that is not covered by one of those functions you should be able to implement it
-using `andThen`.
+other combinators in this module (`each`, `do`, `map` etc.) can be implemented
+in terms of `thenWith`, so if there's some custom behavior you need that is not
+covered by one of those functions you should be able to implement it using
+`thenWith`.
 
 -}
-andThen : (a -> Script x b) -> Script x a -> Script x b
-andThen =
-    Internal.andThen
+thenWith : (a -> Script x b) -> Script x a -> Script x b
+thenWith =
+    Internal.thenWith
 
 
-followedBy : Script x a -> Script x () -> Script x a
-followedBy secondScript firstScript =
-    firstScript |> andThen (\() -> secondScript)
+andThen : Script x a -> Script x () -> Script x a
+andThen secondScript firstScript =
+    firstScript |> thenWith (\() -> secondScript)
 
 
 {-| Sometimes you can run into problems chaining scripts together using
-`andThen` if you want to do 'auxiliary' things like print to the console, log to
-a file etc. For example, the following will **not** work:
+`thenWith` if you want to do 'auxiliary' things like print to the console, log
+to a file etc. For example, the following will **not** work:
 
     File.read inputFile
-        |> Script.andThen
+        |> Script.thenWith
             (\contents -> Script.print "OK, read file")
-        |> Script.andThen
+        |> Script.thenWith
             (\contents -> ...)
 
 `File.read inputFile` succeeds with a `String` which is passed into the first
-`andThen`, but since `Script.print` succeeds with just the unit value `()` that
-is what gets passed into the second `andThen`!
+`thenWith`, but since `Script.print` succeeds with just the unit value `()` that
+is what gets passed into the second `thenWith`!
 
 You can use `aside` for this purpose, which lets you run a script on some
 produced value but then 'pass it through' to the next script:
@@ -631,7 +631,7 @@ produced value but then 'pass it through' to the next script:
     File.read inputFile
         |> Script.aside
             (\contents -> Script.print "OK, read file")
-        |> Script.andThen
+        |> Script.thenWith
             (\contents ->
                 ...
             )
@@ -644,14 +644,14 @@ aside : (a -> Script x ()) -> Script x a -> Script x a
 aside doSomething script =
     -- Run the given script...
     script
-        |> andThen
+        |> thenWith
             (\value ->
                 -- ...as an 'aside' do something with the generated value
                 -- (logging, printing to console etc)...
                 doSomething value
                     -- ...and finally, succeed with the original generated value
                     -- (not the unit return value of the 'aside' script)
-                    |> followedBy (succeed value)
+                    |> andThen (succeed value)
             )
 
 
@@ -678,8 +678,8 @@ ignoreError =
 finally : Script Never () -> Script x a -> Script x a
 finally cleanup script =
     script
-        |> andThen (\result -> perform cleanup |> followedBy (succeed result))
-        |> onError (\error -> perform cleanup |> followedBy (fail error))
+        |> thenWith (\result -> perform cleanup |> andThen (succeed result))
+        |> onError (\error -> perform cleanup |> andThen (fail error))
 
 
 executeWith :

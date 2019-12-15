@@ -14,7 +14,7 @@ script { workingDirectory, userPrivileges } =
         |> Script.map String.lines
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))
-        |> Script.andThen (Script.forEach (String.toUpper >> Script.printLine))
+        |> Script.thenWith (Script.each (\fileName -> Script.printLine (String.toUpper fileName)))
         |> Script.onError (Example.handleError toErrorString)
 
 

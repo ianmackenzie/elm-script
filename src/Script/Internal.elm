@@ -6,11 +6,11 @@ module Script.Internal exposing
     , NetworkConnection(..)
     , Script(..)
     , UserPrivileges(..)
-    , andThen
     , map
     , mapError
     , onError
     , perform
+    , thenWith
     )
 
 import Dict exposing (Dict)
@@ -57,8 +57,8 @@ type UserPrivileges
     = UserPrivileges Path
 
 
-andThen : (a -> Script x b) -> Script x a -> Script x b
-andThen function script =
+thenWith : (a -> Script x b) -> Script x a -> Script x b
+thenWith function script =
     case script of
         Succeed value ->
             function value
@@ -67,19 +67,19 @@ andThen function script =
             Fail error
 
         Perform task ->
-            Perform (Task.map (andThen function) task)
+            Perform (Task.map (thenWith function) task)
 
         Invoke name value decoder ->
             Invoke name value <|
-                \flags -> Decode.map (andThen function) (decoder flags)
+                \flags -> Decode.map (thenWith function) (decoder flags)
 
         Do command ->
-            Do (Cmd.map (andThen function) command)
+            Do (Cmd.map (thenWith function) command)
 
 
 map : (a -> b) -> Script x a -> Script x b
 map function script =
-    script |> andThen (\value -> Succeed (function value))
+    script |> thenWith (\value -> Succeed (function value))
 
 
 onError : (x -> Script y a) -> Script x a -> Script y a

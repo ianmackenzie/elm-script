@@ -40,8 +40,8 @@ script { arguments, fileSystem } =
         |> Script.collect getLineCount
         |> Script.onError (handleError .message)
         |> Script.map (List.map2 (,) arguments)
-        |> Script.andThen
-            (Script.forEach
+        |> Script.thenWith
+            (Script.each
                 (\( filename, lineCount ) ->
                     Script.printLine
                         (filename ++ ": " ++ toString lineCount ++ " lines")
@@ -52,7 +52,7 @@ script { arguments, fileSystem } =
 handleError : (x -> String) -> x -> Script Int a
 handleError toMessage error =
     Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (\() -> Script.fail 1)
+        |> Script.andThen (Script.fail 1)
 ```
 
 One of they key features of this package is very explicit control over

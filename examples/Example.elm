@@ -7,7 +7,7 @@ import Script exposing (Script)
 handleError : (x -> String) -> x -> Script Int a
 handleError toMessage error =
     Script.printLine ("[SCRIPT ERROR] " ++ toMessage error)
-        |> Script.followedBy (Script.fail 1)
+        |> Script.andThen (Script.fail 1)
 
 
 port requestPort : Value -> Cmd msg

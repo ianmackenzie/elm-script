@@ -16,7 +16,7 @@ script { workingDirectory } =
             subdirectory |> Directory.file "child.txt"
     in
     Directory.ensureExists subdirectory
-        |> Script.followedBy (File.writeTo file "dummy contents")
+        |> Script.andThen (File.writeTo file "dummy contents")
         |> Script.onError (Example.handleError .message)
 
 

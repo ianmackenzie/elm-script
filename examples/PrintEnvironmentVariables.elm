@@ -17,7 +17,7 @@ printEnvironmentVariable environment name =
 
 script : Script.Init -> Script Int ()
 script { arguments, environment } =
-    arguments |> Script.forEach (printEnvironmentVariable environment)
+    arguments |> Script.each (printEnvironmentVariable environment)
 
 
 main : Script.Program

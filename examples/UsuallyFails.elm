@@ -8,14 +8,14 @@ import Time
 script : Script.Init -> Script Int ()
 script _ =
     Script.getCurrentTime
-        |> Script.andThen
+        |> Script.thenWith
             (\time ->
                 if (Time.posixToMillis time |> modBy 100) > 87 then
                     Script.printLine "Succeeded"
 
                 else
                     Script.printLine "Failed"
-                        |> Script.followedBy (Script.fail 1)
+                        |> Script.andThen (Script.fail 1)
             )
 
 

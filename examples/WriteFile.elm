@@ -38,7 +38,7 @@ script { workingDirectory, platform } =
     in
     File.read inputFile
         |> Script.map (reverseLines lineSeparator)
-        |> Script.andThen (File.writeTo outputFile)
+        |> Script.thenWith (\reversedInput -> File.writeTo outputFile reversedInput)
         |> Script.onError (Example.handleError .message)
 
 

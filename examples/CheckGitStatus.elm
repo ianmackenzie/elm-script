@@ -12,7 +12,7 @@ checkForUnpushedChanges directory userPrivileges =
         , arguments = [ "log", "@{push}.." ]
         , workingDirectory = directory
         }
-        |> Script.andThen
+        |> Script.thenWith
             (\output ->
                 if String.isEmpty (String.trim output) then
                     Script.succeed ()
@@ -29,7 +29,7 @@ checkForUncommittedChanges directory userPrivileges =
         , arguments = [ "status" ]
         , workingDirectory = directory
         }
-        |> Script.andThen
+        |> Script.thenWith
             (\output ->
                 if String.contains "nothing to commit, working tree clean" output then
                     Script.succeed ()
@@ -48,7 +48,7 @@ checkDirectory directory userPrivileges =
         ]
         |> Script.onError
             (\error ->
-                Script.printLine "Running Git failed" |> Script.followedBy (Script.fail 1)
+                Script.printLine "Running Git failed" |> Script.andThen (Script.fail 1)
             )
 
 
@@ -62,12 +62,12 @@ script { arguments, userPrivileges } =
             in
             Directory.listSubdirectories parentDirectory
                 |> Script.onError (Example.handleError .message)
-                |> Script.andThen
-                    (Script.forEach
+                |> Script.thenWith
+                    (Script.each
                         (\directory ->
                             Directory.checkExistence (Directory.subdirectory ".git" directory)
                                 |> Script.onError (Example.handleError .message)
-                                |> Script.andThen
+                                |> Script.thenWith
                                     (\existence ->
                                         case existence of
                                             Directory.Exists ->
@@ -81,7 +81,7 @@ script { arguments, userPrivileges } =
 
         _ ->
             Script.printLine "Please pass a single parent directory to check within"
-                |> Script.followedBy (Script.fail 1)
+                |> Script.andThen (Script.fail 1)
 
 
 main : Script.Program
