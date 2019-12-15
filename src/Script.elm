@@ -6,7 +6,6 @@ module Script exposing
     , executeWith
     , map, map2, map3, map4, ignoreResult
     , do, forEach, sequence, collect, andThen, followedBy, aside
-    , Arguments, with, andWith, yield, return
     , mapError, attempt, onError, ignoreError, finally
     )
 
@@ -44,11 +43,6 @@ various ways, and turn them into runnable programs.
 # Sequencing
 
 @docs do, forEach, sequence, collect, andThen, followedBy, aside
-
-
-# Combining
-
-@docs Arguments, with, andWith, yield, return
 
 
 # Error handling
@@ -659,35 +653,6 @@ aside doSomething script =
                     -- (not the unit return value of the 'aside' script)
                     |> followedBy (succeed value)
             )
-
-
-type Arguments f r
-    = Arguments (f -> r)
-
-
-with : Script x a -> Script x (Arguments (a -> r) r)
-with =
-    map (\value -> Arguments (\function -> function value))
-
-
-andWith : Script x b -> Script x (Arguments f (b -> r)) -> Script x (Arguments f r)
-andWith scriptB argumentsScriptA =
-    map2
-        (\(Arguments callerA) valueB ->
-            Arguments (\valueA -> callerA valueA valueB)
-        )
-        argumentsScriptA
-        scriptB
-
-
-yield : f -> Script x (Arguments f (Script x r)) -> Script x r
-yield function =
-    andThen (\(Arguments caller) -> caller function)
-
-
-return : f -> Script x (Arguments f r) -> Script x r
-return function =
-    map (\(Arguments caller) -> caller function)
 
 
 mapError : (x -> y) -> Script x a -> Script y a
