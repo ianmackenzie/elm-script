@@ -26,7 +26,7 @@ script { workingDirectory, userPrivileges } =
                             ]
 
                     else
-                        Script.do []
+                        Script.succeed ()
                 )
             )
 
