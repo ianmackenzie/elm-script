@@ -7,16 +7,13 @@ import Script.Directory exposing (Directory, Writable)
 
 runTestCases : Directory Writable -> Script.UserPrivileges -> List ( String, List String, String ) -> Script Int ()
 runTestCases workingDirectory userPrivileges testCases =
-    let
-        runnerFileName =
-            "../runners/deno/main.js"
-    in
     testCases
         |> Script.each
             (\( scriptFileName, scriptArguments, expectedOutput ) ->
                 Script.executeWith userPrivileges
                     { command = "deno"
-                    , arguments = [ "-A", runnerFileName, scriptFileName ] ++ scriptArguments
+                    , arguments =
+                        [ "-A", "../runner/main.js", "run", scriptFileName ] ++ scriptArguments
                     , workingDirectory = workingDirectory
                     }
                     |> Script.onError
