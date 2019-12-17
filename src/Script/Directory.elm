@@ -9,20 +9,20 @@ module Script.Directory exposing
     , create
     , createTemporary
     , ensureExists
-    , file
     , listFiles
-    , listSubdirectories
+    , listSubdirs
     , name
     , obliterate
     , path
     , readOnly
     , remove
-    , subdirectory
+    , subdir
     , writable
     )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
+import Script.File as File
 import Script.FileInfo as FileInfo
 import Script.Internal as Internal exposing (File(..), Flags, Script(..), UserPrivileges(..))
 import Script.Path as Path exposing (Path)
@@ -78,14 +78,9 @@ asReadOnly (Internal.Directory directoryPath) =
     Internal.Directory directoryPath
 
 
-subdirectory : String -> Directory permissions -> Directory permissions
-subdirectory relativePath (Internal.Directory directoryPath) =
+subdir : Directory permissions -> String -> Directory permissions
+subdir (Internal.Directory directoryPath) relativePath =
     Internal.Directory (Path.append relativePath directoryPath)
-
-
-file : String -> Directory permissions -> File permissions
-file relativePath (Internal.Directory directoryPath) =
-    File (Path.append relativePath directoryPath)
 
 
 listFiles : Directory permissions -> Script Error (List (File permissions))
@@ -94,23 +89,22 @@ listFiles ((Internal.Directory directoryPath) as directory) =
         \flags ->
             Decode.oneOf
                 [ Decode.list Decode.string
-                    |> Decode.map (List.map (\fileName -> file fileName directory))
+                    |> Decode.map (List.map (File.in_ directory))
                     |> Decode.map Succeed
                 , errorDecoder |> Decode.map Fail
                 ]
 
 
-listSubdirectories : Directory permissions -> Script Error (List (Directory permissions))
-listSubdirectories ((Internal.Directory directoryPath) as directory) =
+listSubdirs : Directory permissions -> Script Error (List (Directory permissions))
+listSubdirs ((Internal.Directory directoryPath) as directory) =
     Invoke "listSubdirectories" (Path.encode directoryPath) <|
         \flags ->
             Decode.oneOf
                 [ Decode.list Decode.string
                     |> Decode.map
-                        (List.map
-                            (\directoryName -> subdirectory directoryName directory)
+                        (\names ->
+                            Succeed (List.map (subdir directory) names)
                         )
-                    |> Decode.map Succeed
                 , errorDecoder |> Decode.map Fail
                 ]
 

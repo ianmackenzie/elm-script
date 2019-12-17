@@ -28,10 +28,10 @@ script : Script.Init -> Script Int ()
 script { workingDirectory, platform } =
     let
         inputFile =
-            workingDirectory |> Directory.file "test.txt"
+            File.in_ workingDirectory "test.txt"
 
         outputFile =
-            workingDirectory |> Directory.file "reversed.txt"
+            File.in_ workingDirectory "reversed.txt"
 
         lineSeparator =
             Platform.lineSeparator platform

@@ -14,7 +14,7 @@ script _ =
             (\tempDirectory ->
                 let
                     tempFile =
-                        tempDirectory |> Directory.file "temp.txt"
+                        File.in_ tempDirectory "temp.txt"
                 in
                 File.writeTo tempFile "dummy contents"
             )

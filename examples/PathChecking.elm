@@ -8,7 +8,7 @@ import Script.File as File
 
 niceScript : Directory permissions -> Script Int ()
 niceScript directory =
-    File.read (directory |> Directory.file "test.txt")
+    File.read (File.in_ directory "test.txt")
         |> Script.thenWith
             (\contents ->
                 Script.printLine <|
@@ -21,7 +21,7 @@ niceScript directory =
 evilScript : Directory permissions -> Script Int ()
 evilScript directory =
     -- Attempt to sneakily break into a parent directory
-    File.read (directory |> Directory.file "subdirectory/../../test.txt")
+    File.read (File.in_ directory "subdirectory/../../test.txt")
         |> Script.ignoreResult
         |> Script.onError (Example.handleError .message)
 

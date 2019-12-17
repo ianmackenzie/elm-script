@@ -13,7 +13,7 @@ listRecursively level directory =
             String.repeat level "    "
     in
     Script.do
-        [ Directory.listSubdirectories directory
+        [ Directory.listSubdirs directory
             |> Script.thenWith
                 (Script.each
                     (\subdirectory ->

@@ -10,10 +10,10 @@ script : Script.Init -> Script Int ()
 script { workingDirectory } =
     let
         sourceFile =
-            workingDirectory |> Directory.file "reversed.txt"
+            File.in_ workingDirectory "reversed.txt"
 
         destinationFile =
-            workingDirectory |> Directory.file "reversed-moved.txt"
+            File.in_ workingDirectory "reversed-moved.txt"
     in
     File.move sourceFile destinationFile
         |> Script.onError (Example.handleError .message)

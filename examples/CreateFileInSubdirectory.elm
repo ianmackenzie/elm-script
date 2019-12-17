@@ -10,10 +10,10 @@ script : Script.Init -> Script Int ()
 script { workingDirectory } =
     let
         subdirectory =
-            workingDirectory |> Directory.subdirectory "subdirectory"
+            Directory.subdir workingDirectory "subdirectory"
 
         file =
-            subdirectory |> Directory.file "child.txt"
+            File.in_ subdirectory "child.txt"
     in
     Directory.ensureExists subdirectory
         |> Script.andThen (File.writeTo file "dummy contents")

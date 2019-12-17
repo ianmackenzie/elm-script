@@ -9,7 +9,7 @@ script : Script.Init -> Script Int ()
 script { workingDirectory } =
     let
         subdirectory =
-            workingDirectory |> Directory.subdirectory "subdirectory"
+            Directory.subdir workingDirectory "subdirectory"
     in
     Directory.create subdirectory
         |> Script.onError (Example.handleError .message)

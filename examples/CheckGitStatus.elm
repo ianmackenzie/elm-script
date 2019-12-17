@@ -60,12 +60,12 @@ script { arguments, userPrivileges } =
                 parentDirectory =
                     Directory.writable userPrivileges parentPath
             in
-            Directory.listSubdirectories parentDirectory
+            Directory.listSubdirs parentDirectory
                 |> Script.onError (Example.handleError .message)
                 |> Script.thenWith
                     (Script.each
                         (\directory ->
-                            Directory.checkExistence (Directory.subdirectory ".git" directory)
+                            Directory.checkExistence (Directory.subdir directory ".git")
                                 |> Script.onError (Example.handleError .message)
                                 |> Script.thenWith
                                     (\existence ->

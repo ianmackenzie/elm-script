@@ -10,10 +10,10 @@ script : Script.Init -> Script Int ()
 script { workingDirectory } =
     let
         sourceFile =
-            workingDirectory |> Directory.file "reversed.txt"
+            File.in_ workingDirectory "reversed.txt"
 
         destinationFile =
-            workingDirectory |> Directory.file "reversed-copied.txt"
+            File.in_ workingDirectory "reversed-copied.txt"
     in
     File.copy sourceFile destinationFile
         |> Script.onError (Example.handleError .message)

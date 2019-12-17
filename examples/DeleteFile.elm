@@ -10,7 +10,7 @@ script : Script.Init -> Script Int ()
 script { workingDirectory } =
     let
         file =
-            workingDirectory |> Directory.file "reversed.txt"
+            File.in_ workingDirectory "reversed.txt"
     in
     File.delete file |> Script.onError (Example.handleError .message)
 

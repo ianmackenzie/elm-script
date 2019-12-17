@@ -9,6 +9,7 @@ module Script.File exposing
     , copy
     , copyInto
     , delete
+    , in_
     , move
     , moveInto
     , name
@@ -22,9 +23,8 @@ module Script.File exposing
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Script.Directory as Directory exposing (Directory)
 import Script.FileInfo as FileInfo
-import Script.Internal as Internal exposing (Flags, Script(..), UserPrivileges(..))
+import Script.Internal as Internal exposing (Directory, Flags, Script(..), UserPrivileges(..))
 import Script.Path as Path
 import Script.Permissions as Permissions
 
@@ -50,6 +50,11 @@ type Existence
     = Exists
     | DoesNotExist
     | IsNotAFile
+
+
+in_ : Directory permissions -> String -> File permissions
+in_ (Internal.Directory directoryPath) relativePath =
+    Internal.File (Path.append relativePath directoryPath)
 
 
 readOnly : UserPrivileges -> String -> File ReadOnly
@@ -142,7 +147,7 @@ copyInto : Directory Writable -> File permissions -> Script Error (File Writable
 copyInto directory file =
     let
         destination =
-            Directory.file (name file) directory
+            in_ directory (name file)
     in
     copy file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
@@ -151,7 +156,7 @@ moveInto : Directory Writable -> File Writable -> Script Error (File Writable)
 moveInto directory file =
     let
         destination =
-            Directory.file (name file) directory
+            in_ directory (name file)
     in
     move file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
