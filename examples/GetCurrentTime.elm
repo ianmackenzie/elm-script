@@ -3,6 +3,7 @@ module GetCurrentTime exposing (main)
 import Example
 import Script exposing (Script)
 import Time
+import Duration
 
 
 script : Script.Init -> Script Int ()
@@ -15,7 +16,8 @@ script _ =
                         toFloat (Time.posixToMillis currentTime)
 
                     hoursSinceEpoch =
-                        millisecondsSinceEpoch / (1000 * 60 * 60)
+                        Duration.milliseconds millisecondsSinceEpoch
+                            |> Duration.inHours
                 in
                 Script.printLine <|
                     "Number of hours since January 1, 1970: "
