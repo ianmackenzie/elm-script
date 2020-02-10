@@ -1,15 +1,14 @@
 module TestCompilation exposing (main)
 
-import Example exposing (handleError)
+import Example
 import Script exposing (Script)
 import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory, userPrivileges } =
     Directory.listFiles workingDirectory
-        |> Script.onError (handleError .message)
         |> Script.thenWith
             (Script.each
                 (\file ->
@@ -22,7 +21,7 @@ script { workingDirectory, userPrivileges } =
                                 , workingDirectory = workingDirectory
                                 }
                                 |> Script.ignoreResult
-                                |> Script.onError (\error -> Script.fail 1)
+                                |> Script.onError (\_ -> Script.fail "Elm compilation failed")
                             ]
 
                     else

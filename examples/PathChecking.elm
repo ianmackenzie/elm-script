@@ -6,7 +6,7 @@ import Script.Directory as Directory exposing (Directory)
 import Script.File as File
 
 
-niceScript : Directory permissions -> Script Int ()
+niceScript : Directory permissions -> Script String ()
 niceScript directory =
     File.read (File.in_ directory "test.txt")
         |> Script.thenWith
@@ -15,18 +15,16 @@ niceScript directory =
                     String.fromInt (String.length contents)
                         ++ " characters in test.txt"
             )
-        |> Script.onError (Example.handleError .message)
 
 
-evilScript : Directory permissions -> Script Int ()
+evilScript : Directory permissions -> Script String ()
 evilScript directory =
     -- Attempt to sneakily break into a parent directory
     File.read (File.in_ directory "subdirectory/../../test.txt")
         |> Script.ignoreResult
-        |> Script.onError (Example.handleError .message)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments, userPrivileges } =
     case arguments of
         [ path ] ->
@@ -40,8 +38,7 @@ script { arguments, userPrivileges } =
                 ]
 
         _ ->
-            Script.printLine "Please supply the path of one directory to read"
-                |> Script.andThen (Script.fail 1)
+            Script.fail "Please supply the path of one directory to read"
 
 
 main : Script.Program

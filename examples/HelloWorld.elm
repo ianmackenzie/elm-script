@@ -4,7 +4,7 @@ import Json.Encode exposing (Value)
 import Script exposing (Script)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script _ =
     Script.printLine "Hello World!"
 

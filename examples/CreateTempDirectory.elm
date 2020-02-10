@@ -7,7 +7,7 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script _ =
     Directory.createTemporary
         |> Script.thenWith
@@ -19,7 +19,6 @@ script _ =
                 File.writeTo tempFile "dummy contents"
             )
         |> Script.andThen (Script.sleep (Duration.seconds 10))
-        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

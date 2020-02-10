@@ -1,6 +1,5 @@
 module Script.Directory exposing
     ( Directory
-    , Error
     , Existence(..)
     , ReadOnly
     , Writable
@@ -42,11 +41,6 @@ type alias Writable =
     Permissions.Writable
 
 
-type alias Error =
-    { message : String
-    }
-
-
 type Existence
     = Exists
     | DoesNotExist
@@ -63,9 +57,9 @@ writable (UserPrivileges workingDirectoryPath) pathString =
     Internal.Directory (Path.resolve workingDirectoryPath pathString)
 
 
-errorDecoder : Decoder Error
+errorDecoder : Decoder String
 errorDecoder =
-    Decode.map Error (Decode.field "message" Decode.string)
+    Decode.field "message" Decode.string
 
 
 name : Directory permissions -> String
@@ -83,7 +77,7 @@ subdir (Internal.Directory directoryPath) relativePath =
     Internal.Directory (Path.append relativePath directoryPath)
 
 
-listFiles : Directory permissions -> Script Error (List (File permissions))
+listFiles : Directory permissions -> Script String (List (File permissions))
 listFiles ((Internal.Directory directoryPath) as directory) =
     Invoke "listFiles" (Path.encode directoryPath) <|
         \flags ->
@@ -95,7 +89,7 @@ listFiles ((Internal.Directory directoryPath) as directory) =
                 ]
 
 
-listSubdirs : Directory permissions -> Script Error (List (Directory permissions))
+listSubdirs : Directory permissions -> Script String (List (Directory permissions))
 listSubdirs ((Internal.Directory directoryPath) as directory) =
     Invoke "listSubdirectories" (Path.encode directoryPath) <|
         \flags ->
@@ -109,7 +103,7 @@ listSubdirs ((Internal.Directory directoryPath) as directory) =
                 ]
 
 
-decodeNullResult : Flags -> Decoder (Script Error ())
+decodeNullResult : Flags -> Decoder (Script String ())
 decodeNullResult flags =
     Decode.oneOf
         [ Decode.null (Succeed ())
@@ -117,17 +111,17 @@ decodeNullResult flags =
         ]
 
 
-create : Directory Writable -> Script Error ()
+create : Directory Writable -> Script String ()
 create =
     createDirectory { recursive = False }
 
 
-ensureExists : Directory Writable -> Script Error ()
+ensureExists : Directory Writable -> Script String ()
 ensureExists =
     createDirectory { recursive = True }
 
 
-createDirectory : { recursive : Bool } -> Directory Writable -> Script Error ()
+createDirectory : { recursive : Bool } -> Directory Writable -> Script String ()
 createDirectory { recursive } (Internal.Directory directoryPath) =
     Invoke "createDirectory"
         (Encode.object
@@ -138,7 +132,7 @@ createDirectory { recursive } (Internal.Directory directoryPath) =
         decodeNullResult
 
 
-createTemporary : Script Error (Directory Writable)
+createTemporary : Script String (Directory Writable)
 createTemporary =
     Invoke "createTemporaryDirectory" Encode.null <|
         \flags ->
@@ -153,7 +147,7 @@ createTemporary =
                 ]
 
 
-checkExistence : Directory permissions -> Script Error Existence
+checkExistence : Directory permissions -> Script String Existence
 checkExistence (Internal.Directory directoryPath) =
     FileInfo.get directoryPath
         |> Internal.map
@@ -171,20 +165,19 @@ checkExistence (Internal.Directory directoryPath) =
                     FileInfo.Other ->
                         IsNotADirectory
             )
-        |> Internal.mapError Error
 
 
-remove : Directory Writable -> Script Error ()
+remove : Directory Writable -> Script String ()
 remove =
     removeDirectory { recursive = False }
 
 
-obliterate : Directory Writable -> Script Error ()
+obliterate : Directory Writable -> Script String ()
 obliterate =
     removeDirectory { recursive = True }
 
 
-removeDirectory : { recursive : Bool } -> Directory Writable -> Script Error ()
+removeDirectory : { recursive : Bool } -> Directory Writable -> Script String ()
 removeDirectory { recursive } (Internal.Directory directoryPath) =
     Invoke "removeDirectory"
         (Encode.object

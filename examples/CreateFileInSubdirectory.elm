@@ -6,7 +6,7 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory } =
     let
         subdirectory =
@@ -17,7 +17,6 @@ script { workingDirectory } =
     in
     Directory.ensureExists subdirectory
         |> Script.andThen (File.writeTo file "dummy contents")
-        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

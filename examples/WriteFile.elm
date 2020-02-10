@@ -24,7 +24,7 @@ reverseLines lineSeparator input =
         |> (\string -> string ++ lineSeparator)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory, platform } =
     let
         inputFile =
@@ -39,7 +39,6 @@ script { workingDirectory, platform } =
     File.read inputFile
         |> Script.map (reverseLines lineSeparator)
         |> Script.thenWith (\reversedInput -> File.writeTo outputFile reversedInput)
-        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

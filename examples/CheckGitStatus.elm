@@ -39,20 +39,17 @@ checkForUncommittedChanges directory userPrivileges =
             )
 
 
-checkDirectory : Directory Writable -> UserPrivileges -> Script Int ()
+checkDirectory : Directory Writable -> UserPrivileges -> Script String ()
 checkDirectory directory userPrivileges =
     Script.do
         [ Script.printLine ("Checking " ++ Directory.name directory)
         , checkForUnpushedChanges directory userPrivileges
         , checkForUncommittedChanges directory userPrivileges
         ]
-        |> Script.onError
-            (\error ->
-                Script.printLine "Running Git failed" |> Script.andThen (Script.fail 1)
-            )
+        |> Script.onError (\_ -> Script.fail "Running Git failed")
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments, userPrivileges } =
     case arguments of
         [ parentPath ] ->
@@ -61,12 +58,10 @@ script { arguments, userPrivileges } =
                     Directory.writable userPrivileges parentPath
             in
             Directory.listSubdirs parentDirectory
-                |> Script.onError (Example.handleError .message)
                 |> Script.thenWith
                     (Script.each
                         (\directory ->
                             Directory.checkExistence (Directory.subdir directory ".git")
-                                |> Script.onError (Example.handleError .message)
                                 |> Script.thenWith
                                     (\existence ->
                                         case existence of
@@ -80,8 +75,7 @@ script { arguments, userPrivileges } =
                     )
 
         _ ->
-            Script.printLine "Please pass a single parent directory to check within"
-                |> Script.andThen (Script.fail 1)
+            Script.fail "Please pass a single parent directory to check within"
 
 
 main : Script.Program

@@ -5,7 +5,7 @@ import Script exposing (Script)
 import Script.Directory exposing (Directory, Writable)
 
 
-runTestCases : Directory Writable -> Script.UserPrivileges -> List ( String, List String, String ) -> Script Int ()
+runTestCases : Directory Writable -> Script.UserPrivileges -> List ( String, List String, String ) -> Script String ()
 runTestCases workingDirectory userPrivileges testCases =
     testCases
         |> Script.each
@@ -18,8 +18,7 @@ runTestCases workingDirectory userPrivileges testCases =
                     }
                     |> Script.onError
                         (\processError ->
-                            Script.printLine ("Running '" ++ scriptFileName ++ "' failed")
-                                |> Script.andThen (Script.fail 1)
+                            Script.fail ("Running '" ++ scriptFileName ++ "' failed")
                         )
                     |> Script.thenWith
                         (\output ->
@@ -27,7 +26,7 @@ runTestCases workingDirectory userPrivileges testCases =
                                 Script.printLine ("PASSED: " ++ scriptFileName)
 
                             else
-                                Script.printLine
+                                Script.fail
                                     ("FAILED: "
                                         ++ scriptFileName
                                         ++ "\n\n"
@@ -36,7 +35,6 @@ runTestCases workingDirectory userPrivileges testCases =
                                         ++ "\n\nActual output:\n\n"
                                         ++ String.trim output
                                     )
-                                    |> Script.andThen (Script.fail 1)
                         )
             )
         |> Script.andThen
@@ -47,7 +45,7 @@ runTestCases workingDirectory userPrivileges testCases =
             )
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory, userPrivileges } =
     runTestCases workingDirectory userPrivileges <|
         [ ( "HelloWorld.elm", [], "Hello World!" )

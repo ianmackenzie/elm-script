@@ -6,7 +6,7 @@ import Script.Directory as Directory exposing (Directory)
 import Script.File as File exposing (File)
 
 
-listRecursively : Int -> Directory permissions -> Script Directory.Error ()
+listRecursively : Int -> Directory permissions -> Script String ()
 listRecursively level directory =
     let
         indentation =
@@ -27,15 +27,14 @@ listRecursively level directory =
         ]
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments, userPrivileges } =
     case arguments of
         [ path ] ->
             listRecursively 0 (Directory.readOnly userPrivileges path)
-                |> Script.onError (Example.handleError .message)
 
         _ ->
-            Script.printLine "Please supply one directory name"
+            Script.fail "Please supply one directory name"
 
 
 main : Script.Program

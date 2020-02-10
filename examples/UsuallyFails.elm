@@ -5,7 +5,7 @@ import Script exposing (Script)
 import Time
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script _ =
     Script.getCurrentTime
         |> Script.thenWith
@@ -14,8 +14,7 @@ script _ =
                     Script.printLine "Succeeded"
 
                 else
-                    Script.printLine "Failed"
-                        |> Script.andThen (Script.fail 1)
+                    Script.fail "Failed"
             )
 
 

@@ -4,7 +4,7 @@ import Example
 import Script exposing (Script)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory, userPrivileges } =
     Script.executeWith userPrivileges
         { command = "PowerShell"
@@ -15,7 +15,7 @@ script { workingDirectory, userPrivileges } =
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.thenWith (Script.each (\fileName -> Script.printLine (String.toUpper fileName)))
-        |> Script.onError (Example.handleError toErrorString)
+        |> Script.onError (toErrorString >> Script.fail)
 
 
 toErrorString : Script.SubprocessError -> String

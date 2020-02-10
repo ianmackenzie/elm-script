@@ -5,12 +5,7 @@ import Script exposing (Script)
 import Script.Directory exposing (Directory, Writable)
 
 
-abort : String -> Script Int a
-abort message =
-    Script.printLine message |> Script.andThen (Script.fail 1)
-
-
-retry : Directory Writable -> Script.UserPrivileges -> String -> List String -> Int -> Script Int ()
+retry : Directory Writable -> Script.UserPrivileges -> String -> List String -> Int -> Script String ()
 retry workingDirectory userPrivileges command arguments count =
     Script.executeWith userPrivileges
         { command = command
@@ -23,7 +18,7 @@ retry workingDirectory userPrivileges command arguments count =
                 if count > 0 then
                     case error of
                         Script.ExecutableNotFound ->
-                            abort "Process executable not found"
+                            Script.fail "Process executable not found"
 
                         Script.SubprocessExitedWithError _ ->
                             Script.printLine "Process exited with error, retrying..."
@@ -37,22 +32,21 @@ retry workingDirectory userPrivileges command arguments count =
                                     )
 
                         Script.SubprocessWasTerminated ->
-                            abort "Process was terminated"
+                            Script.fail "Process was terminated"
 
                         Script.SubprocessFailed message ->
-                            abort ("Process could not be run: " ++ message)
+                            Script.fail ("Process could not be run: " ++ message)
 
                 else
-                    abort "Process failed too many times"
+                    Script.fail "Process failed too many times"
             )
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments, workingDirectory, userPrivileges } =
     case arguments of
         [] ->
-            Script.printLine "Please enter an executable to run"
-                |> Script.andThen (Script.fail 1)
+            Script.fail "Please enter an executable to run"
 
         command :: rest ->
             retry workingDirectory userPrivileges command rest 5

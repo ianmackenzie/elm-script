@@ -4,7 +4,7 @@ import Example
 import Script exposing (Script)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory, userPrivileges } =
     Script.executeWith userPrivileges
         { command = "elm"
@@ -16,7 +16,7 @@ script { workingDirectory, userPrivileges } =
             (\versionString ->
                 Script.printLine ("Current Elm version: " ++ versionString)
             )
-        |> Script.onError (Example.handleError toErrorString)
+        |> Script.onError (toErrorString >> Script.fail)
 
 
 toErrorString : Script.SubprocessError -> String

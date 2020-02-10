@@ -4,7 +4,7 @@ import Example
 import Script exposing (Script)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments } =
     arguments
         |> Script.each

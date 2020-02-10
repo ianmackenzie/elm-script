@@ -1,6 +1,5 @@
 module Script.File exposing
-    ( Error
-    , Existence(..)
+    ( Existence(..)
     , File
     , ReadOnly
     , Writable
@@ -41,11 +40,6 @@ type alias Writable =
     Permissions.Writable
 
 
-type alias Error =
-    { message : String
-    }
-
-
 type Existence
     = Exists
     | DoesNotExist
@@ -67,9 +61,9 @@ writable (UserPrivileges workingDirectoryPath) pathString =
     Internal.File (Path.resolve workingDirectoryPath pathString)
 
 
-errorDecoder : Decoder Error
+errorDecoder : Decoder String
 errorDecoder =
-    Decode.map Error (Decode.field "message" Decode.string)
+    Decode.field "message" Decode.string
 
 
 name : File permissions -> String
@@ -82,7 +76,7 @@ asReadOnly (Internal.File filePath) =
     Internal.File filePath
 
 
-read : File permissions -> Script Error String
+read : File permissions -> Script String String
 read (Internal.File filePath) =
     Invoke "readFile" (Path.encode filePath) <|
         \flags ->
@@ -92,7 +86,7 @@ read (Internal.File filePath) =
                 ]
 
 
-decodeNullResult : Flags -> Decoder (Script Error ())
+decodeNullResult : Flags -> Decoder (Script String ())
 decodeNullResult flags =
     Decode.oneOf
         [ Decode.null (Succeed ())
@@ -100,7 +94,7 @@ decodeNullResult flags =
         ]
 
 
-write : String -> File Writable -> Script Error ()
+write : String -> File Writable -> Script String ()
 write contents (Internal.File filePath) =
     Invoke "writeFile"
         (Encode.object
@@ -111,12 +105,12 @@ write contents (Internal.File filePath) =
         decodeNullResult
 
 
-writeTo : File Writable -> String -> Script Error ()
+writeTo : File Writable -> String -> Script String ()
 writeTo file contents =
     write contents file
 
 
-copy : File permissions -> File Writable -> Script Error ()
+copy : File permissions -> File Writable -> Script String ()
 copy (Internal.File sourcePath) (Internal.File destinationPath) =
     Invoke "copyFile"
         (Encode.object
@@ -127,7 +121,7 @@ copy (Internal.File sourcePath) (Internal.File destinationPath) =
         decodeNullResult
 
 
-move : File Writable -> File Writable -> Script Error ()
+move : File Writable -> File Writable -> Script String ()
 move (Internal.File sourcePath) (Internal.File destinationPath) =
     Invoke "moveFile"
         (Encode.object
@@ -138,12 +132,12 @@ move (Internal.File sourcePath) (Internal.File destinationPath) =
         decodeNullResult
 
 
-delete : File Writable -> Script Error ()
+delete : File Writable -> Script String ()
 delete (Internal.File filePath) =
     Invoke "deleteFile" (Path.encode filePath) decodeNullResult
 
 
-copyInto : Directory Writable -> File permissions -> Script Error (File Writable)
+copyInto : Directory Writable -> File permissions -> Script String (File Writable)
 copyInto directory file =
     let
         destination =
@@ -152,7 +146,7 @@ copyInto directory file =
     copy file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
 
-moveInto : Directory Writable -> File Writable -> Script Error (File Writable)
+moveInto : Directory Writable -> File Writable -> Script String (File Writable)
 moveInto directory file =
     let
         destination =
@@ -161,7 +155,7 @@ moveInto directory file =
     move file destination |> Internal.thenWith (\() -> Internal.Succeed destination)
 
 
-checkExistence : File permissions -> Script Error Existence
+checkExistence : File permissions -> Script String Existence
 checkExistence (Internal.File filePath) =
     FileInfo.get filePath
         |> Internal.map
@@ -179,7 +173,6 @@ checkExistence (Internal.File filePath) =
                     FileInfo.Other ->
                         IsNotAFile
             )
-        |> Internal.mapError Error
 
 
 path : File permissions -> String

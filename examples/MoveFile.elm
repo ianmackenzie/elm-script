@@ -6,7 +6,7 @@ import Script.Directory as Directory
 import Script.File as File
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { workingDirectory } =
     let
         sourceFile =
@@ -16,7 +16,6 @@ script { workingDirectory } =
             File.in_ workingDirectory "reversed-moved.txt"
     in
     File.move sourceFile destinationFile
-        |> Script.onError (Example.handleError .message)
 
 
 main : Script.Program

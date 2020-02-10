@@ -15,7 +15,7 @@ printEnvironmentVariable environment name =
     Script.printLine (name ++ ": " ++ value)
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { arguments, environment } =
     arguments |> Script.each (printEnvironmentVariable environment)
 

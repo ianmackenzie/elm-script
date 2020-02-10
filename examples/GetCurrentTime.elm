@@ -6,7 +6,7 @@ import Time
 import Duration
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script _ =
     Script.getCurrentTime
         |> Script.thenWith

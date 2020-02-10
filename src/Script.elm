@@ -1,6 +1,6 @@
 module Script exposing
     ( Script, Init, UserPrivileges, SubprocessError(..)
-    , RequestPort, ResponsePort, Program, program
+    , RequestPort, ResponsePort, Program, program, customProgram
     , succeed, fail
     , printLine, sleep, getCurrentTime
     , executeWith
@@ -17,7 +17,7 @@ various ways, and turn them into runnable programs.
 
 # Running
 
-@docs RequestPort, ResponsePort, Program, program
+@docs RequestPort, ResponsePort, Program, program, customProgram
 
 
 # Basics
@@ -214,14 +214,31 @@ have `main` defined as
         Script.program script requestPort responsePort
 
 The function provided as the first argument to `Script.program` must accept a
-`Context` value and produce a `Script Int ()`. If this script succeeds with
+`Context` value and produce a `Script String ()`. If this script succeeds with
 `()`, then a value of 0 will be returned to the operating system as the return
-value of the script. If the script fails with an `Int` value, then that value
-will be returned to the operating system instead.
+value of the script. If the script fails with an `String`, then that message
+will be printed to the console and a value of 1 will be returned to the
+operating system instead.
 
 -}
-program : (Init -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+program : (Init -> Script String ()) -> RequestPort -> ResponsePort -> Program
 program main requestPort responsePort =
+    customProgram
+        (\init ->
+            main init
+                |> onError (\message -> printLine message |> andThen (fail 1))
+        )
+        requestPort
+        responsePort
+
+
+{-| Like `program`, but with a bit more control: allows you to control the
+integer error code returned to the operating system on failure, and does not
+print out anything by default (you will have to print out any error messages
+explicitly yourself).
+-}
+customProgram : (Init -> Script Int ()) -> RequestPort -> ResponsePort -> Program
+customProgram main requestPort responsePort =
     let
         checkProtocolVersion =
             let

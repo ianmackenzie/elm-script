@@ -8,7 +8,7 @@ import Script.Http as Http exposing (NetworkConnection)
 import Time
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { networkConnection } =
     Script.succeed { text = "A", number = 2 }
         |> Script.aside
@@ -37,7 +37,6 @@ script { networkConnection } =
                 else
                     Script.fail "Ugh, number is too small"
             )
-        |> Script.onError (Example.handleError identity)
 
 
 getCurrentTime : NetworkConnection -> Script String String
