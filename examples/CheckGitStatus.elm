@@ -61,7 +61,7 @@ script { arguments, userPrivileges } =
                 |> Script.thenWith
                     (Script.each
                         (\directory ->
-                            Directory.checkExistence (Directory.subdir directory ".git")
+                            Directory.checkExistence (Directory.in_ directory ".git")
                                 |> Script.thenWith
                                     (\existence ->
                                         case existence of

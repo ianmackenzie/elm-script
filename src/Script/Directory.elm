@@ -8,6 +8,7 @@ module Script.Directory exposing
     , create
     , createTemporary
     , ensureExists
+    , in_
     , listFiles
     , listSubdirs
     , name
@@ -15,7 +16,6 @@ module Script.Directory exposing
     , path
     , readOnly
     , remove
-    , subdir
     , writable
     )
 
@@ -72,8 +72,8 @@ asReadOnly (Internal.Directory directoryPath) =
     Internal.Directory directoryPath
 
 
-subdir : Directory permissions -> String -> Directory permissions
-subdir (Internal.Directory directoryPath) relativePath =
+in_ : Directory permissions -> String -> Directory permissions
+in_ (Internal.Directory directoryPath) relativePath =
     Internal.Directory (Path.append relativePath directoryPath)
 
 
@@ -97,7 +97,7 @@ listSubdirs ((Internal.Directory directoryPath) as directory) =
                 [ Decode.list Decode.string
                     |> Decode.map
                         (\names ->
-                            Succeed (List.map (subdir directory) names)
+                            Succeed (List.map (in_ directory) names)
                         )
                 , errorDecoder |> Decode.map Fail
                 ]

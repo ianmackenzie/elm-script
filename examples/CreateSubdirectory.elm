@@ -9,7 +9,7 @@ script : Script.Init -> Script String ()
 script { workingDirectory } =
     let
         subdirectory =
-            Directory.subdir workingDirectory "subdirectory"
+            Directory.in_ workingDirectory "subdirectory"
     in
     Directory.create subdirectory
 
