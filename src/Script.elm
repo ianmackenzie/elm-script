@@ -3,7 +3,7 @@ module Script exposing
     , RequestPort, ResponsePort, Program, program, customProgram
     , succeed, fail
     , printLine, sleep, getCurrentTime
-    , executeWith
+    , executeWith, tryToExecuteWith
     , map, map2, map3, map4, ignoreResult
     , do, each, sequence, collect, andThen, thenWith, aside
     , mapError, attempt, onError, ignoreError, finally
@@ -32,7 +32,7 @@ various ways, and turn them into runnable programs.
 
 # Running external executables
 
-@docs executeWith
+@docs executeWith, tryToExecuteWith
 
 
 # Mapping
@@ -702,8 +702,34 @@ finally cleanup script =
 executeWith :
     UserPrivileges
     -> { workingDirectory : Directory Writable, command : String, arguments : List String }
+    -> Internal.Script String String
+executeWith userPrivileges arguments =
+    tryToExecuteWith userPrivileges arguments
+        |> mapError
+            (\error ->
+                case error of
+                    ExecutableNotFound ->
+                        "Executable '" ++ arguments.command ++ "' not found"
+
+                    SubprocessFailed message ->
+                        message
+
+                    SubprocessWasTerminated ->
+                        "Subprocess '" ++ arguments.command ++ "' terminated"
+
+                    SubprocessExitedWithError code ->
+                        "Subprocess '"
+                            ++ arguments.command
+                            ++ "' exited with code "
+                            ++ String.fromInt code
+            )
+
+
+tryToExecuteWith :
+    UserPrivileges
+    -> { workingDirectory : Directory Writable, command : String, arguments : List String }
     -> Internal.Script SubprocessError String
-executeWith userPrivileges { workingDirectory, command, arguments } =
+tryToExecuteWith userPrivileges { workingDirectory, command, arguments } =
     let
         (Internal.Directory workingDirectoryPath) =
             workingDirectory
