@@ -60,11 +60,11 @@ function resolvePath(components) {
 function listEntities(request, responsePort, statsPredicate) {
   try {
     const directoryPath = resolvePath(request.value);
-    const results = Deno.readDirSync(directoryPath)
-      .filter(function(fileInfo) {
+    const results = Deno.readdirSync(directoryPath)
+      .filter(function (fileInfo) {
         return statsPredicate(fileInfo);
       })
-      .map(function(fileInfo) {
+      .map(function (fileInfo) {
         return fileInfo.name;
       });
     responsePort.send(results);
@@ -75,8 +75,8 @@ function listEntities(request, responsePort, statsPredicate) {
 
 // From https://github.com/github/fetch/issues/175#issuecomment-284787564
 function timeout(ms, promise) {
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
+  return new Promise(function (resolve, reject) {
+    setTimeout(function () {
       reject(new Error("timeout"));
     }, ms);
     promise.then(resolve, reject);
@@ -112,7 +112,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   const compiledPrograms = Object.values(globalThis["Elm"]);
   if (compiledPrograms.length != 1) {
     console.log(
-      `Expected exactly 1 compiled program, found ${compiledPrograms.length}`
+      `Expected exactly 1 compiled program, found ${compiledPrograms.length}`,
     );
     exit(1);
   }
@@ -122,33 +122,34 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   const responsePort = script.ports.responsePort;
 
   // Listen for requests, send responses when required
-  requestPort.subscribe(async function(request) {
+  requestPort.subscribe(async function (request) {
     switch (request.name) {
       case "checkVersion":
         const requiredMajorProtocolVersion = request.value[0];
         const requiredMinorProtocolVersion = request.value[1];
-        const describeCurrentProtocolVersion = ` (current elm-run protocol version: ${majorProtocolVersion}.${minorProtocolVersion})`;
+        const describeCurrentProtocolVersion =
+          ` (current elm-run protocol version: ${majorProtocolVersion}.${minorProtocolVersion})`;
         if (requiredMajorProtocolVersion !== majorProtocolVersion) {
           console.log(
             "Version mismatch: script requires elm-run major protocol version " +
-              requiredMajorProtocolVersion +
-              describeCurrentProtocolVersion
+            requiredMajorProtocolVersion +
+            describeCurrentProtocolVersion,
           );
           if (requiredMajorProtocolVersion > majorProtocolVersion) {
             console.log("Please update to a newer version of elm-run");
           } else {
             console.log(
-              "Please update script to use a newer version of the ianmackenzie/elm-script package"
+              "Please update script to use a newer version of the ianmackenzie/elm-script package",
             );
           }
           exit(1);
         } else if (requiredMinorProtocolVersion > minorProtocolVersion) {
-          const requiredProtocolVersionString =
-            requiredMajorProtocolVersion + "." + requiredMinorProtocolVersion;
+          const requiredProtocolVersionString = requiredMajorProtocolVersion +
+            "." + requiredMinorProtocolVersion;
           console.log(
             "Version mismatch: script requires elm-run protocol version at least " +
-              requiredProtocolVersionString +
-              describeCurrentProtocolVersion
+            requiredProtocolVersionString +
+            describeCurrentProtocolVersion,
           );
           console.log("Please update to a newer version of elm-run");
           exit(1);
@@ -193,15 +194,19 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         }
         break;
       case "listFiles":
-        listEntities(request, responsePort, fileInfo => fileInfo.isFile());
+        listEntities(request, responsePort, (fileInfo) => fileInfo.isFile());
         break;
       case "listSubdirectories":
-        listEntities(request, responsePort, fileInfo => fileInfo.isDirectory());
+        listEntities(
+          request,
+          responsePort,
+          (fileInfo) => fileInfo.isDirectory(),
+        );
         break;
       case "execute":
         try {
           const process = Deno.run({
-            args: [request.value.command, ...request.value.arguments],
+            cmd: [request.value.command, ...request.value.arguments],
             cwd: resolvePath(request.value.workingDirectory),
             stdout: "piped"
           });
@@ -222,10 +227,10 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             }
           }
         } catch (error) {
-          if (error.kind == Deno.ErrorKind.NotFound) {
+          if (error instanceof Deno.errors.NotFound) {
             responsePort.send({ error: "notfound" });
           } else {
-            console.log(error.message);
+            console.log(error);
             exit(1);
           }
         }
@@ -271,7 +276,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             responsePort.send("other");
           }
         } catch (error) {
-          if (error.kind == Deno.ErrorKind.NotFound) {
+          if (error === Deno.errors.NotFound) {
             responsePort.send("nonexistent");
           } else {
             responsePort.send({ message: error.message });
@@ -281,7 +286,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
       case "createDirectory":
         try {
           const directoryPath = resolvePath(request.value.path);
-          Deno.mkdirSync(directoryPath, request.value.recursive);
+          Deno.mkdirSync(directoryPath, { recursive: request.value.recursive });
           responsePort.send(null);
         } catch (error) {
           responsePort.send({ message: error.message });
@@ -291,7 +296,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         try {
           const directoryPath = resolvePath(request.value.path);
           Deno.removeSync(directoryPath, {
-            recursive: request.value.recursive
+            recursive: request.value.recursive,
           });
           responsePort.send(null);
         } catch (error) {
@@ -316,7 +321,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const responseBody = await httpResponse.text();
           responsePort.send({
             status: httpResponse.status,
-            body: responseBody
+            body: responseBody,
           });
         } catch (error) {
           let errorType = null;
@@ -331,7 +336,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
       default:
         console.log(`Internal error - unexpected request ${request}`);
         console.log(
-          "Try updating to newer versions of elm-run and the ianmackenzie/elm-script package"
+          "Try updating to newer versions of elm-run and the ianmackenzie/elm-script package",
         );
         exit(1);
     }
@@ -339,14 +344,14 @@ function runCompiledJs(jsFileName, commandLineArgs) {
 }
 
 async function main() {
-  if (Deno.args.length >= 3) {
-    const subcommand = Deno.args[1];
+  if (Deno.args.length >= 2) {
+    const subcommand = Deno.args[0];
     if (subcommand !== "run") {
       console.log(`Run as 'elm-script run Script.elm [arguments]'`);
       exit(1);
     }
-    const sourceFileName = Deno.args[2];
-    const commandLineArgs = Deno.args.slice(3);
+    const sourceFileName = Deno.args[1];
+    const commandLineArgs = Deno.args.slice(2);
     const absolutePath = path.resolve(sourceFileName);
     const extension = path.extname(absolutePath);
     if (extension === ".js") {
@@ -355,14 +360,14 @@ async function main() {
       const tempDirectory = createTemporaryDirectory();
       const tempFileName = path.resolve(tempDirectory, "main.js");
       const elmProcess = Deno.run({
-        args: [
+        cmd: [
           "elm",
           "make",
           "--optimize",
           "--output=" + tempFileName,
-          absolutePath
+          absolutePath,
         ],
-        stdout: "null"
+        stdout: "piped"
       });
       const elmResult = await elmProcess.status();
       if (elmResult.success) {
@@ -374,7 +379,7 @@ async function main() {
       }
     } else {
       console.log(
-        `Unrecognized source file extension ${extension} (expecting.elm or.js)`
+        `Unrecognized source file extension ${extension} (expecting.elm or.js)`,
       );
       exit(1);
     }
