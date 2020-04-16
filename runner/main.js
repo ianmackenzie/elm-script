@@ -359,6 +359,7 @@ async function main() {
     } else if (extension === ".elm") {
       const tempDirectory = createTemporaryDirectory();
       const tempFileName = path.resolve(tempDirectory, "main.js");
+      const elmFileDirectory = path.dirname(absolutePath);
       const elmProcess = Deno.run({
         cmd: [
           "elm",
@@ -367,7 +368,8 @@ async function main() {
           "--output=" + tempFileName,
           absolutePath,
         ],
-        stdout: "piped"
+        stdout: "piped",
+        cwd: elmFileDirectory
       });
       const elmResult = await elmProcess.status();
       if (elmResult.success) {
