@@ -5,7 +5,7 @@ import Script exposing (Script, UserPrivileges)
 import Script.Directory as Directory exposing (Directory, Writable)
 
 
-checkForUnpushedChanges : Directory Writable -> UserPrivileges -> Script Script.SubprocessError ()
+checkForUnpushedChanges : Directory Writable -> UserPrivileges -> Script String ()
 checkForUnpushedChanges directory userPrivileges =
     Script.executeWith userPrivileges
         { command = "git"
@@ -22,7 +22,7 @@ checkForUnpushedChanges directory userPrivileges =
             )
 
 
-checkForUncommittedChanges : Directory Writable -> UserPrivileges -> Script Script.SubprocessError ()
+checkForUncommittedChanges : Directory Writable -> UserPrivileges -> Script String ()
 checkForUncommittedChanges directory userPrivileges =
     Script.executeWith userPrivileges
         { command = "git"
@@ -46,7 +46,6 @@ checkDirectory directory userPrivileges =
         , checkForUnpushedChanges directory userPrivileges
         , checkForUncommittedChanges directory userPrivileges
         ]
-        |> Script.onError (\_ -> Script.fail "Running Git failed")
 
 
 script : Script.Init -> Script String ()

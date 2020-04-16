@@ -7,7 +7,7 @@ import Script.Directory exposing (Directory, Writable)
 
 retry : Directory Writable -> Script.UserPrivileges -> String -> List String -> Int -> Script String ()
 retry workingDirectory userPrivileges command arguments count =
-    Script.executeWith userPrivileges
+    Script.tryToExecuteWith userPrivileges
         { command = command
         , arguments = arguments
         , workingDirectory = workingDirectory

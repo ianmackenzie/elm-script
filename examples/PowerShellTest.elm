@@ -15,23 +15,7 @@ script { workingDirectory, userPrivileges } =
         |> Script.map (List.map String.trim)
         |> Script.map (List.filter (not << String.isEmpty))
         |> Script.thenWith (Script.each (\fileName -> Script.printLine (String.toUpper fileName)))
-        |> Script.onError (toErrorString >> Script.fail)
 
-
-toErrorString : Script.SubprocessError -> String
-toErrorString processError =
-    case processError of
-        Script.ExecutableNotFound ->
-            "Process executable not found"
-
-        Script.SubprocessFailed message ->
-            message
-
-        Script.SubprocessWasTerminated ->
-            "Process was terminated"
-
-        Script.SubprocessExitedWithError code ->
-            "Process exited with code " ++ String.fromInt code
 
 
 main : Script.Program

@@ -16,23 +16,6 @@ script { workingDirectory, userPrivileges } =
             (\versionString ->
                 Script.printLine ("Current Elm version: " ++ versionString)
             )
-        |> Script.onError (toErrorString >> Script.fail)
-
-
-toErrorString : Script.SubprocessError -> String
-toErrorString processError =
-    case processError of
-        Script.ExecutableNotFound ->
-            "Process executable not found"
-
-        Script.SubprocessFailed message ->
-            message
-
-        Script.SubprocessWasTerminated ->
-            "Process was terminated"
-
-        Script.SubprocessExitedWithError code ->
-            "Process exited with code " ++ String.fromInt code
 
 
 main : Script.Program
