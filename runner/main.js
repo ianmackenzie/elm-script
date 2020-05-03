@@ -208,12 +208,14 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const process = Deno.run({
             cmd: [request.value.command, ...request.value.arguments],
             cwd: resolvePath(request.value.workingDirectory),
-            stdout: "piped"
+            stdout: "piped",
+            stderr: "piped"
           });
+          const outputData = await process.output();
+          const errorOutputData = await process.stderrOutput();
           const result = await process.status();
           if (result.success) {
-            const data = await process.output();
-            const output = new TextDecoder("utf-8").decode(data);
+            const output = new TextDecoder("utf-8").decode(outputData);
             responsePort.send(output);
           } else {
             if (result.code !== null) {
@@ -221,9 +223,8 @@ function runCompiledJs(jsFileName, commandLineArgs) {
             } else if (result.signal !== null) {
               responsePort.send({ error: "terminated" });
             } else {
-              const data = await process.stderrOutput();
-              const output = new TextDecoder("utf-8").decode(data);
-              responsePort.send({ error: "failed", message: output });
+              const errorOutput = new TextDecoder("utf-8").decode(errorOutputData);
+              responsePort.send({ error: "failed", message: errorOutput });
             }
           }
         } catch (error) {
