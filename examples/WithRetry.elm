@@ -1,6 +1,5 @@
 module WithRetry exposing (main)
 
-import Example
 import Script exposing (Script)
 import Script.Directory exposing (Directory, Writable)
 
@@ -54,4 +53,4 @@ script { arguments, workingDirectory, userPrivileges } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

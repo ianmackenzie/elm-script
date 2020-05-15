@@ -1,6 +1,5 @@
 module CheckGitStatus exposing (main)
 
-import Example
 import Script exposing (Script, UserPrivileges)
 import Script.Directory as Directory exposing (Directory, Writable)
 
@@ -79,4 +78,4 @@ script { arguments, userPrivileges } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

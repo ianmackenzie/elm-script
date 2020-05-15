@@ -1,7 +1,6 @@
 module CreateTempDirectory exposing (main)
 
 import Duration
-import Example
 import Script exposing (Script)
 import Script.Directory as Directory
 import Script.File as File
@@ -23,4 +22,4 @@ script _ =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

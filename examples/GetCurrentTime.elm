@@ -1,9 +1,8 @@
 module GetCurrentTime exposing (main)
 
-import Example
+import Duration
 import Script exposing (Script)
 import Time
-import Duration
 
 
 script : Script.Init -> Script String ()
@@ -27,4 +26,4 @@ script _ =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

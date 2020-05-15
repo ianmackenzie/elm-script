@@ -1,6 +1,5 @@
 module GetElmVersion exposing (main)
 
-import Example
 import Script exposing (Script)
 
 
@@ -20,4 +19,4 @@ script { workingDirectory, userPrivileges } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

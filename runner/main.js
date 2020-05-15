@@ -57,7 +57,7 @@ function resolvePath(components) {
   return result;
 }
 
-function listEntities(request, responsePort, statsPredicate) {
+function listEntities(request, handleResponse, statsPredicate) {
   try {
     const directoryPath = resolvePath(request.value);
     const results = Array.from(Deno.readDirSync(directoryPath))
@@ -67,9 +67,9 @@ function listEntities(request, responsePort, statsPredicate) {
       .map(function (fileInfo) {
         return fileInfo.name;
       });
-    responsePort.send(results);
+    handleResponse(results);
   } catch (error) {
-    responsePort.send({ message: error.message });
+    handleResponse({ message: error.message });
   }
 }
 
@@ -88,11 +88,15 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   const jsData = Deno.readFileSync(jsFileName);
   const jsText = new TextDecoder("utf-8").decode(jsData);
 
+  // Add our mock XMLHttpRequest class into the global namespace
+  // so that Elm code will use it
+  globalThis["XMLHttpRequest"] = XMLHttpRequest;
+
   // Run Elm code to create the 'Elm' object
   const globalEval = eval;
   globalEval(jsText);
 
-  // Create Elm worker and get its request/response ports
+  // Collect flags to pass to Elm program
   const flags = {};
   flags["arguments"] = commandLineArgs;
   switch (Deno.build.os) {
@@ -109,6 +113,8 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   }
   flags["environment"] = Object.entries(Deno.env.toObject());
   flags["workingDirectory"] = Deno.cwd();
+
+  // Get Elm program object
   const compiledPrograms = Object.values(globalThis["Elm"]);
   if (compiledPrograms.length != 1) {
     console.log(
@@ -117,12 +123,43 @@ function runCompiledJs(jsFileName, commandLineArgs) {
     exit(1);
   }
   const program = compiledPrograms[0];
-  const script = program.init({ flags: flags });
-  const requestPort = script.ports.requestPort;
-  const responsePort = script.ports.responsePort;
 
-  // Listen for requests, send responses when required
-  requestPort.subscribe(async function (request) {
+  // Start Elm program
+  program.init({ flags: flags });
+}
+
+class XMLHttpRequest {
+  constructor() {
+    this.status = 200;
+    this.statusText = "200 OK";
+    this.responseUrl = "/runner";
+  }
+
+  getAllResponseHeaders() {
+    return "";
+  }
+
+  setRequestHeader(name, value) {
+    return;
+  }
+
+  open(method, url, performAsync) {
+    return;
+  }
+
+  addEventListener(name, callback) {
+    if (name == "load") {
+      this._callback = callback;
+    }
+  }
+
+  async send(request) {
+    let xhr = this;
+    function handleResponse(response) {
+      xhr.response = JSON.stringify(response);
+      xhr._callback();
+    }
+    request = JSON.parse(request);
     switch (request.name) {
       case "checkVersion":
         const requiredMajorProtocolVersion = request.value[0];
@@ -154,14 +191,14 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           console.log("Please update to a newer version of elm-run");
           exit(1);
         } else {
-          responsePort.send(null);
+          handleResponse(null);
         }
         break;
       case "writeStdout":
         try {
           const data = new TextEncoder().encode(request.value);
           Deno.stdout.writeSync(data);
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
           console.log("Error printing to stdout");
           exit(1);
@@ -178,9 +215,9 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const filePath = resolvePath(request.value);
           const data = Deno.readFileSync(filePath);
           const contents = new TextDecoder("utf-8").decode(data);
-          responsePort.send(contents);
+          handleResponse(contents);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "writeFile":
@@ -188,18 +225,18 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const filePath = resolvePath(request.value.path);
           const contents = new TextEncoder().encode(request.value.contents);
           Deno.writeFileSync(filePath, contents);
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "listFiles":
-        listEntities(request, responsePort, (fileInfo) => fileInfo.isFile);
+        listEntities(request, handleResponse, (fileInfo) => fileInfo.isFile);
         break;
       case "listSubdirectories":
         listEntities(
           request,
-          responsePort,
+          handleResponse,
           (fileInfo) => fileInfo.isDirectory(),
         );
         break;
@@ -216,20 +253,20 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const result = await process.status();
           if (result.success) {
             const output = new TextDecoder("utf-8").decode(outputData);
-            responsePort.send(output);
+            handleResponse(output);
           } else {
             if (result.code !== null) {
-              responsePort.send({ error: "exited", code: result.code });
+              handleResponse({ error: "exited", code: result.code });
             } else if (result.signal !== null) {
-              responsePort.send({ error: "terminated" });
+              handleResponse({ error: "terminated" });
             } else {
               const errorOutput = new TextDecoder("utf-8").decode(errorOutputData);
-              responsePort.send({ error: "failed", message: errorOutput });
+              handleResponse({ error: "failed", message: errorOutput });
             }
           }
         } catch (error) {
           if (error instanceof Deno.errors.NotFound) {
-            responsePort.send({ error: "notfound" });
+            handleResponse({ error: "notfound" });
           } else {
             console.log(error);
             exit(1);
@@ -241,9 +278,9 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const sourcePath = resolvePath(request.value.sourcePath);
           const destinationPath = resolvePath(request.value.destinationPath);
           Deno.copyFileSync(sourcePath, destinationPath);
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "moveFile":
@@ -251,18 +288,18 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const sourcePath = resolvePath(request.value.sourcePath);
           const destinationPath = resolvePath(request.value.destinationPath);
           Deno.renameSync(sourcePath, destinationPath);
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "deleteFile":
         try {
           const filePath = resolvePath(request.value);
           Deno.removeSync(filePath);
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "stat":
@@ -270,17 +307,17 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           const entityPath = resolvePath(request.value);
           const fileInfo = Deno.statSync(entityPath);
           if (fileInfo.isFile) {
-            responsePort.send("file");
+            handleResponse("file");
           } else if (fileInfo.isDirectory()) {
-            responsePort.send("directory");
+            handleResponse("directory");
           } else {
-            responsePort.send("other");
+            handleResponse("other");
           }
         } catch (error) {
           if (error === Deno.errors.NotFound) {
-            responsePort.send("nonexistent");
+            handleResponse("nonexistent");
           } else {
-            responsePort.send({ message: error.message });
+            handleResponse({ message: error.message });
           }
         }
         break;
@@ -288,9 +325,9 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         try {
           const directoryPath = resolvePath(request.value.path);
           Deno.mkdirSync(directoryPath, { recursive: request.value.recursive });
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "removeDirectory":
@@ -299,17 +336,17 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           Deno.removeSync(directoryPath, {
             recursive: request.value.recursive,
           });
-          responsePort.send(null);
+          handleResponse(null);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "createTemporaryDirectory":
         try {
           const directoryPath = createTemporaryDirectory();
-          responsePort.send(directoryPath);
+          handleResponse(directoryPath);
         } catch (error) {
-          responsePort.send({ message: error.message });
+          handleResponse({ message: error.message });
         }
         break;
       case "http":
@@ -320,7 +357,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           }
           const httpResponse = await promise;
           const responseBody = await httpResponse.text();
-          responsePort.send({
+          handleResponse({
             status: httpResponse.status,
             body: responseBody,
           });
@@ -331,7 +368,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           } else {
             errorType = "NetworkError";
           }
-          responsePort.send({ error: errorType });
+          handleResponse({ error: errorType });
         }
         break;
       default:
@@ -340,9 +377,9 @@ function runCompiledJs(jsFileName, commandLineArgs) {
           "Try updating to newer versions of elm-run and the ianmackenzie/elm-script package",
         );
         exit(1);
-    }
-  });
-}
+    };
+  }
+};
 
 async function main() {
   if (Deno.args.length >= 2) {

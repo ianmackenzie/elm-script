@@ -1,6 +1,5 @@
 module ReadFile exposing (main)
 
-import Example
 import Script exposing (Script)
 import Script.File as File exposing (File)
 
@@ -20,4 +19,4 @@ script { arguments, userPrivileges } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

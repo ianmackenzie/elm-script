@@ -1,6 +1,5 @@
 module PathChecking exposing (main)
 
-import Example
 import Script exposing (Script)
 import Script.Directory as Directory exposing (Directory)
 import Script.File as File
@@ -43,4 +42,4 @@ script { arguments, userPrivileges } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

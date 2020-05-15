@@ -1,7 +1,6 @@
 module Miscellaneous exposing (main)
 
 import Duration
-import Example
 import Json.Decode as Decode
 import Script exposing (Script)
 import Script.Http as Http exposing (NetworkConnection)
@@ -63,4 +62,4 @@ printCurrentTime networkConnection =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

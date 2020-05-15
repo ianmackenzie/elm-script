@@ -1,6 +1,5 @@
 module UsuallyFails exposing (main)
 
-import Example
 import Script exposing (Script)
 import Time
 
@@ -20,4 +19,4 @@ script _ =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

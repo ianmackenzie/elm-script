@@ -1,6 +1,6 @@
 module Script exposing
     ( Script, Init, UserPrivileges, SubprocessError(..)
-    , RequestPort, ResponsePort, Program, program, customProgram
+    , Program, program, customProgram
     , succeed, fail
     , printLine, sleep, getCurrentTime
     , executeWith, tryToExecuteWith
@@ -53,6 +53,7 @@ various ways, and turn them into runnable programs.
 
 import Dict exposing (Dict)
 import Duration exposing (Duration)
+import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Platform.Cmd as Cmd
@@ -102,32 +103,6 @@ type SubprocessError
     | SubprocessExitedWithError Int
 
 
-{-| The type of port that scripts use to send requests to the external runner.
-You will need to declare a compatible port named `requestPort` in your top-level
-Elm file, like so:
-
-    port requestPort : Value -> Cmd msg
-
-(Note the lower-case `msg` since this is the format Elm requires for ports.)
-
--}
-type alias RequestPort =
-    Value -> Cmd Msg
-
-
-{-| The type of port that scripts use to receive responses from the external
-runner. You will need to declare a compatible port named `responsePort` in your
-top-level Elm file, like so:
-
-    port responsePort : (Value -> msg) -> Sub msg
-
-(Note the lower-case `msg` since this is the format Elm requires for ports.)
-
--}
-type alias ResponsePort =
-    (Value -> Msg) -> Sub Msg
-
-
 type Model
     = Running Flags (Script Int ())
     | Aborting
@@ -135,7 +110,7 @@ type Model
 
 type Msg
     = Updated (Script Int ())
-    | Response Value
+    | Response (Result Http.Error Value)
 
 
 {-| The type of program returned by `Script.program`.
@@ -221,15 +196,13 @@ will be printed to the console and a value of 1 will be returned to the
 operating system instead.
 
 -}
-program : (Init -> Script String ()) -> RequestPort -> ResponsePort -> Program
-program main requestPort responsePort =
+program : (Init -> Script String ()) -> Program
+program main =
     customProgram
         (\init ->
             main init
                 |> onError (\message -> printLine message |> andThen (fail 1))
         )
-        requestPort
-        responsePort
 
 
 {-| Like `program`, but with a bit more control: allows you to control the
@@ -237,8 +210,8 @@ integer error code returned to the operating system on failure, and does not
 print out anything by default (you will have to print out any error messages
 explicitly yourself).
 -}
-customProgram : (Init -> Script Int ()) -> RequestPort -> ResponsePort -> Program
-customProgram main requestPort responsePort =
+customProgram : (Init -> Script Int ()) -> Program
+customProgram main =
     let
         checkProtocolVersion =
             let
@@ -281,11 +254,17 @@ customProgram main requestPort responsePort =
                     abort "Failed to decode flags from JavaScript"
 
         submitRequest name value =
-            requestPort <|
-                Encode.object
-                    [ ( "name", Encode.string name )
-                    , ( "value", value )
-                    ]
+            Http.post
+                { url = "/runner"
+                , body =
+                    Http.jsonBody <|
+                        Encode.object
+                            [ ( "name", Encode.string name )
+                            , ( "value", value )
+                            ]
+                , expect =
+                    Http.expectJson Response Decode.value
+                }
 
         commands script =
             case script of
@@ -317,7 +296,7 @@ customProgram main requestPort responsePort =
                         Updated updated ->
                             ( Running flags updated, commands updated )
 
-                        Response value ->
+                        Response (Ok value) ->
                             case current of
                                 Internal.Invoke _ _ decoder ->
                                     case Decode.decodeValue (decoder flags) value of
@@ -329,11 +308,14 @@ customProgram main requestPort responsePort =
 
                                 _ ->
                                     abort ("Received unexpected response from JavaScript: " ++ Encode.encode 0 value)
+
+                        Response (Err _) ->
+                            abort "Internal HTTP request failed"
     in
     Platform.worker
         { init = init
         , update = update
-        , subscriptions = always (responsePort Response)
+        , subscriptions = always Sub.none
         }
 
 

@@ -1,6 +1,5 @@
 module PrintEnvironmentVariables exposing (main)
 
-import Example
 import Script exposing (Script)
 import Script.Environment as Environment exposing (Environment)
 
@@ -22,4 +21,4 @@ script { arguments, environment } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

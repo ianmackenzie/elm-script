@@ -1,6 +1,5 @@
 module CreateFileInSubdirectory exposing (main)
 
-import Example
 import Script exposing (Script)
 import Script.Directory as Directory
 import Script.File as File
@@ -21,4 +20,4 @@ script { workingDirectory } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

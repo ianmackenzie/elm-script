@@ -1,6 +1,5 @@
 module PowerShellTest exposing (main)
 
-import Example
 import Script exposing (Script)
 
 
@@ -17,7 +16,6 @@ script { workingDirectory, userPrivileges } =
         |> Script.thenWith (Script.each (\fileName -> Script.printLine (String.toUpper fileName)))
 
 
-
 main : Script.Program
 main =
-    Example.program script
+    Script.program script

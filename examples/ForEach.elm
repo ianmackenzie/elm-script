@@ -1,6 +1,5 @@
 module ForEach exposing (main)
 
-import Example
 import Script exposing (Script)
 
 
@@ -27,4 +26,4 @@ script { arguments } =
 
 main : Script.Program
 main =
-    Example.program script
+    Script.program script
