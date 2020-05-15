@@ -13,7 +13,8 @@ runTestCases workingDirectory userPrivileges testCases =
                 Script.executeWith userPrivileges
                     { command = "deno"
                     , arguments =
-                        [ "-A", "../runner/main.js", "run", scriptFileName ] ++ scriptArguments
+                        [ "run", "-A", "../runner/main.js", "run", scriptFileName ]
+                            ++ scriptArguments
                     , workingDirectory = workingDirectory
                     }
                     |> Script.onError

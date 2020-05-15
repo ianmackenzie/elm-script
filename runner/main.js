@@ -60,7 +60,7 @@ function resolvePath(components) {
 function listEntities(request, responsePort, statsPredicate) {
   try {
     const directoryPath = resolvePath(request.value);
-    const results = Deno.readdirSync(directoryPath)
+    const results = Array.from(Deno.readDirSync(directoryPath))
       .filter(function (fileInfo) {
         return statsPredicate(fileInfo);
       })
@@ -100,14 +100,14 @@ function runCompiledJs(jsFileName, commandLineArgs) {
     case "linux":
       flags["platform"] = { type: "posix", name: Deno.build.os };
       break;
-    case "win":
+    case "windows":
       flags["platform"] = { type: "windows" };
       break;
     default:
       console.log("Unrecognized OS '" + Deno.build.os + "'");
       exit(1);
   }
-  flags["environment"] = Object.entries(Deno.env());
+  flags["environment"] = Object.entries(Deno.env.toObject());
   flags["workingDirectory"] = Deno.cwd();
   const compiledPrograms = Object.values(globalThis["Elm"]);
   if (compiledPrograms.length != 1) {
@@ -194,7 +194,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         }
         break;
       case "listFiles":
-        listEntities(request, responsePort, (fileInfo) => fileInfo.isFile());
+        listEntities(request, responsePort, (fileInfo) => fileInfo.isFile);
         break;
       case "listSubdirectories":
         listEntities(
@@ -269,7 +269,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
         try {
           const entityPath = resolvePath(request.value);
           const fileInfo = Deno.statSync(entityPath);
-          if (fileInfo.isFile()) {
+          if (fileInfo.isFile) {
             responsePort.send("file");
           } else if (fileInfo.isDirectory()) {
             responsePort.send("directory");
