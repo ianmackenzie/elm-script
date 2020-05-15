@@ -11,28 +11,44 @@ This package allows you define command-line scripts in Elm that can
   - Make HTTP requests
   - Run subprocesses
 
-Here's "Hello World" (from [examples/HelloWorld.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/HelloWorld.elm)):
+Here's a complete "Hello World" program ([examples/HelloWorld.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/HelloWorld.elm)):
 
 ```elm
-script : Script.Init -> Script Int ()
-script init =
+module HelloWorld exposing (main)
+
+import Script exposing (Script)
+
+
+script : Script.Init -> Script String ()
+script {} =
     Script.printLine "Hello World!"
+
+
+main : Script.Program
+main =
+    Script.program script
 ```
 
 And here's a slightly more realistic/useful script that counts the number of
-lines in files given at the command line (from [examples/LineCounts.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/LineCounts.elm)):
+lines in files given at the command line ([examples/LineCounts.elm](https://github.com/ianmackenzie/elm-script/blob/master/examples/LineCounts.elm)):
 
 ```elm
-getLineCount : File ReadOnly -> Script File.Error Int
+module LineCounts exposing (main)
+
+import Script exposing (Script)
+import Script.File as File exposing (File, ReadOnly)
+
+
+getLineCount : File ReadOnly -> Script String Int
 getLineCount file =
     File.read file
         |> Script.map (String.trimRight >> String.lines >> List.length)
 
-script : Script.Init -> Script Int ()
+
+script : Script.Init -> Script String ()
 script { arguments, userPrivileges } =
     List.map (File.readOnly userPrivileges) arguments
         |> Script.collect getLineCount
-        |> Script.onError (handleError .message)
         |> Script.map (List.map2 Tuple.pair arguments)
         |> Script.thenWith
             (Script.each
@@ -46,10 +62,10 @@ script { arguments, userPrivileges } =
                 )
             )
 
-handleError : (x -> String) -> x -> Script Int a
-handleError toMessage error =
-    Script.printLine ("ERROR: " ++ toMessage error)
-        |> Script.andThen (Script.fail 1)
+
+main : Script.Program
+main =
+    Script.program script
 ```
 
 One of they key features of this package is very explicit control over
@@ -60,10 +76,10 @@ harmless things like getting the current time and printing to the console; in
 order to do anything more, it must explicitly be given read access to a
 particular directory, write access to a particular file, network access etc. In
 the above example, you can know just from the type signature of `getLineCount`
-that the returned script can read the file that you pass it (the `File (Read p)`
-type should be read as "file with read permissions"), but it can't read any
-other files, it can't write to any files at all, and it can't access the network
-(to, say, send the contents of `passwords.txt` to a nefarious server somewhere).
+that the returned script can read the file that you pass it, but it can't read
+any other files, it can't write to any files at all, and it can't access the
+network (to, say, send the contents of `passwords.txt` to an evil server
+somewhere).
 
 My hope is that this will make it possible to share scripting functionality via
 the Elm package system without worrying that some script written by a stranger
@@ -80,38 +96,20 @@ then either just experiment with the files in the `examples` directory, or add
 the `src` directory of this package to the `source-directories` field in your
 package's `elm-package.json`.
 
-To create a new script, create a `Main.elm` file that looks like this:
-
-```elm
-port module Main exposing (..)
-
-import Script exposing (Script)
-import Json.Encode exposing (Value)
-
-script : Script.Context -> Script Int ()
-script context =
-    Script.printLine "Hello World!"
-
-port requestPort : Value -> Cmd msg
-
-port responsePort : (Value -> msg) -> Sub msg
-
-main =
-    Script.program script requestPort responsePort
-```
-
-(The top-level script must have the type `Script Int ()`, i.e. the script must
-either fail with an integer error code or succeed with the unit value, but it
-can be composed out of smaller scripts that produce any kinds of errors and
-success values.)
-
-To actually run the compiled script, you will need the Node-based `elm-run`
-runner script. This has also not yet been published, so in the `runners/node`
-directory run `npm link` to use the current version. You should then be able to
-run your script with:
+To actually run scripts, you'll need to first install [Deno](https://deno.land/).
+You should then be able to [install](https://deno.land/manual/tools/script_installer)
+the `elm-script` command by running
 
 ```
-elm-run Main.elm
+deno install -A -n elm-script path/to/elm-script/runner/main.js
+```
+
+This will create a small executable file named `elm-script` that calls Deno to
+execute [`runner/main.js`](https://github.com/ianmackenzie/elm-script/blob/master/runner/main.js).
+You should then be able to run Elm scripts using
+
+```
+elm-script run Main.elm
 ```
 
 Refer to the API documentation for more details, or check out some more
