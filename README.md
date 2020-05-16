@@ -93,8 +93,8 @@ which parts are running potentially dangerous subprocesses, etc.
 `ianmackenzie/elm-script` has not yet been published, so right now if you
 want to play around with it you'll have to check out this repository. You can
 then either just experiment with the files in the `examples` directory, or add
-the `src` directory of this package to the `source-directories` field in your
-package's `elm-package.json`.
+the `src` directory of this package to the `source-directories` field of your
+`elm.json`.
 
 To actually run scripts, you'll need to first install [Deno](https://deno.land/).
 You should then be able to [install](https://deno.land/manual/tools/script_installer)
