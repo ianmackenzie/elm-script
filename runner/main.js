@@ -1,8 +1,5 @@
 "use strict";
 
-const majorVersion = 0;
-const minorVersion = 1;
-
 const majorProtocolVersion = 9;
 const minorProtocolVersion = 1;
 
