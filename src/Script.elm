@@ -140,6 +140,9 @@ decodePlatform =
                 case platformType of
                     "posix" ->
                         Decode.map Posix (Decode.field "name" Decode.string)
+                        
+                    "darwin" ->
+                        Decode.map Posix (Decode.field "name" Decode.string)
 
                     "windows" ->
                         Decode.succeed Windows

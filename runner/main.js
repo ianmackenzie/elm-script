@@ -98,6 +98,7 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   flags["arguments"] = commandLineArgs;
   switch (Deno.build.os) {
     case "mac":
+    case "darwin":
     case "linux":
       flags["platform"] = { type: "posix", name: Deno.build.os };
       break;
@@ -234,7 +235,7 @@ class XMLHttpRequest {
         listEntities(
           request,
           handleResponse,
-          (fileInfo) => fileInfo.isDirectory(),
+          (fileInfo) => fileInfo.isDirectory,
         );
         break;
       case "execute":
@@ -305,13 +306,13 @@ class XMLHttpRequest {
           const fileInfo = Deno.statSync(entityPath);
           if (fileInfo.isFile) {
             handleResponse("file");
-          } else if (fileInfo.isDirectory()) {
+          } else if (fileInfo.isDirectory) {
             handleResponse("directory");
           } else {
             handleResponse("other");
           }
         } catch (error) {
-          if (error === Deno.errors.NotFound) {
+          if (error instanceof Deno.errors.NotFound) {
             handleResponse("nonexistent");
           } else {
             handleResponse({ message: error.message });
