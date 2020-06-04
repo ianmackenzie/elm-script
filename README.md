@@ -106,7 +106,10 @@ deno install -A -n elm-script path/to/elm-script/runner/main.js
 
 This will create a small executable file named `elm-script` that calls Deno to
 execute [`runner/main.js`](https://github.com/ianmackenzie/elm-script/blob/master/runner/main.js).
-You should then be able to run Elm scripts using
+Where exactly the file gets installed depends on your operating system and Deno
+configuration, but you will need to make sure that directory gets added to your
+PATH; see the [`deno install` docs](https://deno.land/manual/tools/script_installer)
+for details. Once that is all done, you should be able to run Elm scripts using
 
 ```
 elm-script run Main.elm
