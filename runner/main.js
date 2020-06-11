@@ -80,6 +80,15 @@ function timeout(ms, promise) {
   });
 }
 
+function findNestedModule(obj) {
+  const nestedModules = Object.values(obj);
+  if (nestedModules.length != 1) {
+    console.log(`Expected exactly 1 nested module, found ${nestedModules.length}`);
+    exit(1);
+  }
+  return nestedModules[0];
+}
+
 function runCompiledJs(jsFileName, commandLineArgs) {
   // Read compiled JS from file
   const jsData = Deno.readFileSync(jsFileName);
@@ -113,17 +122,12 @@ function runCompiledJs(jsFileName, commandLineArgs) {
   flags["workingDirectory"] = Deno.cwd();
 
   // Get Elm program object
-  const compiledPrograms = Object.values(globalThis["Elm"]);
-  if (compiledPrograms.length != 1) {
-    console.log(
-      `Expected exactly 1 compiled program, found ${compiledPrograms.length}`,
-    );
-    exit(1);
+  var module = findNestedModule(globalThis["Elm"]);
+  while (!("init" in module)) {
+    module = findNestedModule(module);
   }
-  const program = compiledPrograms[0];
-
   // Start Elm program
-  program.init({ flags: flags });
+  module.init({ flags: flags });
 }
 
 class XMLHttpRequest {
