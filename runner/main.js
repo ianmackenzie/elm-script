@@ -1,7 +1,8 @@
 "use strict";
 
+// Used by CopyNewVersion.elm
 const majorVersion = 0;
-const minorVersion = 1;
+const minorVersion = 2;
 
 const majorProtocolVersion = 9;
 const minorProtocolVersion = 1;
