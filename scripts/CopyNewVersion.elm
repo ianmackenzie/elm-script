@@ -1,6 +1,5 @@
 module CopyNewVersion exposing (main)
 
-import Common exposing (handleError)
 import Parser exposing ((|.), (|=), Parser)
 import Script exposing (Script, UserPrivileges)
 import Script.Directory as Directory
@@ -18,6 +17,8 @@ parseVersion =
         |. Parser.symbol "\"use strict\";"
         |. parseNewLine
         |. parseNewLine
+        |. Parser.symbol "// Used by CopyNewVersion.elm"
+        |. parseNewLine
         |. Parser.symbol "const majorVersion = "
         |= Parser.int
         |. Parser.symbol ";"
@@ -28,14 +29,13 @@ parseVersion =
         |. parseNewLine
 
 
-script : Script.Init -> Script Int ()
+script : Script.Init -> Script String ()
 script { userPrivileges } =
     let
         runnerFile =
-            File.readOnly userPrivileges "C:/Git/ianmackenzie/elm-script/runner/main.js"
+            File.readOnly userPrivileges "/home/ian/git/ianmackenzie/elm-script/runner/main.js"
     in
     File.read runnerFile
-        |> Script.onError (handleError .message)
         |> Script.thenWith
             (\contents ->
                 case Parser.run parseVersion contents of
@@ -43,12 +43,11 @@ script { userPrivileges } =
                         copyVersion userPrivileges version runnerFile
 
                     Err _ ->
-                        Script.printLine "Failed to parse main.js"
-                            |> Script.andThen (Script.fail 1)
+                        Script.fail "Failed to parse main.js"
             )
 
 
-copyVersion : UserPrivileges -> ( Int, Int ) -> File ReadOnly -> Script Int ()
+copyVersion : UserPrivileges -> ( Int, Int ) -> File ReadOnly -> Script String ()
 copyVersion userPrivileges ( majorVersion, minorVersion ) runnerFile =
     let
         versionString =
@@ -56,10 +55,9 @@ copyVersion userPrivileges ( majorVersion, minorVersion ) runnerFile =
 
         targetFile =
             File.writable userPrivileges
-                ("C:/Git/elm-script/elm-script.github.io/" ++ versionString)
+                ("/home/ian/git/elm-script/elm-script.github.io/" ++ versionString)
     in
     File.checkExistence targetFile
-        |> Script.onError (handleError .message)
         |> Script.thenWith
             (\existence ->
                 case existence of
@@ -67,21 +65,19 @@ copyVersion userPrivileges ( majorVersion, minorVersion ) runnerFile =
                         let
                             latestFile =
                                 File.writable userPrivileges
-                                    "C:/Git/elm-script/elm-script.github.io/latest"
+                                    "/home/ian/git/elm-script/elm-script.github.io/latest"
                         in
                         Script.do
                             [ Script.printLine ("Copying new version " ++ versionString)
                             , File.copy runnerFile targetFile
                             , File.copy runnerFile latestFile
                             ]
-                            |> Script.onError (handleError .message)
 
                     _ ->
-                        Script.printLine ("Version " ++ versionString ++ " already exists!")
-                            |> Script.andThen (Script.fail 1)
+                        Script.fail ("Version " ++ versionString ++ " already exists!")
             )
 
 
 main : Script.Program
 main =
-    Common.program script
+    Script.program script
