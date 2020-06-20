@@ -101,14 +101,36 @@ You should then be able to [install](https://deno.land/manual/tools/script_insta
 the `elm-script` command by running
 
 ```
-deno install -A -n elm-script path/to/elm-script/runner/main.js
+deno install -A -n elm-script https://elm-script.github.io/latest
 ```
 
 This will create a small executable file named `elm-script` that calls Deno to
-execute [`runner/main.js`](https://github.com/ianmackenzie/elm-script/blob/master/runner/main.js).
-Where exactly the file gets installed depends on your operating system and Deno
-configuration, but you will need to make sure that directory gets added to your
-PATH; see the [`deno install` docs](https://deno.land/manual/tools/script_installer)
+execute [`runner/main.js`](https://github.com/ianmackenzie/elm-script/blob/master/runner/main.js):
+
+  - `-A` tells Deno to give full permissions (file system, network etc.) to
+    `elm-script`; `elm-script` has its own permissions system (described above)
+    to ensure that untrusted code cannot do anything malicious.
+  - `-n elm-script` tells Deno to name the resulting file `elm-script` instead
+    of `latest`.
+  - You will need to also add `-f` to force Deno to overwrite an existing
+    `elm-script` file if you are updating to a new version.
+
+If you need to use the bleeding-edge version of the runner script (either
+because the published version is out of date, or you've made some local
+modifications) you can instead run
+
+
+```
+deno install -A -n elm-script path/to/elm-script/runner/main.js
+```
+
+to use the locally checked-out version. However, this will also introduce a
+small delay when running scripts, since Deno seems to then 'recompile' `main.js`
+every time.
+
+Where exactly `elm-script` gets installed depends on your operating system and
+Deno configuration, but you will need to make sure that directory gets added to
+your PATH; see the [`deno install` docs](https://deno.land/manual/tools/script_installer)
 for details. Once that is all done, you should be able to run Elm scripts using
 
 ```
