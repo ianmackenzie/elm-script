@@ -87,7 +87,9 @@ function timeout(ms, promise) {
 function findNestedModule(obj) {
   const nestedModules = Object.values(obj);
   if (nestedModules.length != 1) {
-    console.log(`Expected exactly 1 nested module, found ${nestedModules.length}`);
+    console.log(
+      `Expected exactly 1 nested module, found ${nestedModules.length}`,
+    );
     exit(1);
   }
   return nestedModules[0];
@@ -175,8 +177,8 @@ class XMLHttpRequest {
         if (requiredMajorProtocolVersion !== majorProtocolVersion) {
           console.log(
             "Version mismatch: script requires elm-run major protocol version " +
-            requiredMajorProtocolVersion +
-            describeCurrentProtocolVersion,
+              requiredMajorProtocolVersion +
+              describeCurrentProtocolVersion,
           );
           if (requiredMajorProtocolVersion > majorProtocolVersion) {
             console.log("Please update to a newer version of elm-run");
@@ -191,8 +193,8 @@ class XMLHttpRequest {
             "." + requiredMinorProtocolVersion;
           console.log(
             "Version mismatch: script requires elm-run protocol version at least " +
-            requiredProtocolVersionString +
-            describeCurrentProtocolVersion,
+              requiredProtocolVersionString +
+              describeCurrentProtocolVersion,
           );
           console.log("Please update to a newer version of elm-run");
           exit(1);
@@ -252,7 +254,7 @@ class XMLHttpRequest {
             cmd: [request.value.command, ...request.value.arguments],
             cwd: resolvePath(request.value.workingDirectory),
             stdout: "piped",
-            stderr: "piped"
+            stderr: "piped",
           });
           const outputData = await process.output();
           const errorOutputData = await process.stderrOutput();
@@ -266,7 +268,9 @@ class XMLHttpRequest {
             } else if (result.signal !== null) {
               handleResponse({ error: "terminated" });
             } else {
-              const errorOutput = new TextDecoder("utf-8").decode(errorOutputData);
+              const errorOutput = new TextDecoder("utf-8").decode(
+                errorOutputData,
+              );
               handleResponse({ error: "failed", message: errorOutput });
             }
           }
@@ -383,9 +387,9 @@ class XMLHttpRequest {
           "Try updating to newer versions of elm-run and the ianmackenzie/elm-script package",
         );
         exit(1);
-    };
+    }
   }
-};
+}
 
 async function main() {
   if (Deno.args.length >= 2) {
@@ -413,7 +417,7 @@ async function main() {
           absolutePath,
         ],
         stdout: "piped",
-        cwd: elmFileDirectory
+        cwd: elmFileDirectory,
       });
       const elmResult = await elmProcess.status();
       if (elmResult.success) {
