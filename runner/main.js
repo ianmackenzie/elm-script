@@ -398,8 +398,18 @@ async function main() {
       console.log(`Run as 'elm-script run Script.elm [arguments]'`);
       exit(1);
     }
-    const sourceFileName = Deno.args[1];
-    const commandLineArgs = Deno.args.slice(2);
+    var isDebug = null;
+    var sourceFileName = null;
+    var commandLineArgs = null;
+    if (Deno.args[1] == "--debug") {
+      isDebug = true;
+      sourceFileName = Deno.args[2];
+      commandLineArgs = Deno.args.slice(3);
+    } else {
+      isDebug = false;
+      sourceFileName = Deno.args[1];
+      commandLineArgs = Deno.args.slice(2);
+    }
     const absolutePath = path.resolve(sourceFileName);
     const extension = path.extname(absolutePath);
     if (extension === ".js") {
@@ -412,7 +422,7 @@ async function main() {
         cmd: [
           "elm",
           "make",
-          "--optimize",
+          ...(isDebug ? [] : ["--optimize"]),
           "--output=" + tempFileName,
           absolutePath,
         ],
